@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Список групп пользователей в базе данных</title>
+</head>
+<body>
+    <h1>Список групп пользователей в базе данных</h1>
+    <ul>
+        {% for group in groups %}
+            <li>{{ group }}</li>
+        {% empty %}
+            <li>Нет групп пользователей</li>
+        {% endfor %}
+    </ul>
+</body>
+</html>

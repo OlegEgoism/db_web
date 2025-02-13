@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Пользователи и их группы</title>
+</head>
+<body>
+    <h1>Список пользователей и их групп</h1>
+    <table border="1">
+        <thead>
+            <tr>
+                <th>Пользователь</th>
+                <th>Группы</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for user, groups in users_groups.items %}
+                <tr>
+                    <td>{{ user }}</td>
+                    <td>
+                        {% if groups %}
+                            {{ groups|join:", " }}
+                        {% else %}
+                            Нет групп
+                        {% endif %}
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</body>
+</html>
