@@ -14,8 +14,8 @@
     <nav>
         <a href="/">Главная</a>
         {% if user.is_authenticated %}
-            <a href="{% url 'user_list' %}">Список пользователей</a>
             <a href="{% url 'group_list' %}">Список групп</a>
+            <a href="{% url 'user_list' %}">Список пользователей</a>
             <a href="{% url 'logout' %}">Выйти</a>
         {% else %}
             <a href="{% url 'login' %}">Войти</a>

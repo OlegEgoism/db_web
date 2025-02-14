@@ -1,38 +1,33 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<div class="welcome-container">
-    <h1 class="welcome-title">Список пользователей в базе данных</h1>
-
-    <table class="styled-table">
-        <thead>
-        <tr>
-            <th>Логин</th>
-            <th>Действия</th>
-        </tr>
-        </thead>
-        <tbody>
-        {% for user in users %}
+    <div class="welcome-container">
+        <h1 class="welcome-title">Список пользователей в базе данных</h1>
+        <a href="{% url 'user_create' %}" class="btn btn-add">Создать пользователя</a>
+        <table>
+            <thead>
             <tr>
-                <td>{{ user }}</td>
-                <td>
-                    <a href="{% url 'user_info' username=user %}" class="btn btn-info">ℹ️ Информация</a>
-                    <a href="{% url 'user_change_password' username=user %}" class="btn btn-change">🔑 Сменить пароль</a>
-                    <a href="{% url 'user_add_to_group' %}?username={{ user }}" class="btn btn-group">👥 Добавить в группу</a>
-                    <a href="{% url 'user_delete' username=user %}" class="btn btn-delete" onclick="return confirm('Удалить пользователя {{ user }}?')">🗑️ Удалить</a>
-                </td>
+                <th>Логин</th>
+                <th>Действия</th>
             </tr>
-        {% empty %}
-            <tr>
-                <td colspan="2" class="no-users">Нет пользователей</td>
-            </tr>
-        {% endfor %}
-        </tbody>
-    </table>
-
-    <div class="center">
-        <a href="{% url 'user_create' %}" class="btn btn-add">➕ Создать нового пользователя</a>
-        <a href="{% url 'create_group' %}" class="btn btn-add">➕ Создать новую группу</a>
+            </thead>
+            <tbody>
+            {% for user in users %}
+                <tr>
+                    <td>{{ user }}</td>
+                    <td>
+                        <a href="{% url 'user_info' username=user %}" class="btn btn-info">ℹ️ Информация</a>
+                        <a href="{% url 'user_change_password' username=user %}" class="btn btn-change">🔑 Сменить пароль</a>
+                        <a href="{% url 'user_add_to_group' %}?username={{ user }}" class="btn btn-group">👥 Добавить в группу</a>
+                        <a href="{% url 'user_delete' username=user %}" class="btn btn-delete" onclick="return confirm('Удалить пользователя {{ user }}?')">🗑️ Удалить</a>
+                    </td>
+                </tr>
+            {% empty %}
+                <tr>
+                    <td colspan="2" class="no-users">Нет пользователей</td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
     </div>
-</div>
 {% endblock %}

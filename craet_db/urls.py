@@ -25,20 +25,20 @@ from db_crp.views import (
     register,
     logout_view,
 
-    user_list,
     group_list,
+    group_create,
+    group_delete,
     group_users,
 
+    user_list,
     user_create,
-    user_change_password,
-    user_delete,
     user_info,
+    user_change_password,
     user_add_to_group,
-    create_group,
+    user_delete,
 
-    users_with_groups,
-    create_table,
-
+    # users_with_groups,
+    # create_table,
 )
 
 urlpatterns = [
@@ -50,22 +50,30 @@ urlpatterns = [
     path('login/', auth_views.LoginView.as_view(), name='login'),  # Вход пользователя
     path('logout/', logout_view, name='logout'),  # Выход пользователя
 
-    path('user_list/', user_list, name='user_list'),  # Список пользователей в базе данных
-    path('group_list/', group_list, name='group_list'),  # Список групп в базе данных
-    path('group_users/<str:group_name>/', group_users, name='group_users'),
+    path('group_list/', group_list, name='group_list'),  # Список групп
+    path('group_create/', group_create, name='group_create'),  # Создание группы
+    path('group_delete/<str:group_name>/', group_delete, name='group_delete'),  # Удаление группы
+    path('group_users/<str:group_name>/', group_users, name='group_users'),  # Cписок пользователей в группе
+
+    path('user_list/', user_list, name='user_list'),  # Список пользователей
+    path('user_create/', user_create, name='user_create'),  # Создать пользователя
+    path('user_info/<str:username>/', user_info, name='user_info'),  # Информация о пользователе
+    path('user_change_password/<str:username>/', user_change_password, name='user_change_password'),  # Сменить пароль
+    path('user_add_to_group/', user_add_to_group, name='user_add_to_group'),  # Добавление удаление пользователя в группы
+    path('user_delete/<str:username>/', user_delete, name='user_delete'),  # Удаление пользователя
 
 
-    path('user_create/', user_create, name='user_create'),  # Создать нового пользователя в базе данных
-    path('user_change_password/<str:username>/', user_change_password, name='user_change_password'),  # Сменить пароль пользователя в базе данных
-    path('user_delete/<str:username>/', user_delete, name='user_delete'),  # Удалить пользователя из базы данных
-    path('user_info/<str:username>/', user_info, name='user_info'),  # Информация о пользователе из базы данных
-    path('user_add_to_group/', user_add_to_group, name='user_add_to_group'),  # Добавления пользователя в группы
-    path('create_group/', create_group, name='create_group'),  # Создание новой группы в базе данных
 
-    path('users_with_groups/', users_with_groups, name='users_with_groups'),
-    # path('user_groups/', user_groups, name='user_groups'),  # Список групп пользователей в базе данных
 
-    path('create_table/', create_table, name='create_table'),
+
+
+
+
+
+    # path('users_with_groups/', users_with_groups, name='users_with_groups'),
+    # # path('user_groups/', user_groups, name='user_groups'),  # Список групп пользователей в базе данных
+    #
+    # path('create_table/', create_table, name='create_table'),
 
 ]
 

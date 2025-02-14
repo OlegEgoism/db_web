@@ -1,12 +1,6 @@
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-    <meta charset="UTF-8">
-    <title>Добавить пользователя в группы</title>
-    {% load static %}
-    <link rel="stylesheet" href="{% static 'css/style.css' %}">
-</head>
-<body>
+{% extends 'base.html' %}
+
+{% block content %}
 
 <div class="container">
     <h1>Добавить пользователя {{ username }} в группы</h1>
@@ -87,5 +81,4 @@
     });
 </script>
 
-</body>
-</html>
+{% endblock %}
