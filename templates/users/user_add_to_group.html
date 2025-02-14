@@ -1,106 +1,39 @@
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-    <meta charset="UTF-8">
-    <title>Добавить пользователя в группы</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 30px;
-            background-color: #f4f4f4;
-        }
-        .container {
-            width: 40%;
-            margin: 0 auto;
-            background-color: #fff;
-            border: 1px solid #ccc;
-            border-radius: 10px;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
-            padding: 20px;
-        }
-        h1 {
-            text-align: center;
-            color: #333;
-        }
-        .group-list {
-            margin: 20px 0;
-            padding: 0;
-            list-style: none;
-        }
-        .group-list li {
-            margin: 5px 0;
-            color: #007BFF;
-        }
-        .form-field {
-            margin: 15px 0;
-        }
-        .submit-btn {
-            margin-top: 20px;
-            display: block;
-            width: 100%;
-            background-color: #007BFF;
-            color: white;
-            padding: 10px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            text-align: center;
-            text-decoration: none;
-            transition: background-color 0.3s;
-        }
-        .submit-btn:hover {
-            background-color: #0056b3;
-        }
-        .back-link {
-            margin-top: 20px;
-            text-align: center;
-        }
-        .back-link a {
-            text-decoration: none;
-            color: white;
-            background-color: #28A745;
-            padding: 10px 15px;
-            border-radius: 5px;
-            transition: background-color 0.3s;
-        }
-        .back-link a:hover {
-            background-color: #218838;
-        }
-    </style>
-</head>
-<body>
+{% extends 'base.html' %}
+
+{% block content %}
 
 <div class="container">
-    <h1>Добавить пользователя в группы</h1>
+    <h1>Добавить пользователя {{ username }} в группы</h1>
 
-    <!-- Список уже существующих групп -->
-    <div class="form-field">
-        <label><strong>Уже существующие группы:</strong></label>
-        {% if existing_groups %}
-            <ul class="group-list">
-                {% for group in existing_groups %}
-                    <li>✅ {{ group }}</li>
+    <div class="group-container">
+        <!-- Список групп, которые есть у пользователя -->
+        <div>
+            <h3>✅ Уже есть у пользователя</h3>
+            <ul class="group-list" id="user-groups" ondrop="drop(event, 'user-groups')" ondragover="allowDrop(event)">
+                {% for group in user_groups %}
+                    <li draggable="true" ondragstart="drag(event)" id="group_{{ group }}">{{ group }}</li>
                 {% endfor %}
             </ul>
-        {% else %}
-            <p>Пользователь ещё не состоит в группах.</p>
-        {% endif %}
+        </div>
+
+        <!-- Список групп, которых у пользователя нет -->
+        <div>
+            <h3>🔍 Доступные группы</h3>
+            <ul class="group-list" id="available-groups" ondrop="drop(event, 'available-groups')" ondragover="allowDrop(event)">
+                {% for group in available_groups %}
+                    <li draggable="true" ondragstart="drag(event)" id="group_{{ group }}">{{ group }}</li>
+                {% endfor %}
+            </ul>
+        </div>
     </div>
 
-    <!-- Форма для добавления новых групп -->
-    <form method="post">
+    <!-- Форма для отправки выбранных групп -->
+    <form method="post" id="group-form">
         {% csrf_token %}
-        <div class="form-field">
-            <label for="id_username">Имя пользователя:</label>
-            {{ form.username }}
-        </div>
-
-        <div class="form-field">
-            <label for="id_groups">Выберите группы:</label>
-            {{ form.groups }}
-        </div>
-
-        <button type="submit" class="submit-btn">➕ Добавить группы</button>
+        <input type="hidden" name="username" value="{{ username }}">
+        <input type="hidden" name="selected_groups" id="selected-groups">
+        <input type="hidden" name="deleted_groups" id="deleted-groups">
+        <button type="submit" class="submit-btn">➕ Добавить выбранные группы</button>
     </form>
 
     <div class="back-link">
@@ -108,5 +41,44 @@
     </div>
 </div>
 
-</body>
-</html>
+<script>
+    let draggedElement = null;
+    let deletedGroups = [];
+
+    function allowDrop(event) {
+        event.preventDefault();
+    }
+
+    function drag(event) {
+        draggedElement = event.target;
+    }
+
+    function drop(event, targetId) {
+        event.preventDefault();
+        if (draggedElement) {
+            const targetList = document.getElementById(targetId);
+            const sourceList = draggedElement.parentNode;
+
+            // Перемещение группы
+            if (targetList !== sourceList) {
+                targetList.appendChild(draggedElement);
+
+                // Добавляем в удалённые группы, если перенесли в доступные
+                if (sourceList.id === 'user-groups' && targetList.id === 'available-groups') {
+                    deletedGroups.push(draggedElement.textContent);
+                }
+            }
+            draggedElement = null;
+        }
+    }
+
+    document.getElementById('group-form').addEventListener('submit', () => {
+        // Формируем список групп из левого списка
+        const selectedGroups = Array.from(document.getElementById('user-groups').children)
+            .map(item => item.textContent);
+        document.getElementById('selected-groups').value = selectedGroups.join(',');
+        document.getElementById('deleted-groups').value = deletedGroups.join(',');
+    });
+</script>
+
+{% endblock %}

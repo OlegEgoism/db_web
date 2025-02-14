@@ -1,36 +1,20 @@
 from django import forms
-from django.db import connection
-
-COLUMN_TYPES = [
-    ('INTEGER', 'Integer'),
-    ('TEXT', 'Text'),
-    ('BOOLEAN', 'Boolean'),
-    ('DATE', 'Date'),
-    ('FLOAT', 'Float'),
-]
+from django.contrib.auth.forms import UserCreationForm
+from .models import CustomUser
 
 
-class TableCreateForm(forms.Form):
-    table_name = forms.CharField(label="Имя таблицы", max_length=50)
+class CustomUserRegistrationForm(UserCreationForm):
+    """Регистрация пользователя"""
+    phone_number = forms.CharField(max_length=15, required=True, help_text='Формат с кодом телефона')
+    photo = forms.ImageField(required=False)
 
-    # Динамически создаем 5 полей для столбцов
-    column_1_name = forms.CharField(label="Имя столбца 1", required=False)
-    column_1_type = forms.ChoiceField(choices=COLUMN_TYPES, required=False)
-
-    column_2_name = forms.CharField(label="Имя столбца 2", required=False)
-    column_2_type = forms.ChoiceField(choices=COLUMN_TYPES, required=False)
-
-    column_3_name = forms.CharField(label="Имя столбца 3", required=False)
-    column_3_type = forms.ChoiceField(choices=COLUMN_TYPES, required=False)
-
-    column_4_name = forms.CharField(label="Имя столбца 4", required=False)
-    column_4_type = forms.ChoiceField(choices=COLUMN_TYPES, required=False)
-
-    column_5_name = forms.CharField(label="Имя столбца 5", required=False)
-    column_5_type = forms.ChoiceField(choices=COLUMN_TYPES, required=False)
+    class Meta:
+        model = CustomUser
+        fields = ('username', 'email', 'phone_number', 'photo', 'password1', 'password2')
 
 
 class UserCreateForm(forms.Form):
+    """Создать нового пользователя в базе данных"""
     username = forms.CharField(label="Имя пользователя", max_length=150)
     password = forms.CharField(label="Пароль", widget=forms.PasswordInput)
 
@@ -63,6 +47,7 @@ class ChangePasswordForm(forms.Form):
 from django import forms
 from django.db import connection
 
+
 class AddUserToGroupForm(forms.Form):
     username = forms.CharField(label="Имя пользователя", max_length=150, widget=forms.TextInput(attrs={'readonly': 'readonly'}))
     groups = forms.MultipleChoiceField(label="Выберите группы", widget=forms.CheckboxSelectMultiple)
@@ -84,6 +69,34 @@ class AddUserToGroupForm(forms.Form):
         return [(group[0], group[0]) for group in groups]
 
 
-
 class CreateGroupForm(forms.Form):
     groupname = forms.CharField(label="Название группы", max_length=150)
+
+
+COLUMN_TYPES = [
+    ('INTEGER', 'Integer'),
+    ('TEXT', 'Text'),
+    ('BOOLEAN', 'Boolean'),
+    ('DATE', 'Date'),
+    ('FLOAT', 'Float'),
+]
+
+
+class TableCreateForm(forms.Form):
+    table_name = forms.CharField(label="Имя таблицы", max_length=50)
+
+    # Динамически создаем 5 полей для столбцов
+    column_1_name = forms.CharField(label="Имя столбца 1", required=False)
+    column_1_type = forms.ChoiceField(choices=COLUMN_TYPES, required=False)
+
+    column_2_name = forms.CharField(label="Имя столбца 2", required=False)
+    column_2_type = forms.ChoiceField(choices=COLUMN_TYPES, required=False)
+
+    column_3_name = forms.CharField(label="Имя столбца 3", required=False)
+    column_3_type = forms.ChoiceField(choices=COLUMN_TYPES, required=False)
+
+    column_4_name = forms.CharField(label="Имя столбца 4", required=False)
+    column_4_type = forms.ChoiceField(choices=COLUMN_TYPES, required=False)
+
+    column_5_name = forms.CharField(label="Имя столбца 5", required=False)
+    column_5_type = forms.ChoiceField(choices=COLUMN_TYPES, required=False)

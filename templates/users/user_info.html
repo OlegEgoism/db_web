@@ -1,103 +1,48 @@
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-    <meta charset="UTF-8">
-    <title>Информация о пользователе</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 30px;
-            background-color: #f4f4f4;
-        }
-        .info-container {
-            width: 50%;
-            margin: 0 auto;
-            background-color: #fff;
-            border: 1px solid #ccc;
-            border-radius: 10px;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
-            padding: 20px;
-        }
-        h1 {
-            text-align: center;
-            margin-bottom: 30px;
-            color: #333;
-        }
-        .info-item {
-            margin-bottom: 15px;
-        }
-        .info-label {
-            font-weight: bold;
-            color: #007BFF;
-        }
-        .groups {
-            list-style-type: none;
-            padding: 0;
-        }
-        .groups li {
-            margin-left: 10px;
-        }
-        .back-link {
-            display: block;
-            margin-top: 20px;
-            text-align: center;
-        }
-        .back-link a {
-            text-decoration: none;
-            color: #fff;
-            background-color: #28A745;
-            padding: 10px 15px;
-            border-radius: 5px;
-            transition: background-color 0.3s;
-        }
-        .back-link a:hover {
-            background-color: #218838;
-        }
-    </style>
-</head>
-<body>
+{% extends 'base.html' %}
 
-<div class="info-container">
-    {% if user_data %}
-        <h1>Информация о пользователе: {{ user_data.username }}</h1>
-        <div class="info-item">
-            <span class="info-label">ID пользователя:</span> {{ user_data.user_id }}
-        </div>
-        <div class="info-item">
-            <span class="info-label">Может создавать базы данных:</span> {{ user_data.can_create_db }}
-        </div>
-        <div class="info-item">
-            <span class="info-label">Суперпользователь:</span> {{ user_data.is_superuser }}
-        </div>
-        <div class="info-item">
-            <span class="info-label">Может изменять системный каталог:</span> {{ user_data.can_update_catalog }}
-        </div>
-        <div class="info-item">
-            <span class="info-label">Пароль (хэш):</span> {{ user_data.password_hash }}
-        </div>
-        <div class="info-item">
-            <span class="info-label">Действителен до:</span> {{ user_data.valid_until|default:"Без ограничений" }}
-        </div>
-        <div class="info-item">
-            <span class="info-label">Группы пользователя:</span>
-            {% if user_data.groups %}
-                <ul class="groups">
-                    {% for group in user_data.groups %}
-                        <li>{{ group }}</li>
-                    {% endfor %}
-                </ul>
-            {% else %}
-                <p>Пользователь не состоит в группах.</p>
-            {% endif %}
-        </div>
-    {% else %}
-        <h1>Пользователь не найден</h1>
-    {% endif %}
-
-    <div class="back-link">
-        <a href="{% url 'user_list' %}">🔙 Вернуться к списку пользователей</a>
+{% block content %}
+    <div class="welcome-container">
+        {% if user_data %}
+            <h1 class="welcome-title">Информация о пользователе: {{ user_data.username }}</h1>
+            <div>
+                <span class="info-label">ID пользователя:</span> {{ user_data.user_id }}
+            </div>
+            <div>
+                <span class="info-label">Может создавать базы данных:</span> {{ user_data.can_create_db }}
+            </div>
+            <div>
+                <span class="info-label">Суперпользователь:</span> {{ user_data.is_superuser }}
+            </div>
+            <div>
+                <span class="info-label">Может изменять системный каталог:</span> {{ user_data.can_update_catalog }}
+            </div>
+            <div>
+                <span class="info-label">Пароль (хэш):</span> {{ user_data.password_hash }}
+                <a href="{% url 'user_change_password' user_data.username %}" class="btn btn-password">Изменить пароль</a>
+            </div>
+            <div>
+                <span class="info-label">Действителен до:</span> {{ user_data.valid_until|default:"Без ограничений" }}
+            </div>
+            <div>
+                <span class="info-label">Группы пользователя:</span>
+                {% if user_data.groups %}
+                    <ul class="group-list">
+                        {% for group in user_data.groups %}
+                            <a href="{% url 'group_users' group %}" class="group-link-user">{{ group }}</a>
+                        {% endfor %}
+                    </ul>
+                {% else %}
+                    <p class="no-groups">Пользователь не состоит в группах.</p>
+                {% endif %}
+            </div>
+        {% else %}
+            <h1 class="welcome-title">Пользователь не найден</h1>
+        {% endif %}
+        {% if user_data.groups %}
+            <a href="{% url 'group_users' user_data.groups.0 %}" class="btn">Назад</a>
+        {% else %}
+            <a href="{% url 'group_list' %}" class="btn">Назад {{ user_data.groups }}</a>
+        {% endif %}
     </div>
-</div>
+{% endblock %}
 
-</body>
-</html>
