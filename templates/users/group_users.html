@@ -1,0 +1,15 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="welcome-container">
+    <h1 class="welcome-title">Пользователи в группе: {{ group_name }}</h1>
+    <ul class="group-list">
+        {% for user in users %}
+            <li class="group-item">{{ user }}</li>
+        {% empty %}
+            <li class="group-item no-groups">Нет пользователей в этой группе</li>
+        {% endfor %}
+    </ul>
+    <a href="{% url 'group_list' %}" class="btn btn-add">Назад к списку групп</a>
+</div>
+{% endblock %}

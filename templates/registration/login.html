@@ -1,0 +1,20 @@
+{% extends 'base.html' %}
+
+{% block content %}
+    <div class="welcome-container">
+        <h2 class="welcome-title">Вход в систему</h2>
+        <form method="post" class="login-form">
+            {% csrf_token %}
+            <div class="form-group">
+                <label for="username" class="form-label">Логин:</label>
+                <input type="text" id="username" name="username" required>
+            </div>
+            <div class="form-group">
+                <label for="password" class="form-label">Пароль:</label>
+                <input type="password" id="password" name="password" required>
+            </div>
+            <button type="submit" class="btn">Войти</button>
+        </form>
+        <h3>Нет аккаунта? <a href="{% url 'register' %}">Зарегистрироваться</a></h3>
+    </div>
+{% endblock %}

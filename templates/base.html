@@ -1,0 +1,32 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}ХДАК DB{% endblock %}</title>
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+</head>
+
+<body>
+<header>
+    <nav>
+        <a href="/">Главная</a>
+        {% if user.is_authenticated %}
+            <a href="{% url 'user_list' %}">Список пользователей</a>
+            <a href="{% url 'group_list' %}">Список групп</a>
+            <a href="{% url 'logout' %}">Выйти</a>
+        {% else %}
+            <a href="{% url 'login' %}">Войти</a>
+            <a href="{% url 'register' %}">Регистрация</a>
+        {% endif %}
+    </nav>
+</header>
+<main>
+    {% block content %}{% endblock %}
+</main>
+
+</body>
+
+</html>
