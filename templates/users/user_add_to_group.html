@@ -1,14 +1,13 @@
 {% extends 'base.html' %}
 
 {% block content %}
-
-<div class="container">
-    <h1>Добавить пользователя {{ username }} в группы</h1>
+    <div class="welcome-container">
+    <h1 class="welcome-title">Группы пользователя {{ username }}</h1>
 
     <div class="group-container">
         <!-- Список групп, которые есть у пользователя -->
         <div>
-            <h3>✅ Уже есть у пользователя</h3>
+            <h3>Группы пользователя</h3>
             <ul class="group-list" id="user-groups" ondrop="drop(event, 'user-groups')" ondragover="allowDrop(event)">
                 {% for group in user_groups %}
                     <li draggable="true" ondragstart="drag(event)" id="group_{{ group }}">{{ group }}</li>
@@ -18,7 +17,7 @@
 
         <!-- Список групп, которых у пользователя нет -->
         <div>
-            <h3>🔍 Доступные группы</h3>
+            <h3>Доступные группы</h3>
             <ul class="group-list" id="available-groups" ondrop="drop(event, 'available-groups')" ondragover="allowDrop(event)">
                 {% for group in available_groups %}
                     <li draggable="true" ondragstart="drag(event)" id="group_{{ group }}">{{ group }}</li>
@@ -33,11 +32,11 @@
         <input type="hidden" name="username" value="{{ username }}">
         <input type="hidden" name="selected_groups" id="selected-groups">
         <input type="hidden" name="deleted_groups" id="deleted-groups">
-        <button type="submit" class="submit-btn">➕ Добавить выбранные группы</button>
+        <button type="submit" class="submit-btn">Добавить выбранные группы</button>
     </form>
 
     <div class="back-link">
-        <a href="{% url 'user_list' %}">🔙 Вернуться к списку пользователей</a>
+        <a href="{% url 'user_list' %}">Вернуться к списку пользователей</a>
     </div>
 </div>
 
