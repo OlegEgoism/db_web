@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+
+{% block content %}
+    <h1 class="centered-title">Список групп в базе данных</h1>
+    <div class="welcome-container">
+        <h2 class="section-title">Пользовательские группы</h2>
+        <ul class="group-list">
+            {% for group in user_groups %}
+                <li class="group-item user-group">
+                    <a href="{% url 'group_users' group %}" class="group-link">{{ group }}</a>
+                </li>
+            {% empty %}
+                <li class="group-item no-groups">Нет пользовательских групп</li>
+            {% endfor %}
+        </ul>
+
+        <h2 class="section-title">Системные группы</h2>
+        <ul class="group-list">
+            {% for group in system_groups %}
+                <li class="group-item system-group">
+                    <a href="{% url 'group_users' group %}" class="group-link">{{ group }}</a>
+                </li>
+            {% empty %}
+                <li class="group-item no-groups">Нет системных групп</li>
+            {% endfor %}
+        </ul>
+    </div>
+ 
+{% endblock %}

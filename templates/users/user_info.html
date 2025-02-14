@@ -3,57 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <title>Информация о пользователе</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 30px;
-            background-color: #f4f4f4;
-        }
-        .info-container {
-            width: 50%;
-            margin: 0 auto;
-            background-color: #fff;
-            border: 1px solid #ccc;
-            border-radius: 10px;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
-            padding: 20px;
-        }
-        h1 {
-            text-align: center;
-            margin-bottom: 30px;
-            color: #333;
-        }
-        .info-item {
-            margin-bottom: 15px;
-        }
-        .info-label {
-            font-weight: bold;
-            color: #007BFF;
-        }
-        .groups {
-            list-style-type: none;
-            padding: 0;
-        }
-        .groups li {
-            margin-left: 10px;
-        }
-        .back-link {
-            display: block;
-            margin-top: 20px;
-            text-align: center;
-        }
-        .back-link a {
-            text-decoration: none;
-            color: #fff;
-            background-color: #28A745;
-            padding: 10px 15px;
-            border-radius: 5px;
-            transition: background-color 0.3s;
-        }
-        .back-link a:hover {
-            background-color: #218838;
-        }
-    </style>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
 </head>
 <body>
 

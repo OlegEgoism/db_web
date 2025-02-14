@@ -18,9 +18,17 @@ from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib import admin
 from django.urls import path
-
+from django.contrib.auth import views as auth_views
 from db_crp.views import (
+    home,
+
+    register,
+    logout_view,
+
     user_list,
+    group_list,
+    group_users,
+
     user_create,
     user_change_password,
     user_delete,
@@ -28,7 +36,6 @@ from db_crp.views import (
     user_add_to_group,
     create_group,
 
-    user_groups,
     users_with_groups,
     create_table,
 
@@ -37,7 +44,17 @@ from db_crp.views import (
 urlpatterns = [
     path('admin/', admin.site.urls),
 
+    path('', home, name='home'),
+
+    path('register/', register, name='register'),  # Регистрация пользователя
+    path('login/', auth_views.LoginView.as_view(), name='login'),  # Вход пользователя
+    path('logout/', logout_view, name='logout'),  # Выход пользователя
+
     path('user_list/', user_list, name='user_list'),  # Список пользователей в базе данных
+    path('group_list/', group_list, name='group_list'),  # Список групп в базе данных
+    path('group_users/<str:group_name>/', group_users, name='group_users'),
+
+
     path('user_create/', user_create, name='user_create'),  # Создать нового пользователя в базе данных
     path('user_change_password/<str:username>/', user_change_password, name='user_change_password'),  # Сменить пароль пользователя в базе данных
     path('user_delete/<str:username>/', user_delete, name='user_delete'),  # Удалить пользователя из базы данных
@@ -45,10 +62,8 @@ urlpatterns = [
     path('user_add_to_group/', user_add_to_group, name='user_add_to_group'),  # Добавления пользователя в группы
     path('create_group/', create_group, name='create_group'),  # Создание новой группы в базе данных
 
-
-
     path('users_with_groups/', users_with_groups, name='users_with_groups'),
-    path('user_groups/', user_groups, name='user_groups'),  # Список групп пользователей в базе данных
+    # path('user_groups/', user_groups, name='user_groups'),  # Список групп пользователей в базе данных
 
     path('create_table/', create_table, name='create_table'),
 

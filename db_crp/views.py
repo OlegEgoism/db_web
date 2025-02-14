@@ -1,10 +1,38 @@
 from django.contrib import messages
+from django.contrib.auth import login, logout
 from django.db import connection
 from django.http import HttpResponse
-from .forms import TableCreateForm, UserCreateForm, ChangePasswordForm, AddUserToGroupForm, CreateGroupForm
+from .forms import TableCreateForm, UserCreateForm, ChangePasswordForm, AddUserToGroupForm, CreateGroupForm, CustomUserRegistrationForm
 from django.shortcuts import render, redirect
 
 
+def home(request):
+    return render(request, 'home.html')
+
+
+def register(request):
+    """Регистрация пользователя"""
+    if request.method == 'POST':
+        form = CustomUserRegistrationForm(request.POST, request.FILES)
+        if form.is_valid():
+            user = form.save()
+            login(request, user)
+            messages.success(request, 'Регистрация прошла успешно!')
+            return redirect('home')
+        else:
+            messages.error(request, 'Ошибка регистрации. Проверьте введённые данные.')
+    else:
+        form = CustomUserRegistrationForm()
+    return render(request, 'registration/register.html', {'form': form})
+
+
+def logout_view(request):
+    """Выход пользователя"""
+    logout(request)
+    return redirect('home')
+
+
+# TODO
 def user_list(request):
     """Список пользователей в базе данных"""
     with connection.cursor() as cursor:
@@ -12,6 +40,47 @@ def user_list(request):
         users = cursor.fetchall()
     user_names = [user[0] for user in users]
     return render(request, 'users/user_list.html', {'users': user_names})
+
+
+def group_list(request):
+    """Список групп в базе данных"""
+    with connection.cursor() as cursor:
+        cursor.execute("SELECT groname FROM pg_group;")
+        groups = cursor.fetchall()
+    group_names = [group[0] for group in groups]
+
+    system_groups = [g for g in group_names if g.startswith('pg_')]
+    user_groups = [g for g in group_names if not g.startswith('pg_')]
+
+    return render(request, 'users/group_list.html', {
+        'system_groups': system_groups,
+        'user_groups': user_groups
+    })
+
+def group_users(request, group_name):
+    """Cписок пользователей в выбранной группе"""
+    with connection.cursor() as cursor:
+        cursor.execute("SELECT usename FROM pg_user JOIN pg_group ON (pg_user.usesysid = ANY(pg_group.grolist)) WHERE groname = %s;", [group_name])
+        users = cursor.fetchall()
+    user_names = [user[0] for user in users]
+
+    return render(request, 'users/group_users.html', {
+        'group_name': group_name,
+        'users': user_names
+    })
+
+
+def group_users(request, group_name):
+    """Отобразить список пользователей в выбранной группе"""
+    with connection.cursor() as cursor:
+        cursor.execute("SELECT usename FROM pg_user JOIN pg_group ON (pg_user.usesysid = ANY(pg_group.grolist)) WHERE groname = %s;", [group_name])
+        users = cursor.fetchall()
+    user_names = [user[0] for user in users]
+
+    return render(request, 'users/group_users.html', {
+        'group_name': group_name,
+        'users': user_names
+    })
 
 
 def user_create(request):
@@ -108,52 +177,77 @@ def user_info(request, username):
 #     return render(request, 'users/user_add_to_group.html', {'form': form})
 
 
+from django.shortcuts import render, redirect
+from django.db import connection
+from django.http import HttpResponse
+
+
 def user_add_to_group(request):
-    """Добавление пользователя в группы и отображение текущих групп"""
-    existing_groups = []
+    """Добавление или удаление пользователя из групп"""
     username = request.GET.get('username')
 
+    # Получаем список групп
+    all_groups = set()
+    user_groups = set()
+
+    with connection.cursor() as cursor:
+        # Получаем все доступные группы (кроме системных)
+        cursor.execute("""
+            SELECT rolname 
+            FROM pg_roles 
+            WHERE rolcanlogin = FALSE AND rolname NOT LIKE 'pg_%';
+        """)
+        all_groups = {group[0] for group in cursor.fetchall()}
+
+        # Получаем группы пользователя
+        cursor.execute("""
+            SELECT r.rolname
+            FROM pg_user u
+            JOIN pg_auth_members m ON u.usesysid = m.member
+            JOIN pg_roles r ON m.roleid = r.oid
+            WHERE u.usename = %s;
+        """, [username])
+        user_groups = {group[0] for group in cursor.fetchall()}
+
+    # Определяем группы, которых у пользователя нет
+    available_groups = all_groups - user_groups
+
     if request.method == "POST":
-        form = AddUserToGroupForm(request.POST)
-        if form.is_valid():
-            username = form.cleaned_data['username']
-            selected_groups = form.cleaned_data['groups']
+        # Получаем группы для добавления
+        selected_groups = request.POST.get('selected_groups').split(',')
+        selected_groups = [group.strip() for group in selected_groups if group.strip()]
 
-            # Добавляем пользователя в выбранные группы
-            errors = []
-            for groupname in selected_groups:
-                if groupname.startswith('pg_'):
-                    errors.append(f"⚠️ Нельзя добавить пользователя в системную группу '{groupname}'")
-                    continue
-                query = f"GRANT {groupname} TO {username};"
-                try:
-                    with connection.cursor() as cursor:
-                        cursor.execute(query)
-                except Exception as e:
-                    errors.append(f"Ошибка при добавлении в группу '{groupname}': {e}")
+        # Получаем группы для удаления
+        deleted_groups = request.POST.get('deleted_groups').split(',')
+        deleted_groups = [group.strip() for group in deleted_groups if group.strip()]
 
-            if errors:
-                return HttpResponse("<br>".join(errors))
+        errors = []
 
-            return redirect('user_list')
+        # Удаляем группы
+        for groupname in deleted_groups:
+            try:
+                with connection.cursor() as cursor:
+                    cursor.execute(f"REVOKE {groupname} FROM {username};")
+            except Exception as e:
+                errors.append(f"Ошибка при удалении группы '{groupname}': {e}")
 
-    else:
-        # Создаем форму с предзаполненным именем пользователя
-        form = AddUserToGroupForm(initial={'username': username})
+        # Добавляем выбранные группы
+        for groupname in selected_groups:
+            try:
+                with connection.cursor() as cursor:
+                    cursor.execute(f"GRANT {groupname} TO {username};")
+            except Exception as e:
+                errors.append(f"Ошибка при добавлении группы '{groupname}': {e}")
 
-    # Загружаем уже существующие группы пользователя
-    if username:
-        with connection.cursor() as cursor:
-            cursor.execute("""
-                SELECT r.rolname
-                FROM pg_user u
-                JOIN pg_auth_members m ON u.usesysid = m.member
-                JOIN pg_roles r ON m.roleid = r.oid
-                WHERE u.usename = %s;
-            """, [username])
-            existing_groups = [group[0] for group in cursor.fetchall()]
+        if errors:
+            return HttpResponse("<br>".join(errors))
+        return redirect('user_list')
 
-    return render(request, 'users/user_add_to_group.html', {'form': form, 'existing_groups': existing_groups, 'username': username})
+    return render(request, 'users/user_add_to_group.html', {
+        'username': username,
+        'user_groups': sorted(user_groups),
+        'available_groups': sorted(available_groups),
+    })
 
 
 def create_group(request):
@@ -176,13 +270,6 @@ def create_group(request):
 
 
 # TODO
-def user_groups(request):
-    """Список групп пользователей в базе данных"""
-    with connection.cursor() as cursor:
-        cursor.execute("SELECT groname FROM pg_group;")
-        groups = cursor.fetchall()
-    group_names = [group[0] for group in groups]
-    return render(request, 'users/user_groups.html', {'groups': group_names})
 
 
 def users_with_groups(request):
