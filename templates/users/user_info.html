@@ -4,45 +4,54 @@
     <div class="welcome-container">
         {% if user_data %}
             <h1 class="welcome-title">Информация о пользователе: {{ user_data.username }}</h1>
-            <div>
-                <span class="info-label">ID пользователя:</span> {{ user_data.user_id }}
-            </div>
-            <div>
-                <span class="info-label">Может создавать базы данных:</span> {{ user_data.can_create_db }}
-            </div>
-            <div>
-                <span class="info-label">Суперпользователь:</span> {{ user_data.is_superuser }}
-            </div>
-            <div>
-                <span class="info-label">Может изменять системный каталог:</span> {{ user_data.can_update_catalog }}
-            </div>
-            <div>
-                <span class="info-label">Пароль (хэш):</span> {{ user_data.password_hash }}
-                <a href="{% url 'user_change_password' user_data.username %}" class="btn btn-password">Изменить пароль</a>
-            </div>
-            <div>
-                <span class="info-label">Действителен до:</span> {{ user_data.valid_until|default:"Без ограничений" }}
-            </div>
-            <div>
-                <span class="info-label">Группы пользователя:</span>
-                {% if user_data.groups %}
-                    <ul class="group-list">
-                        {% for group in user_data.groups %}
-                            <a href="{% url 'group_users' group %}" class="group-link-user">{{ group }}</a>
-                        {% endfor %}
-                    </ul>
-                {% else %}
-                    <p class="no-groups">Пользователь не состоит в группах.</p>
-                {% endif %}
+            <div class="user-info">
+                <div class="info-item">
+                    <span class="info-label">ID пользователя:</span>
+                    <span class="info-value">{{ user_data.user_id }}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Может создавать базы данных:</span>
+                    <span class="info-value">{{ user_data.can_create_db }}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Суперпользователь:</span>
+                    <span class="info-value">{{ user_data.is_superuser }}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Может изменять системный каталог:</span>
+                    <span class="info-value">{{ user_data.can_update_catalog }}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Пароль (хэш):</span>
+                    <span class="info-value">{{ user_data.password_hash }}</span>
+                    <a href="{% url 'user_change_password' user_data.username %}" class="btn btn-password">Изменить пароль</a>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Действителен до:</span>
+                    <span class="info-value">{{ user_data.valid_until|default:"Без ограничений" }}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Группы пользователя:</span>
+                    {% if user_data.groups %}
+                        <ul class="group-list">
+                            {% for group in user_data.groups %}
+                                <li><a href="{% url 'group_users' group %}" class="group-link-user">{{ group }}</a></li>
+                            {% endfor %}
+                        </ul>
+                    {% else %}
+                        <p class="no-groups">Пользователь не состоит в группах.</p>
+                    {% endif %}
+                </div>
             </div>
         {% else %}
             <h1 class="welcome-title">Пользователь не найден</h1>
         {% endif %}
-        {% if user_data.groups %}
-            <a href="{% url 'group_users' user_data.groups.0 %}" class="btn">Назад</a>
-        {% else %}
-            <a href="{% url 'group_list' %}" class="btn">Назад {{ user_data.groups }}</a>
-        {% endif %}
+        <div class="back-link">
+            {% if user_data.groups %}
+                <a href="{% url 'group_users' user_data.groups.0 %}" class="btn">Назад</a>
+            {% else %}
+                <a href="{% url 'group_list' %}" class="btn">Назад</a>
+            {% endif %}
+        </div>
     </div>
 {% endblock %}
-

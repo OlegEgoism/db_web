@@ -8,18 +8,25 @@
         </div>
         <h2 class="section-title" onclick="toggleSection('user-groups')">▼ Пользовательские группы ({{ user_groups|length }} шт.)</h2>
         <ul class="group-list" id="user-groups" style="display: block;">
-            {% for group, count in user_groups.items %}
-                <div class="group-item">
-                    <div class="group-name">
-                        <a href="{% url 'group_users' group %}" class="group-link-user">{{ group }} ({{ count }} шт.)</a>
-                    </div>
-                    <div class="group-action">
-                        <a href="{% url 'group_delete' group %}" class="btn btn-delete" onclick="return confirm('Удалить группу {{ group }}?')">Удалить</a>
-                    </div>
-                </div>
-            {% empty %}
-                <li>Нет пользовательских групп</li>
-            {% endfor %}
+{% for group, count, created_at, updated_at in user_groups_data %}
+    <div class="group-item">
+        <div class="group-name">
+            <a href="{% url 'group_users' group %}" class="group-link-user">
+                {{ group }} ({{ count }} шт.)
+            </a>
+            <div class="group-dates">
+                <small>Создано: {% if created_at %}{{ created_at|date:"d.m.Y H:i" }}{% else %}—{% endif %}</small><br>
+                <small>Изменено: {% if updated_at %}{{ updated_at|date:"d.m.Y H:i" }}{% else %}—{% endif %}</small>
+            </div>
+        </div>
+        <div class="group-action">
+            <a href="{% url 'group_delete' group %}" class="btn btn-delete" onclick="return confirm('Удалить группу {{ group }}?')">Удалить</a>
+        </div>
+    </div>
+{% empty %}
+    <li>Нет пользовательских групп</li>
+{% endfor %}
+
         </ul>
         <h2 class="section-title" onclick="toggleSection('system-groups')">▶ Системные группы ({{ system_groups|length }} шт.)</h2>
         <ul class="group-list" id="system-groups" style="display: none;">
@@ -51,5 +58,4 @@
             }
         }
     </script>
-
 {% endblock %}

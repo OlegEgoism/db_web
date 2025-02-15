@@ -3,8 +3,12 @@ from django.contrib.auth import login, logout
 from django.db import connection
 from django.http import HttpResponse, HttpResponseRedirect
 from django.urls import reverse
-from .forms import TableCreateForm, UserCreateForm, ChangePasswordForm, CreateGroupForm, CustomUserRegistrationForm
+from django.utils import timezone
+
+from .forms import UserCreateForm, ChangePasswordForm, CreateGroupForm, CustomUserRegistrationForm
 from django.shortcuts import render, redirect
+
+from .models import GroupLog
 
 
 def home(request):
@@ -39,8 +43,10 @@ def group_list(request):
     with connection.cursor() as cursor:
         cursor.execute("SELECT groname FROM pg_group;")
         groups = cursor.fetchall()
+
     group_names = [group[0] for group in groups]
     group_user_counts = {}
+
     for group in group_names:
         with connection.cursor() as cursor:
             cursor.execute("""
@@ -52,16 +58,28 @@ def group_list(request):
             """, [group])
             count = cursor.fetchone()[0]
             group_user_counts[group] = count
+
     system_groups = {g: group_user_counts[g] for g in group_user_counts if g.startswith('pg_')}
     user_groups = {g: group_user_counts[g] for g in group_user_counts if not g.startswith('pg_')}
-    return render(request, 'users/group_list.html', {
+
+    # Получаем данные из логов групп
+    group_logs = {log.groupname: log for log in GroupLog.objects.filter(groupname__in=user_groups.keys())}
+
+    # Преобразуем словарь в список кортежей
+    user_groups_data = [
+        (group, count, group_logs[group].created_at if group in group_logs else None,
+         group_logs[group].updated_at if group in group_logs else None)
+        for group, count in user_groups.items()
+    ]
+
+    return render(request, 'groups/group_list.html', {
         'system_groups': system_groups,
-        'user_groups': user_groups
+        'user_groups_data': user_groups_data,
     })
 
 
 def group_create(request):
-    """Создание группу"""
+    """Создание группы"""
     if request.method == "POST":
         form = CreateGroupForm(request.POST)
         if form.is_valid():
@@ -71,12 +89,16 @@ def group_create(request):
             try:
                 with connection.cursor() as cursor:
                     cursor.execute(f"CREATE ROLE {groupname};")
+
+                # Создаем запись в логе
+                GroupLog.objects.create(groupname=groupname, created_at=timezone.now(), updated_at=timezone.now())
+
                 return redirect('group_list')
             except Exception as e:
                 return HttpResponse(f"Ошибка при создании группы: {e}")
     else:
         form = CreateGroupForm()
-    return render(request, 'users/group_create.html', {'form': form})
+    return render(request, 'groups/group_create.html', {'form': form})
 
 
 def group_delete(request, group_name):
@@ -96,7 +118,7 @@ def group_users(request, group_name):
         cursor.execute("SELECT usename FROM pg_user JOIN pg_group ON (pg_user.usesysid = ANY(pg_group.grolist)) WHERE groname = %s;", [group_name])
         users = cursor.fetchall()
     user_names = [user[0] for user in users]
-    return render(request, 'users/group_users.html', {
+    return render(request, 'groups/group_users.html', {
         'group_name': group_name,
         'users': user_names
     })

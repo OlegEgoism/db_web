@@ -4,7 +4,7 @@
     <div class="welcome-container">
         {% if user.is_authenticated %}
             <h2 class="welcome-title">Добро пожаловать!</h2>
-            <h3>Вы вошли в систему как пользователь {{ user.username }}</h3>
+            <h3>Вы вошли в систему как пользователь <strong class="user-log ">{{ user.username }}</strong></h3>
         {% else %}
             <h2 class="welcome-title">Вы не вошли в систему!</h2>
             <h3>Пожалуйста,

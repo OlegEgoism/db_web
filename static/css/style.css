@@ -28,19 +28,24 @@ main {
 }
 
 .welcome-container {
-    max-width: 900px;
+    max-width: 800px;
     margin: 50px auto;
     text-align: center;
-    background-color: #edf0f8;
+    background-color: rgba(100, 130, 168, 0.1);
     padding: 20px;
-    border-radius: 15px;
+    border-radius: 10px;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
 }
 
 .welcome-title {
     font-size: 2em;
     color: #333;
-    margin-bottom: 20px;
+    margin-bottom: 10px;
+}
+
+.user-log {
+    font-size: 20px;
+    color: #6b92c2;
 }
 
 /*Авторизация*/ /*Регистрация*/
@@ -66,38 +71,43 @@ main {
 .btn {
     text-decoration: none;
     color: white;
-    padding: 12px 20px;
-    margin: 10px;
+    padding: 8px 16px;
     border-radius: 5px;
-    display: inline-block;
     transition: background-color 0.3s ease;
     background-color: #6482a8;
     border: none;
     cursor: pointer;
 }
 
-/*Список групп*/
-.section-title {
-    margin-top: 30px;
-    color: #333;
-    font-size: 1.5em;
-    border-bottom: 2px solid #6482a8;
-    padding-bottom: 10px;
-    cursor: pointer;
+.btn-add {
+    color: white;
 }
 
-.group-list {
-    list-style: none;
-    padding: 0;
-    margin-top: 20px;
+.btn-add:hover {
+    background-color: #45a049;
+}
+
+.btn-delete {
+
+    color: white;
+}
+
+.btn-delete:hover {
+    background-color: #ee0923;
+}
+
+/*Список групп*/
+.section-title {
+    color: #333;
+    font-size: 16px;
+    cursor: pointer;
 }
 
 .group-link-user {
     text-decoration: none;
-    color: #6b92c2;
-    font-weight: bold;
+    color: #000000;
     display: block;
-    font-size: 20px;
+    font-size: 14px;
     margin: 5px 0;
     border: 1px solid #1171d7;
     padding: 10px;
@@ -111,19 +121,18 @@ main {
 
 .group-link-system {
     text-decoration: none;
-    color: #6fbd6b;
-    font-weight: bold;
+    color: #000000;
     display: block;
-    font-size: 20px;
+    font-size: 14px;
     margin: 5px 0;
-    border: 1px solid #2cbb26;
+    border: 1px solid #bb2626;
     padding: 10px;
     border-radius: 10px;
     transition: background-color 0.3s;
 }
 
 .group-link-system:hover {
-    background-color: #f7dada;
+    background-color: rgba(187, 38, 38, 0.2);
 }
 
 .no-groups {
@@ -137,7 +146,6 @@ main {
 
 .group-item {
     display: flex;
-    justify-content: space-between;
     align-items: center;
 }
 
@@ -149,14 +157,131 @@ main {
     margin-left: 15px;
 }
 
-.btn-delete {
-    text-decoration: none;
-    color: white;
+
+.group-container {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 20px;
 }
 
-.btn-delete:hover {
-    background-color: #ee0923;
+.group-list {
+    min-height: 100px;
+    padding: 10px;
 }
+
+.group-list li {
+    border: 1px solid #ddd;
+    border-radius: 3px;
+    cursor: grab;
+}
+
+.group-list li:hover {
+    background-color: #f1f1f1;
+}
+
+
+.submit-btn:hover {
+    background-color: #4a6a8e;
+}
+
+
+.title-with-button {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+
+
+/* Стили для контейнера с информацией о пользователе */
+.user-info {
+    padding: 20px;
+}
+
+.info-item {
+    margin-bottom: 15px;
+    display: flex;
+    align-items: center;
+}
+
+.info-label {
+    font-weight: bold;
+    color: #333;
+    min-width: 200px;
+}
+
+.info-value {
+    color: #555;
+    margin-left: 10px;
+}
+
+/* Стили для списка групп */
+.group-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.group-list li {
+    margin: 5px 0;
+}
+
+.group-link-user {
+    text-decoration: none;
+    color: #1171d7;
+    font-size: 14px;
+    padding: 5px 10px;
+    border-radius: 5px;
+    transition: background-color 0.3s;
+}
+
+.group-link-user:hover {
+    background-color: #cce1f7;
+}
+
+.no-groups {
+    color: #ff4d4d;
+    font-style: italic;
+}
+
+/* Стили для кнопки "Изменить пароль" */
+.btn-password {
+    background-color: #4CAF50;
+    color: white;
+    padding: 8px 16px;
+    border-radius: 5px;
+    text-decoration: none;
+    margin-left: 10px;
+    transition: background-color 0.3s;
+}
+
+.btn-password:hover {
+    background-color: #45a049;
+}
+
+/* Стили для кнопки "Назад" */
+.back-link {
+    margin-top: 20px;
+    text-align: center;
+}
+
+.btn {
+    background-color: #6482a8;
+    color: white;
+    padding: 8px 16px;
+    border-radius: 5px;
+    text-decoration: none;
+    transition: background-color 0.3s;
+}
+
+.btn:hover {
+    background-color: #4a6a8e;
+}
+
+
+
+
 
 
 
@@ -184,21 +309,6 @@ main {
 /*!*.group-link:hover {*!*/
 /*!*    color: #0056b3;*!*/
 /*!*}*!*/
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 /*!*----*!*/
@@ -233,7 +343,6 @@ main {
 /*.no-users {*/
 /*    color: red;*/
 /*}*/
-
 
 
 /*!*.btn:hover {*!*/
@@ -282,12 +391,6 @@ main {
 /*}*/
 
 
-
-
-
-
-
-
 /*input[type="text"],*/
 /*input[type="email"],*/
 /*input[type="password"],*/
@@ -302,8 +405,6 @@ main {
 /*    margin-top: 15px;*/
 /*    color: #555;*/
 /*}*/
-
-
 
 
 /*.user-group {*/
@@ -322,22 +423,6 @@ main {
 /*.group-item:hover {*/
 /*    background-color: #c7113f;*/
 /*}*/
-
-
-
-
-
-/*.welcome-container {*/
-/*    max-width: 600px;*/
-/*    margin: 50px auto;*/
-/*    background-color: #ffffff;*/
-/*    padding: 30px;*/
-/*    border-radius: 15px;*/
-/*    box-shadow: 0 6px 10px rgba(0, 0, 0, 0.2);*/
-/*    text-align: center;*/
-/*}*/
-
-
 
 
 /*ыф*/

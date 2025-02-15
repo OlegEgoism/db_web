@@ -1,5 +1,6 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
+from django.utils import timezone
 
 
 class CustomUser(AbstractUser):
@@ -15,7 +16,14 @@ class CustomUser(AbstractUser):
         verbose_name_plural = "Пользователи"
 
 
-# class InfoUserDataBase(models.Model):
-#     user = models.OneToOneField(CustomUser, on_delete=models.CASCADE)
-#     db_date_create = models.DateTimeField(verbose_name="Дата создания", auto_now_add=True)
-#     db_date_edit = models.DateTimeField(verbose_name="Дата изменения", auto_now=True)
+class GroupLog(models.Model):
+    groupname = models.CharField(max_length=100, unique=True, verbose_name="Имя группы")
+    created_at = models.DateTimeField(default=timezone.now, verbose_name="Дата создания")
+    updated_at = models.DateTimeField(auto_now=True, verbose_name="Дата последнего изменения")
+
+    def __str__(self):
+        return self.groupname
+
+    class Meta:
+        verbose_name = "Лог группы"
+        verbose_name_plural = "Логи групп"
