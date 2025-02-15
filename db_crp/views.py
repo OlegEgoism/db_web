@@ -141,7 +141,8 @@ def group_users(request, group_name):
     return render(request, 'groups/group_users.html', {
         'group_name': group_name,
         'users': user_names,
-        'group_log': group_log  # Передаем информацию о логах в шаблон
+        'user_count': len(user_names),  # Передаем количество пользователей отдельно
+        'group_log': group_log
     })
 
 
