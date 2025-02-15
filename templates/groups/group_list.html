@@ -2,60 +2,33 @@
 
 {% block content %}
     <div class="welcome-container">
-        <div class="title-with-button">
-            <h2 class="welcome-title">Список групп</h2>
-            <a href="{% url 'group_create' %}" class="btn btn-add">Создать группу</a>
+        <div class="title-with-button" style="display: flex; align-items: center; justify-content: space-between;">
+            <h2 class="welcome-title">Список пользовательских групп ({{ user_groups_data|length }} шт.)</h2>
+            <a href="{% url 'group_create' %}" class="btn btn-save" style="margin-left: auto;">Создать группу</a>
         </div>
-        <h2 class="section-title" onclick="toggleSection('user-groups')">▼ Пользовательские группы ({{ user_groups|length }} шт.)</h2>
-        <ul class="group-list" id="user-groups" style="display: block;">
-{% for group, count, created_at, updated_at in user_groups_data %}
-    <div class="group-item">
-        <div class="group-name">
-            <a href="{% url 'group_users' group %}" class="group-link-user">
-                {{ group }} ({{ count }} шт.)
-            </a>
-            <div class="group-dates">
-                <small>Создано: {% if created_at %}{{ created_at|date:"d.m.Y H:i" }}{% else %}—{% endif %}</small><br>
-                <small>Изменено: {% if updated_at %}{{ updated_at|date:"d.m.Y H:i" }}{% else %}—{% endif %}</small>
-            </div>
-        </div>
-        <div class="group-action">
-            <a href="{% url 'group_delete' group %}" class="btn btn-delete" onclick="return confirm('Удалить группу {{ group }}?')">Удалить</a>
-        </div>
-    </div>
-{% empty %}
-    <li>Нет пользовательских групп</li>
-{% endfor %}
-
-        </ul>
-        <h2 class="section-title" onclick="toggleSection('system-groups')">▶ Системные группы ({{ system_groups|length }} шт.)</h2>
-        <ul class="group-list" id="system-groups" style="display: none;">
-            {% for group, count in system_groups.items %}
-                <div class="group-item">
-                    <div class="group-name">
-                        <a href="{% url 'group_users' group %}" class="group-link-system">{{ group }} ({{ count }} шт.)</a>
-                    </div>
-                    <div class="group-action">
-                        <a href="{% url 'group_delete' group %}" class="btn btn-delete" onclick="return confirm('Удалить группу {{ group }}?')">Удалить</a>
-                    </div>
+        <hr>
+        {% for group, count, created_at, updated_at in user_groups_data %}
+            <div class="group-item">
+                <div class="group-number">
+                    <strong>{{ forloop.counter }}. </strong>
                 </div>
-            {% empty %}
-                <li>Нет системных групп</li>
-            {% endfor %}
-        </ul>
+                <div class="group-name">
+                    <a href="{% url 'group_users' group %}" class="group-link-user">{{ group }}</a>
+                </div>
+                <div class="group-dates">
+                    <small>Создан: {% if created_at %}{{ created_at|date:"d.m.Y H:i" }}{% else %}—{% endif %}</small>
+                    <small>Изменен: {% if updated_at %}{{ updated_at|date:"d.m.Y H:i" }}{% else %}—{% endif %}</small>
+                </div>
+                <div class="group-user-count">
+                    <small>Пользователей: {{ count }} шт.</small>
+                </div>
+                <div class="group-action">
+                    <a href="{% url 'group_edit' group %}" class="btn btn-edit">Редактировать</a>
+                    <a href="{% url 'group_delete' group %}" class="btn btn-delete" onclick="return confirm('Удалить группу {{ group }}?')">Удалить</a>
+                </div>
+            </div>
+        {% empty %}
+            <li>Нет пользовательских групп</li>
+        {% endfor %}
     </div>
-
-    <script>
-        function toggleSection(sectionId) {
-            const section = document.getElementById(sectionId);
-            const title = document.querySelector(`[onclick="toggleSection('${sectionId}')"]`);
-            if (section.style.display === 'none') {
-                section.style.display = 'block';
-                title.textContent = `▼ ${title.textContent.slice(2)}`;
-            } else {
-                section.style.display = 'none';
-                title.textContent = `▶ ${title.textContent.slice(2)}`;
-            }
-        }
-    </script>
 {% endblock %}

@@ -1,15 +1,24 @@
 {% extends 'base.html' %}
 
 {% block content %}
-    <div class="welcome-container">
+    <div class="welcome-group">
         <h2 class="welcome-title">Список пользователей в группе: {{ group_name }}</h2>
-        <ul class="group-list">
+        <hr>
+        <div class="group-dates">
+            <small>Создано: {% if group_log.created_at %}{{ group_log.created_at|date:"d.m.Y H:i" }}{% else %}—{% endif %}</small>
+            <small>Изменено: {% if group_log.updated_at %}{{ group_log.updated_at|date:"d.m.Y H:i" }}{% else %}—{% endif %}</small>
+        </div>
+
+        <div class="group-users-grid">
             {% for user in users %}
                 <a href="{% url 'user_info' username=user %}" class="group-link-user">{{ user }}</a>
             {% empty %}
                 <h3 class="no-users">Нет пользователей в этой группе</h3>
             {% endfor %}
-        </ul>
-        <a href="{% url 'group_list' %}" class="btn">Назад</a>
+        </div>
+
+        <div class="all-btn">
+            <a href="{% url 'group_list' %}" class="btn btn-cancel">Назад</a>
+        </div>
     </div>
 {% endblock %}

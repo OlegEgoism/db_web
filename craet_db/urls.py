@@ -27,6 +27,7 @@ from db_crp.views import (
 
     group_list,
     group_create,
+    group_edit,
     group_delete,
     group_users,
 
@@ -42,18 +43,30 @@ from db_crp.views import (
 )
 
 urlpatterns = [
+    # Админка
     path('admin/', admin.site.urls),
-
+    # Главная
     path('', home, name='home'),
+    # Регистрация пользователя
+    path('register/', register, name='register'),
+    # Вход пользователя
+    path('login/', auth_views.LoginView.as_view(), name='login'),
+    # Выход пользователя
+    path('logout/', logout_view, name='logout'),
 
-    path('register/', register, name='register'),  # Регистрация пользователя
-    path('login/', auth_views.LoginView.as_view(), name='login'),  # Вход пользователя
-    path('logout/', logout_view, name='logout'),  # Выход пользователя
+    # Список групп
+    path('group_list/', group_list, name='group_list'),
+    # Создание группы
+    path('group_create/', group_create, name='group_create'),
+    # Редактирование группы
+    path('groups/edit/<str:group_name>/', group_edit, name='group_edit'),
+    # Удаление группы
+    path('group_delete/<str:group_name>/', group_delete, name='group_delete'),
+    # Пользователи в группе
+    path('group_users/<str:group_name>/', group_users, name='group_users'),
 
-    path('group_list/', group_list, name='group_list'),  # Список групп
-    path('group_create/', group_create, name='group_create'),  # Создание группы
-    path('group_delete/<str:group_name>/', group_delete, name='group_delete'),  # Удаление группы
-    path('group_users/<str:group_name>/', group_users, name='group_users'),  # Cписок пользователей в группе
+
+
 
     path('user_list/', user_list, name='user_list'),  # Список пользователей
     path('user_create/', user_create, name='user_create'),  # Создать пользователя
@@ -61,14 +74,6 @@ urlpatterns = [
     path('user_change_password/<str:username>/', user_change_password, name='user_change_password'),  # Сменить пароль
     path('user_add_to_group/', user_add_to_group, name='user_add_to_group'),  # Добавление удаление пользователя в группы
     path('user_delete/<str:username>/', user_delete, name='user_delete'),  # Удаление пользователя
-
-
-
-
-
-
-
-
 
     # path('users_with_groups/', users_with_groups, name='users_with_groups'),
     # # path('user_groups/', user_groups, name='user_groups'),  # Список групп пользователей в базе данных

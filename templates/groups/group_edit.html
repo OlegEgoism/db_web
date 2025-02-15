@@ -1,0 +1,20 @@
+{% extends 'base.html' %}
+
+{% block content %}
+    <div class="welcome-edit">
+        <h2 class="welcome-title">Редактирование группы: {{ group_name }}</h2>
+        <hr>
+        <div class="group-dates">
+            <small>Создан: {% if group_log.created_at %}{{ group_log.created_at|date:"d.m.Y H:i" }}{% else %}—{% endif %}</small>
+            <small>Изменен: {% if group_log.updated_at %}{{ group_log.updated_at|date:"d.m.Y H:i" }}{% else %}—{% endif %}</small>
+        </div>
+        <form method="post">
+            {% csrf_token %}
+                {{ form.as_p }}
+            <div class="all-btn">
+                <a href="{% url 'group_list' %}" class="btn btn-cancel">Назад</a>
+                <button type="submit" class="btn btn-save">Сохранить</button>
+            </div>
+        </form>
+    </div>
+{% endblock %}

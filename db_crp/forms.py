@@ -23,6 +23,15 @@ class ChangePasswordForm(forms.Form):
     new_password = forms.CharField(label="Новый пароль", widget=forms.PasswordInput)
 
 
+class GroupEditForm(forms.Form):
+    """Редактирование группы"""
+    groupname = forms.CharField(
+        max_length=100,
+        widget=forms.TextInput(attrs={'class': 'form-control'}),
+        label="Название группы"
+    )
+
+
 # class AddUserToGroupForm(forms.Form):
 #     username = forms.CharField(label="Имя пользователя", max_length=150)
 #     groupname = forms.ChoiceField(label="Выберите группу")

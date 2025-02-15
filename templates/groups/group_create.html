@@ -1,15 +1,16 @@
 {% extends 'base.html' %}
 
 {% block content %}
-    <div class="welcome-container">
-        <h2 class="welcome-title">Создание группу</h2>
+    <div class="welcome-create">
+        <h2 class="welcome-title">Создание группы</h2>
+        <hr>
         <form method="post">
             {% csrf_token %}
             {{ form.as_p }}
-            <button type="submit" class="btn">Создать группу</button>
+            <div class="all-btn">
+                <a href="{% url 'group_list' %}" class="btn btn-cancel">Назад</a>
+                <button type="submit" class="btn btn-save">Создать</button>
+            </div>
         </form>
-        <div class="back-link">
-            <a href="{% url 'group_list' %}" class="btn">Назад</a>
-        </div>
     </div>
 {% endblock %}
