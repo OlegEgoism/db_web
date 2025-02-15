@@ -4,20 +4,43 @@
     <div class="welcome-group">
         <h2 class="welcome-title">Список пользователей в группе: {{ group_name }} ({{ user_count }} шт.)</h2>
         <hr>
+        <!-- Поле поиска -->
+        <input type="text" id="userSearch" class="user-search" onkeyup="filterUsers()" placeholder="🔍 Поиск пользователя..."/>
+
         <div class="group-dates">
-            <small>Создано: {% if group_log.created_at %}{{ group_log.created_at|date:"d.m.Y H:i" }}{% else %}—{% endif %}</small>
-            <small>Изменено: {% if group_log.updated_at %}{{ group_log.updated_at|date:"d.m.Y H:i" }}{% else %}—{% endif %}</small>
+            <small>Дата создания группы: {% if group_log.created_at %}{{ group_log.created_at|date:"d.m.Y H:i" }}{% else %}—{% endif %}</small>
+            <small>Дата изменения группы: {% if group_log.updated_at %}{{ group_log.updated_at|date:"d.m.Y H:i" }}{% else %}—{% endif %}</small>
             <small>Количество пользователей в группе: {% if user_count %}{{ user_count }}{% else %}0{% endif %} шт.</small>
         </div>
-        <div class="group-users-grid">
+
+        <div class="group-users-grid" id="userList">
             {% for user in users %}
                 <a href="{% url 'user_info' username=user %}" class="group-link-user">{{ user }}</a>
             {% empty %}
                 <h3 class="no-users">Нет пользователей в этой группе</h3>
             {% endfor %}
         </div>
+
         <div class="all-btn">
             <a href="{% url 'group_list' %}" class="btn btn-cancel">Назад</a>
         </div>
     </div>
+
+    <script>
+        function filterUsers() {
+            let input = document.getElementById("userSearch");
+            let filter = input.value.toLowerCase();
+            let items = document.querySelectorAll(".group-link-user");
+
+            items.forEach(item => {
+                let userName = item.textContent.toLowerCase();
+                if (userName.includes(filter)) {
+                    item.style.display = "block";
+                } else {
+                    item.style.display = "none";
+                }
+            });
+        }
+    </script>
+
 {% endblock %}

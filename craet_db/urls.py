@@ -71,7 +71,7 @@ urlpatterns = [
     path('user_list/', user_list, name='user_list'),  # Список пользователей
     path('user_create/', user_create, name='user_create'),  # Создать пользователя
     path('user_info/<str:username>/', user_info, name='user_info'),  # Информация о пользователе
-    path('user_change_password/<str:username>/', user_change_password, name='user_change_password'),  # Сменить пароль
+    path('user_change_password/<str:username>/', user_change_password, name='user_change_password'),  # Смена пароля
     path('user_add_to_group/', user_add_to_group, name='user_add_to_group'),  # Добавление удаление пользователя в группы
     path('user_delete/<str:username>/', user_delete, name='user_delete'),  # Удаление пользователя
 

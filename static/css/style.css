@@ -360,5 +360,59 @@ main {
 
 .no-users {
     text-align: center;
-    grid-column: span 4; /* Чтобы сообщение занимало всю ширину */
+    grid-column: span 4;
+}
+
+
+.group-search {
+    width: 80%;
+    padding: 8px 12px;
+    margin-bottom: 15px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    font-size: 16px;
+}
+
+.group-item {
+    padding: 10px;
+    border-bottom: 1px solid #eee;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.user-search {
+    width: 80%;
+    padding: 8px 12px;
+    margin-bottom: 15px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    font-size: 16px;
+}
+
+.group-users-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr); /* 4 колонки */
+    gap: 10px;
+    padding: 15px 0;
+}
+
+.group-link-user {
+    display: block;
+    padding: 8px 12px;
+    background-color: #f3f3f3;
+    border-radius: 5px;
+    text-align: center;
+    font-weight: bold;
+    text-decoration: none;
+    color: #333;
+}
+
+.group-link-user:hover {
+    background-color: #e0e0e0;
+}
+
+.no-users {
+    text-align: center;
+    grid-column: span 4;
 }

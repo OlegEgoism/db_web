@@ -127,7 +127,7 @@ def group_delete(request, group_name):
 
 
 def group_users(request, group_name):
-    """Список пользователей в группе с логами"""
+    """Пользователи в группе"""
     group_log = get_object_or_404(GroupLog, groupname=group_name)
     with connection.cursor() as cursor:
         cursor.execute("""

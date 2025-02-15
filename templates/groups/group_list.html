@@ -7,28 +7,52 @@
             <a href="{% url 'group_create' %}" class="btn btn-save" style="margin-left: auto;">Создать группу</a>
         </div>
         <hr>
-        {% for group, count, created_at, updated_at in user_groups_data %}
-            <div class="group-item">
-                <div class="group-number">
-                    <strong>{{ forloop.counter }}. </strong>
+
+        <!-- Поле поиска -->
+        <input type="text" id="groupSearch" class="group-search" onkeyup="filterGroups()" placeholder="Поиск группы..."/>
+
+        <div id="groupList">
+            {% for group, count, created_at, updated_at in user_groups_data %}
+                <div class="group-item">
+                    <div class="group-number">
+                        <strong>{{ forloop.counter }}. </strong>
+                    </div>
+                    <div class="group-name">
+                        <a href="{% url 'group_users' group %}" class="group-link-user">{{ group }}</a>
+                    </div>
+                    <div class="group-dates">
+                        <small>Создан: {% if created_at %}{{ created_at|date:"d.m.Y H:i" }}{% else %}—{% endif %}</small>
+                        <small>Изменен: {% if updated_at %}{{ updated_at|date:"d.m.Y H:i" }}{% else %}—{% endif %}</small>
+                    </div>
+                    <div class="group-user-count">
+                        <small>Пользователей: {{ count }} шт.</small>
+                    </div>
+                    <div class="group-action">
+                        <a href="{% url 'group_edit' group %}" class="btn btn-edit">Редактировать</a>
+                        <a href="{% url 'group_delete' group %}" class="btn btn-delete" onclick="return confirm('Удалить группу {{ group }}?')">Удалить</a>
+                    </div>
                 </div>
-                <div class="group-name">
-                    <a href="{% url 'group_users' group %}" class="group-link-user">{{ group }}</a>
-                </div>
-                <div class="group-dates">
-                    <small>Создан: {% if created_at %}{{ created_at|date:"d.m.Y H:i" }}{% else %}—{% endif %}</small>
-                    <small>Изменен: {% if updated_at %}{{ updated_at|date:"d.m.Y H:i" }}{% else %}—{% endif %}</small>
-                </div>
-                <div class="group-user-count">
-                    <small>Пользователей: {{ count }} шт.</small>
-                </div>
-                <div class="group-action">
-                    <a href="{% url 'group_edit' group %}" class="btn btn-edit">Редактировать</a>
-                    <a href="{% url 'group_delete' group %}" class="btn btn-delete" onclick="return confirm('Удалить группу {{ group }}?')">Удалить</a>
-                </div>
-            </div>
-        {% empty %}
-            <li>Нет пользовательских групп</li>
-        {% endfor %}
+            {% empty %}
+                <li>Нет пользовательских групп</li>
+            {% endfor %}
+        </div>
     </div>
+
+    <script>
+        function filterGroups() {
+            let input = document.getElementById("groupSearch");
+            let filter = input.value.toLowerCase();
+            let items = document.querySelectorAll(".group-item");
+
+            items.forEach(item => {
+                let groupName = item.querySelector(".group-name a").textContent.toLowerCase();
+                if (groupName.includes(filter)) {
+                    item.style.display = "";
+                } else {
+                    item.style.display = "none";
+                }
+            });
+        }
+    </script>
+
 {% endblock %}
