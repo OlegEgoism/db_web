@@ -246,8 +246,6 @@ def user_edit(request):
     """Редактирование почты, пароля и управление группами пользователя с уведомлением"""
     username = request.GET.get('username')
     user_log = get_object_or_404(UserLog, username=username)
-
-    # Получаем текущие группы пользователя
     with connection.cursor() as cursor:
         cursor.execute("""
             SELECT r.rolname
@@ -257,8 +255,6 @@ def user_edit(request):
             WHERE u.usename = %s;
         """, [username])
         current_groups = {group[0] for group in cursor.fetchall()}
-
-    # Получаем все доступные группы
     with connection.cursor() as cursor:
         cursor.execute("""
             SELECT rolname 
@@ -266,22 +262,15 @@ def user_edit(request):
             WHERE rolcanlogin = FALSE AND rolname NOT LIKE 'pg_%';
         """)
         all_groups = {group[0] for group in cursor.fetchall()}
-
     available_groups = all_groups - current_groups
-
     if request.method == "POST":
         new_email = request.POST.get('new_email')
         new_password = request.POST.get('new_password')
-
-        # Получаем группы из POST-запроса
         selected_groups = set(filter(None, request.POST.get('selected_groups', '').split(',')))
         deleted_groups = set(filter(None, request.POST.get('deleted_groups', '').split(',')))
-
         errors = []
-        has_changes = False  # Флаг для отслеживания изменений
+        has_changes = False
         group_changes = []
-
-        # Проверяем, изменился ли email
         if user_log.email != new_email:
             try:
                 user_log.email = new_email if new_email else None
@@ -289,8 +278,6 @@ def user_edit(request):
                 has_changes = True
             except Exception as e:
                 errors.append(f"Ошибка при обновлении email: {e}")
-
-        # Проверяем, изменился ли пароль
         if new_password:
             try:
                 with connection.cursor() as cursor:
@@ -298,12 +285,8 @@ def user_edit(request):
                 has_changes = True
             except Exception as e:
                 errors.append(f"Ошибка при смене пароля: {e}")
-
-        # Проверяем, изменился ли список групп
         if selected_groups != current_groups:
-            has_changes = True  # Изменение групп требует уведомления
-
-            # Удаление пользователя из групп
+            has_changes = True
             for groupname in deleted_groups:
                 try:
                     with connection.cursor() as cursor:
@@ -311,8 +294,6 @@ def user_edit(request):
                     group_changes.append(f"Удален из группы: {groupname}")
                 except Exception as e:
                     errors.append(f"Ошибка при удалении группы '{groupname}': {e}")
-
-            # Добавление пользователя в новые группы
             for groupname in selected_groups:
                 if groupname not in current_groups:
                     try:
@@ -321,28 +302,19 @@ def user_edit(request):
                         group_changes.append(f"Добавлен в группу: {groupname}")
                     except Exception as e:
                         errors.append(f"Ошибка при добавлении группы '{groupname}': {e}")
-
-        # Отправка email только если были реальные изменения
         if has_changes and user_log.email:
             subject = "Изменение учетной записи"
-
-            # Рендеринг HTML-шаблона
             html_message = render_to_string('send_email/send_user_edit.html', {
                 'username': username,
                 'password': new_password if new_password else "Пароль не изменен",
-                'group_changes': group_changes if group_changes else None  # Если нет изменений в группах, передаем `None`
+                'group_changes': group_changes if group_changes else None
             })
-
-            # Отправка письма
             email_message = EmailMultiAlternatives(subject, "", settings.EMAIL_HOST_USER, [user_log.email])
             email_message.attach_alternative(html_message, "text/html")
             email_message.send()
-
         if errors:
             return HttpResponse("<br>".join(errors))
-
         return redirect('user_list')
-
     return render(request, 'users/user_edit.html', {
         'username': username,
         'user_log': user_log,
@@ -352,7 +324,7 @@ def user_edit(request):
 
 
 def user_delete(request, username):
-    """Удаление пользователя из базы и логов с уведомлением"""
+    """Удаление пользователя"""
     try:
         user_log = UserLog.objects.filter(username=username).first()
         user_email = user_log.email if user_log else None
