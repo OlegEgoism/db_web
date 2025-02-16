@@ -41,9 +41,6 @@ class GroupEditForm(forms.Form):
     groupname = forms.CharField(label="Название", max_length=150)
 
 
-from .models import GroupLog
-from django.db import connection
-
 class CreateGroupForm(forms.Form):
     """Форма для создания группы с уникальным именем"""
     groupname = forms.CharField(label="Название", max_length=150)
