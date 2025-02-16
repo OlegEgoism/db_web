@@ -1,0 +1,84 @@
+{% extends 'base.html' %}
+
+{% block content %}
+    <div class="welcome-group">
+        <h1 class="welcome-title">Редактирование пользователя: {{ username }}</h1>
+        <hr>
+        <form method="post" id="user-edit-form">
+            {% csrf_token %}
+            <div class="info-item">
+                <label for="new_email" class="info-label">Email:</label>
+                <input type="email" id="new_email" name="new_email" value="{{ user_log.email|default:'' }}" placeholder="Введите email">
+            </div>
+            <div class="info-item">
+                <label for="new_password" class="info-label">Новый пароль:</label>
+                <input type="password" id="new_password" name="new_password" placeholder="Введите новый пароль">
+            </div>
+            <div class="group-container">
+                <div>
+                    <h4>Группы пользователя</h4>
+                    <hr>
+                    <ul class="group-list" id="user-groups" ondrop="drop(event, 'user-groups')" ondragover="allowDrop(event)">
+                        {% for group in user_groups %}
+                            <li draggable="true" ondragstart="drag(event)" id="group_{{ group }}">{{ group }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                <div>
+                    <h4>Доступные группы</h4>
+                    <hr>
+                    <ul class="group-list" id="available-groups" ondrop="drop(event, 'available-groups')" ondragover="allowDrop(event)">
+                        {% for group in available_groups %}
+                            <li draggable="true" ondragstart="drag(event)" id="group_{{ group }}">{{ group }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Скрытые поля для передачи данных о группах -->
+            <input type="hidden" name="selected_groups" id="selected-groups">
+            <input type="hidden" name="deleted_groups" id="deleted-groups">
+            <div class="all-btn">
+                <a href="{% url 'user_list' %}" class="btn btn-cancel">Назад</a>
+                <button type="submit" class="btn btn-save">Сохранить</button>
+            </div>
+        </form>
+    </div>
+
+    <script>
+        let draggedElement = null;
+        let deletedGroups = [];
+
+        function allowDrop(event) {
+            event.preventDefault();
+        }
+
+        function drag(event) {
+            draggedElement = event.target;
+        }
+
+        function drop(event, targetId) {
+            event.preventDefault();
+            if (draggedElement) {
+                const targetList = document.getElementById(targetId);
+                const sourceList = draggedElement.parentNode;
+
+                if (targetList !== sourceList) {
+                    targetList.appendChild(draggedElement);
+
+                    if (sourceList.id === 'user-groups' && targetList.id === 'available-groups') {
+                        deletedGroups.push(draggedElement.textContent);
+                    }
+                }
+                draggedElement = null;
+            }
+        }
+
+        document.getElementById('user-edit-form').addEventListener('submit', () => {
+            const selectedGroups = Array.from(document.getElementById('user-groups').children)
+                .map(item => item.textContent);
+            document.getElementById('selected-groups').value = selectedGroups.join(',');
+            document.getElementById('deleted-groups').value = deletedGroups.join(',');
+        });
+    </script>
+{% endblock %}

@@ -109,6 +109,7 @@ main {
 
 .no-groups {
     color: red;
+    margin: 5px;
 }
 
 .info-label {
@@ -122,8 +123,7 @@ main {
 }
 
 .group-name {
-    min-width: 300px;
-    flex-grow: 1;
+    min-width: 320px;
 }
 
 .group-action {
@@ -132,11 +132,24 @@ main {
     gap: 10px;
 }
 
-
 .group-container {
     display: flex;
     justify-content: space-between;
-    margin-top: 20px;
+}
+
+.group-container div {
+    border: 1px solid #333; /* Серый контур */
+    width: 45%;
+    padding: 10px;
+    border-radius: 5px; /* Скругление углов */
+    margin-bottom: 20px;
+    background-color: #eff2f6; /* Светлый фон */
+}
+
+.group-container h4 {
+    margin-top: 0;
+    text-align: center;
+    font-weight: bold;
 }
 
 
@@ -175,11 +188,11 @@ main {
     align-items: center;
 }
 
-.info-label {
-    font-weight: bold;
-    color: #333;
-    min-width: 200px;
-}
+/*.info-label {*/
+/*    font-weight: bold;*/
+/*    color: #333;*/
+/*    min-width: 200px;*/
+/*}*/
 
 .info-value {
     color: #555;
@@ -196,12 +209,6 @@ main {
 
 .group-list li {
     margin: 5px 0;
-}
-
-
-.no-groups {
-    color: #ff4d4d;
-    font-style: italic;
 }
 
 
@@ -231,15 +238,18 @@ main {
     font-size: 14px;
     margin: 5px 0;
     border: 1px solid #4a6a8e;
-    padding: 5px 10px;
+    padding: 8px 12px;
     border-radius: 5px;
     transition: background-color 0.3s;
     cursor: pointer;
+    text-align: center;
+    font-weight: bold;
 }
 
 .group-link-user:hover {
     background-color: #cce1f7;
 }
+
 
 /*Кнопки*/
 .btn {
@@ -343,25 +353,25 @@ main {
     padding: 15px 0;
 }
 
-.group-link-user {
-    display: block;
-    padding: 8px 12px;
-    background-color: #f3f3f3;
-    border-radius: 5px;
-    text-align: center;
-    font-weight: bold;
-    text-decoration: none;
-    color: #333;
-}
+/*.group-link-user {*/
+/*    display: block;*/
+/*    padding: 8px 12px;*/
+/*    background-color: #f3f3f3;*/
+/*    border-radius: 5px;*/
+/*    text-align: center;*/
+/*    font-weight: bold;*/
+/*    text-decoration: none;*/
+/*    color: #333;*/
+/*}*/
 
-.group-link-user:hover {
-    background-color: #e0e0e0;
-}
+/*.group-link-user:hover {*/
+/*    background-color: #e0e0e0;*/
+/*}*/
 
-.no-users {
-    text-align: center;
-    grid-column: span 4;
-}
+/*.no-users {*/
+/*    text-align: center;*/
+/*    grid-column: span 4;*/
+/*}*/
 
 
 .group-search {
@@ -373,13 +383,6 @@ main {
     font-size: 16px;
 }
 
-.group-item {
-    padding: 10px;
-    border-bottom: 1px solid #eee;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-}
 
 .user-search {
     width: 80%;
@@ -390,29 +393,20 @@ main {
     font-size: 16px;
 }
 
-.group-users-grid {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr); /* 4 колонки */
-    gap: 10px;
-    padding: 15px 0;
-}
-
-.group-link-user {
-    display: block;
-    padding: 8px 12px;
-    background-color: #f3f3f3;
-    border-radius: 5px;
-    text-align: center;
-    font-weight: bold;
-    text-decoration: none;
-    color: #333;
-}
-
-.group-link-user:hover {
-    background-color: #e0e0e0;
-}
 
 .no-users {
-    text-align: center;
-    grid-column: span 4;
+    color: red;
+    margin: 5px;
+}
+
+.no-email {
+    color: red;
+}
+
+
+.user-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid #eee;
 }

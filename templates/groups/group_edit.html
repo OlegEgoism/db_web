@@ -4,9 +4,13 @@
     <div class="welcome-edit">
         <h2 class="welcome-title">Редактирование группы: {{ group_name }}</h2>
         <hr>
-        <div class="group-dates">
-            <small>Дата создания группы: {% if group_log.created_at %}{{ group_log.created_at|date:"d.m.Y H:i" }}{% else %}—{% endif %}</small>
-            <small>Дата изменения группы: {% if group_log.updated_at %}{{ group_log.updated_at|date:"d.m.Y H:i" }}{% else %}—{% endif %}</small>
+        <div class="info-item">
+            <span class="info-label">Дата создания:</span>
+            <span class="info-value">{% if group_log.created_at %}{{ group_log.created_at|date:"d.m.Y - H:i" }}{% else %}—{% endif %}</span>
+        </div>
+        <div class="info-item">
+            <span class="info-label">Дата изменения:</span>
+             <span class="info-value">{% if group_log.updated_at %} {{ group_log.updated_at|date:"d.m.Y - H:i" }} {% else %}—{% endif %}</span>
         </div>
         <form method="post">
             {% csrf_token %}
@@ -18,3 +22,5 @@
         </form>
     </div>
 {% endblock %}
+
+

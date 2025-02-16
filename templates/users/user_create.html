@@ -1,21 +1,17 @@
 {% extends 'base.html' %}
 
 {% block content %}
-    <div class="welcome-container">
-        <h1 class="welcome-title">Создать нового пользователя в базе данных</h1>
-        <form method="post" class="registration-form">
+    <div class="welcome-create">
+        <h1 class="welcome-title">Создать пользователя</h1>
+        <hr>
+        <form method="post">
             {% csrf_token %}
-            <div class="form-group">
-                <label for="username" class="form-label">Имя пользователя:</label>
-                {{ form.username }}
+            {{ form.as_p }}
+            <div class="all-btn">
+                <a href="{% url 'user_list' %}" class="btn btn-cancel">Назад</a>
+                <button type="submit" class="btn btn-save">Создать</button>
             </div>
-            <div class="form-group">
-                <label for="password" class="form-label">Пароль:</label>
-                {{ form.password }}
-            </div>
-            <button type="submit" class="btn btn-primary">Создать пользователя</button>
         </form>
-        <a href="{% url 'user_list' %}" class="btn btn-primary">Назад</a>
     </div>
 {% endblock %}
 

@@ -34,12 +34,9 @@ from db_crp.views import (
     user_list,
     user_create,
     user_info,
-    user_change_password,
-    user_add_to_group,
+    user_edit,
     user_delete,
 
-    # users_with_groups,
-    # create_table,
 )
 
 urlpatterns = [
@@ -65,22 +62,17 @@ urlpatterns = [
     # Пользователи в группе
     path('group_users/<str:group_name>/', group_users, name='group_users'),
 
-
-
-
-    path('user_list/', user_list, name='user_list'),  # Список пользователей
-    path('user_create/', user_create, name='user_create'),  # Создать пользователя
-    path('user_info/<str:username>/', user_info, name='user_info'),  # Информация о пользователе
-    path('user_change_password/<str:username>/', user_change_password, name='user_change_password'),  # Смена пароля
-    path('user_add_to_group/', user_add_to_group, name='user_add_to_group'),  # Добавление удаление пользователя в группы
-    path('user_delete/<str:username>/', user_delete, name='user_delete'),  # Удаление пользователя
-
-    # path('users_with_groups/', users_with_groups, name='users_with_groups'),
-    # # path('user_groups/', user_groups, name='user_groups'),  # Список групп пользователей в базе данных
-    #
-    # path('create_table/', create_table, name='create_table'),
+    # Список пользователей
+    path('user_list/', user_list, name='user_list'),
+    # Создать пользователя
+    path('user_create/', user_create, name='user_create'),
+    # Информация о пользователе
+    path('user_info/<str:username>/', user_info, name='user_info'),
+    # Редактирование пользователя
+    path('user_edit/', user_edit, name='user_edit'),
+    # Удаление пользователя
+    path('user_delete/<str:username>/', user_delete, name='user_delete'),
 
 ]
-
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

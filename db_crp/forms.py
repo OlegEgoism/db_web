@@ -15,7 +15,8 @@ class CustomUserRegistrationForm(UserCreationForm):
 
 class UserCreateForm(forms.Form):
     """Создать пользователя"""
-    username = forms.CharField(label="Имя пользователя", max_length=150)
+    username = forms.CharField(label="Логин", max_length=150)
+    email = forms.EmailField(label="Email")
     password = forms.CharField(label="Пароль", widget=forms.PasswordInput)
 
 
@@ -26,12 +27,12 @@ class ChangePasswordForm(forms.Form):
 
 class GroupEditForm(forms.Form):
     """Редактирование группы"""
-    groupname = forms.CharField(label="Название группы", max_length=150)
+    groupname = forms.CharField(label="Название", max_length=150)
 
 
 class CreateGroupForm(forms.Form):
     """Создание группы"""
-    groupname = forms.CharField(label="Название группы", max_length=150)
+    groupname = forms.CharField(label="Название", max_length=150)
 
 
 # class AddUserToGroupForm(forms.Form):

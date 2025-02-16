@@ -3,8 +3,8 @@
 {% block content %}
     <div class="welcome-container">
         <div class="title-with-button" style="display: flex; align-items: center; justify-content: space-between;">
-            <h2 class="welcome-title">Список пользовательских групп ({{ user_groups_data|length }} шт.)</h2>
-            <a href="{% url 'group_create' %}" class="btn btn-save" style="margin-left: auto;">Создать группу</a>
+            <h2 class="welcome-title">Список групп ({{ user_groups_data|length }} шт.)</h2>
+            <a href="{% url 'group_create' %}" class="btn btn-save">Создать группу</a>
         </div>
         <hr>
 

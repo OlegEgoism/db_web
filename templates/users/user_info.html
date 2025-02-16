@@ -1,57 +1,67 @@
 {% extends 'base.html' %}
 
 {% block content %}
-    <div class="welcome-container">
+    <div class="welcome-group">
         {% if user_data %}
-            <h1 class="welcome-title">Информация о пользователе: {{ user_data.username }}</h1>
-            <div class="user-info">
-                <div class="info-item">
-                    <span class="info-label">ID пользователя:</span>
-                    <span class="info-value">{{ user_data.user_id }}</span>
-                </div>
-                <div class="info-item">
-                    <span class="info-label">Может создавать базы данных:</span>
-                    <span class="info-value">{{ user_data.can_create_db }}</span>
-                </div>
-                <div class="info-item">
-                    <span class="info-label">Суперпользователь:</span>
-                    <span class="info-value">{{ user_data.is_superuser }}</span>
-                </div>
-                <div class="info-item">
-                    <span class="info-label">Может изменять системный каталог:</span>
-                    <span class="info-value">{{ user_data.can_update_catalog }}</span>
-                </div>
-                <div class="info-item">
-                    <span class="info-label">Пароль (хэш):</span>
-                    <span class="info-value">{{ user_data.password_hash }}</span>
-                    <a href="{% url 'user_change_password' user_data.username %}" class="btn btn-password">Изменить пароль</a>
-                </div>
-                <div class="info-item">
-                    <span class="info-label">Действителен до:</span>
-                    <span class="info-value">{{ user_data.valid_until|default:"Без ограничений" }}</span>
-                </div>
-                <div class="info-item">
-                    <span class="info-label">Группы пользователя:</span>
-                    {% if user_data.groups %}
-                        <ul class="group-list">
-                            {% for group in user_data.groups %}
-                                <li><a href="{% url 'group_users' group %}" class="group-link-user">{{ group }}</a></li>
-                            {% endfor %}
-                        </ul>
-                    {% else %}
-                        <p class="no-groups">Пользователь не состоит в группах.</p>
-                    {% endif %}
-                </div>
+            <h1 class="welcome-title">Информация пользователя: {{ user_data.username }}</h1>
+            <hr>
+            <div class="info-item">
+                <span class="info-label">ID пользователя:</span>
+                <span class="info-value">{{ user_data.user_id }}</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">Логин:</span>
+                <span class="info-value">{{ user_data.username }}</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">Пароль (хэш):</span>
+                <span class="info-value">{{ user_data.password_hash }}</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">Email:</span>
+                {% if user_data.email %}
+                    <span class="info-value">{{ user_data.email }}</span>
+                {% else %}
+                    <span class="info-value no-email">Почта не указана</span>
+                {% endif %}
+            </div>
+            <div class="info-item">
+                <span class="info-label">Может создавать БД:</span>
+                <span class="info-value">{{ user_data.can_create_db }}</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">Суперпользователь:</span>
+                <span class="info-value">{{ user_data.is_superuser }}</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">Дата создания:</span>
+                <span class="info-value">{{ user_data.created_at|date:"d.m.Y - H:i" }}</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">Дата изменения:</span>
+                <span class="info-value">{{ user_data.updated_at|date:"d.m.Y - H:i" }}</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">Количество групп пользователя:</span>
+                <span class="info-value">{{ user_data.group_count }} шт.</span>
+            </div>
+            <hr>
+            <div class="info-item">
+                <span class="info-label">Группы пользователя:</span>
+                {% if user_data.groups %}
+                    {% for group in user_data.groups %}
+                        <a href="{% url 'group_users' group %}" class="group-link-user">{{ group }}</a>
+                    {% endfor %}
+                {% else %}
+                    <span class="no-groups"> Пользователь не состоит в группах</span>
+                {% endif %}
+            </div>
+            <div class="all-btn">
+                <a href="{% url 'user_list' %}" class="btn btn-cancel">Назад</a>
+                <a href="{% url 'user_edit' %}?username={{ user_data.username }}" class="btn btn-edit">Редактировать</a>
             </div>
         {% else %}
             <h1 class="welcome-title">Пользователь не найден</h1>
         {% endif %}
-        <div class="back-link">
-            {% if user_data.groups %}
-                <a href="{% url 'group_users' user_data.groups.0 %}" class="btn">Назад</a>
-            {% else %}
-                <a href="{% url 'group_list' %}" class="btn">Назад</a>
-            {% endif %}
-        </div>
     </div>
 {% endblock %}

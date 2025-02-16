@@ -17,9 +17,10 @@ class CustomUser(AbstractUser):
 
 
 class GroupLog(models.Model):
-    groupname = models.CharField(max_length=100, unique=True, verbose_name="Имя группы")
-    created_at = models.DateTimeField(default=timezone.now, verbose_name="Дата создания")
-    updated_at = models.DateTimeField(auto_now=True, verbose_name="Дата последнего изменения")
+    """Логи групп"""
+    groupname = models.CharField(verbose_name="Имя группы", max_length=100, unique=True)
+    created_at = models.DateTimeField(verbose_name="Дата создания", default=timezone.now)
+    updated_at = models.DateTimeField(verbose_name="Дата последнего изменения", auto_now=True)
 
     def __str__(self):
         return self.groupname
@@ -27,3 +28,18 @@ class GroupLog(models.Model):
     class Meta:
         verbose_name = "Лог группы"
         verbose_name_plural = "Логи групп"
+
+
+class UserLog(models.Model):
+    """Логи пользователей"""
+    username = models.CharField(verbose_name="Имя пользователя", max_length=150, unique=True)
+    email = models.EmailField(verbose_name="Email", blank=True, null=True, unique=True)
+    created_at = models.DateTimeField(verbose_name="Дата создания", default=timezone.now)
+    updated_at = models.DateTimeField(verbose_name="Дата последнего изменения", auto_now=True)
+
+    def __str__(self):
+        return self.username
+
+    class Meta:
+        verbose_name = "Лог пользователя"
+        verbose_name_plural = "Логи пользователей"
