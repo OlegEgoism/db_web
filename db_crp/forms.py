@@ -13,11 +13,22 @@ class CustomUserRegistrationForm(UserCreationForm):
         fields = ('username', 'email', 'phone_number', 'photo', 'password1', 'password2')
 
 
+from django import forms
+from .models import UserLog
+
 class UserCreateForm(forms.Form):
-    """Создать пользователя"""
+    """Форма для создания пользователя с уникальной почтой"""
     username = forms.CharField(label="Логин", max_length=150)
     email = forms.EmailField(label="Email")
     password = forms.CharField(label="Пароль", widget=forms.PasswordInput)
+
+    def clean_email(self):
+        """Проверяем, что email уникален"""
+        email = self.cleaned_data.get('email')
+        if email and UserLog.objects.filter(email=email).exists():
+            raise forms.ValidationError("❌ Ошибка: Этот email уже используется другим пользователем!")
+        return email
+
 
 
 class ChangePasswordForm(forms.Form):

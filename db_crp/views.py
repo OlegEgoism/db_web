@@ -2,7 +2,7 @@ from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth import login, logout
 from django.core.mail import send_mail, EmailMultiAlternatives
-from django.db import connection
+from django.db import connection, IntegrityError
 from django.http import HttpResponse, HttpResponseRedirect
 from django.template.loader import render_to_string
 from django.urls import reverse
@@ -178,27 +178,38 @@ def user_list(request):
 
 
 def user_create(request):
-    """Создать пользователя"""
+    """Создать пользователя с проверкой логина и email"""
     if request.method == "POST":
         form = UserCreateForm(request.POST)
         if form.is_valid():
             username = form.cleaned_data['username']
-            email = form.cleaned_data['email']
+            email = form.cleaned_data.get('email', None)
             password = form.cleaned_data['password']
-            query = f"CREATE USER {username} WITH PASSWORD %s;"
             with connection.cursor() as cursor:
-                cursor.execute(query, [password])
-            UserLog.objects.create(username=username, email=email)
-            if email:
-                subject = ""
-                html_message = render_to_string('send_email/send_user_create.html', {
-                    'username': username,
-                    'password': password
-                })
-                email_message = EmailMultiAlternatives(subject, "", settings.EMAIL_HOST_USER, [email])
-                email_message.attach_alternative(html_message, "text/html")
-                email_message.send()
-            return redirect('user_list')
+                cursor.execute("SELECT 1 FROM pg_roles WHERE rolname = %s;", [username])
+                user_exists = cursor.fetchone()
+            if user_exists:
+                messages.error(request, f"❌ Ошибка: Пользователь с логином {username} уже существует!")
+                return render(request, 'users/user_create.html', {'form': form})
+            try:
+                with connection.cursor() as cursor:
+                    cursor.execute(f"CREATE USER {username} WITH PASSWORD %s;", [password])
+                UserLog.objects.create(username=username, email=email)
+                if email:
+                    subject = "Ваши учетные данные"
+                    html_message = render_to_string('send_email/send_user_create.html', {
+                        'username': username,
+                        'password': password
+                    })
+                    email_message = EmailMultiAlternatives(subject, "", settings.EMAIL_HOST_USER, [email])
+                    email_message.attach_alternative(html_message, "text/html")
+                    email_message.send()
+                messages.success(request, f'✅ Пользователь {username} успешно создан!')
+                return redirect('user_list')
+            except IntegrityError:
+                messages.error(request, f"❌ Ошибка: Лог пользователя {username} уже существует в системе!")
+            except Exception as e:
+                messages.error(request, f"⚠️ Ошибка: {str(e)}")
     else:
         form = UserCreateForm()
     return render(request, 'users/user_create.html', {'form': form})
