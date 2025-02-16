@@ -69,24 +69,33 @@ def group_list(request):
     })
 
 
+from django.contrib import messages
+from django.shortcuts import render, redirect
+from django.utils import timezone
+from django.db import connection
+from .models import GroupLog
+from .forms import CreateGroupForm
+
 def group_create(request):
-    """Создание группы"""
+    """Создание группы с проверкой существования"""
     if request.method == "POST":
         form = CreateGroupForm(request.POST)
         if form.is_valid():
             groupname = form.cleaned_data['groupname']
             if groupname.startswith('pg_'):
-                return HttpResponse("⚠️ Ошибка: Имя группы не может начинаться с 'pg_', так как это зарезервировано системой.")
+                messages.error(request, "⚠️ Ошибка имя группы не может начинаться с 'pg_'")
+                return render(request, 'groups/group_create.html', {'form': form})
             try:
                 with connection.cursor() as cursor:
                     cursor.execute(f"CREATE ROLE {groupname};")
-                GroupLog.objects.get_or_create(groupname=groupname, defaults={"created_at": timezone.now(), "updated_at": timezone.now()})
+                GroupLog.objects.create(groupname=groupname, created_at=timezone.now(), updated_at=timezone.now())
                 return redirect('group_list')
             except Exception as e:
-                return HttpResponse(f"Ошибка при создании группы: {e}")
+                messages.error(request, f"❌ Ошибка при создании группы, такая группа уже есть")
     else:
         form = CreateGroupForm()
     return render(request, 'groups/group_create.html', {'form': form})
+
 
 
 def group_edit(request, group_name):
@@ -124,7 +133,7 @@ def group_delete(request, group_name):
         group_log = GroupLog.objects.filter(groupname=group_name).first()
         if group_log:
             group_log.delete()
-        messages.success(request, f'Группа "{group_name}" успешно удалена.')
+        # messages.success(request, f'Группа "{group_name}" успешно удалена.')
     except Exception as e:
         messages.error(request, f'Ошибка при удалении группы: {e}')
     return HttpResponseRedirect(reverse('group_list'))
@@ -189,7 +198,7 @@ def user_create(request):
                 cursor.execute("SELECT 1 FROM pg_roles WHERE rolname = %s;", [username])
                 user_exists = cursor.fetchone()
             if user_exists:
-                messages.error(request, f"❌ Ошибка: Пользователь с логином {username} уже существует!")
+                messages.error(request, f"❌ Ошибка пользователь с логином {username} уже существует!")
                 return render(request, 'users/user_create.html', {'form': form})
             try:
                 with connection.cursor() as cursor:
@@ -204,10 +213,10 @@ def user_create(request):
                     email_message = EmailMultiAlternatives(subject, "", settings.EMAIL_HOST_USER, [email])
                     email_message.attach_alternative(html_message, "text/html")
                     email_message.send()
-                messages.success(request, f'✅ Пользователь {username} успешно создан!')
+                # messages.success(request, '')
                 return redirect('user_list')
             except IntegrityError:
-                messages.error(request, f"❌ Ошибка: Лог пользователя {username} уже существует в системе!")
+                messages.error(request, f"❌ Ошибка лог пользователя {username} уже существует в системе!")
             except Exception as e:
                 messages.error(request, f"⚠️ Ошибка: {str(e)}")
     else:

@@ -41,6 +41,25 @@ class GroupEditForm(forms.Form):
     groupname = forms.CharField(label="Название", max_length=150)
 
 
+from .models import GroupLog
+from django.db import connection
+
 class CreateGroupForm(forms.Form):
-    """Создание группы"""
+    """Форма для создания группы с уникальным именем"""
     groupname = forms.CharField(label="Название", max_length=150)
+
+    # def clean_groupname(self):
+    #     """Проверяем, что группа с таким именем еще не существует"""
+    #     groupname = self.cleaned_data['groupname']
+    #
+    #     # Проверяем в PostgreSQL
+    #     with connection.cursor() as cursor:
+    #         cursor.execute("SELECT 1 FROM pg_roles WHERE rolname = %s;", [groupname])
+    #         if cursor.fetchone():
+    #             raise forms.ValidationError(f"❌ Ошибка: Группа '{groupname}' уже существует!")
+    #
+    #     # Проверяем в логах (если логов нет, можно убрать)
+    #     if GroupLog.objects.filter(groupname=groupname).exists():
+    #         raise forms.ValidationError(f"❌ Ошибка: Группа '{groupname}' уже зарегистрирована в системе!")
+    #
+    #     return groupname

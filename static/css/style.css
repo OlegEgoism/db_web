@@ -117,20 +117,32 @@ main {
     color: #333;
 }
 
+/*.group-item {*/
+/*    display: flex;*/
+/*    align-items: center;*/
+/*}*/
+
 .group-item {
     display: flex;
     align-items: center;
+    justify-content: flex-start; /* Выравниваем элементы в ряд */
+    gap: 10px; /* Отступ между колонками */
 }
+
+/*.group-name {*/
+/*    min-width: 320px;*/
+/*}*/
 
 .group-name {
-    min-width: 320px;
+    flex-grow: 1; /* Разрешает названию занимать оставшееся пространство */
+    min-width: 300px;
 }
 
-.group-action {
-    margin-left: auto;
-    display: flex;
-    gap: 10px;
-}
+/*.group-action {*/
+/*    margin-left: auto;*/
+/*    display: flex;*/
+/*    gap: 10px;*/
+/*}*/
 
 .group-container {
     display: flex;
@@ -342,8 +354,14 @@ main {
 /* Стили для кнопки */
 
 
+/*.group-number {*/
+/*    margin-right: 10px;*/
+/*}*/
+
+
 .group-number {
-    margin-right: 10px;
+    min-width: 20px; /* Фиксированная ширина для номера */
+    text-align: right; /* Выравниваем текст по правому краю */
 }
 
 .group-users-grid {
