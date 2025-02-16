@@ -1,0 +1,5 @@
+/.env
+/db_crp/migrations/0002_grouplog.py
+/db_crp/migrations/0003_userlog.py
+/db_crp/migrations/0004_alter_userlog_email.py
+/db_crp/migrations/0005_alter_userlog_email.py
