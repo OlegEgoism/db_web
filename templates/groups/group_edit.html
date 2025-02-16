@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+<title>{% block title %}Редактирование группы{% endblock %}</title>
 
 {% block content %}
     <div class="welcome-edit">
@@ -10,7 +11,7 @@
         </div>
         <div class="info-item">
             <span class="info-label">Дата изменения:</span>
-             <span class="info-value">{% if group_log.updated_at %} {{ group_log.updated_at|date:"d.m.Y - H:i" }} {% else %}—{% endif %}</span>
+            <span class="info-value">{% if group_log.updated_at %} {{ group_log.updated_at|date:"d.m.Y - H:i" }} {% else %}—{% endif %}</span>
         </div>
         <form method="post">
             {% csrf_token %}

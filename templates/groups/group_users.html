@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+<title>{% block title %}Список пользователей в группе{% endblock %}</title>
 
 {% block content %}
     <div class="welcome-group">
@@ -17,7 +18,7 @@
             <span class="info-value">{% if user_count %}{{ user_count }}{% else %}0{% endif %} шт.</span>
         </div>
         <hr>
-            <!-- Поле поиска -->
+        <!-- Поле поиска -->
         <input type="text" id="userSearch" class="user-search" onkeyup="filterUsers()" placeholder="Поиск пользователя..."/>
         <div class="info-item" id="userList">
             <span class="info-label">Пользователи:</span>

@@ -7,7 +7,7 @@ from django.http import HttpResponse, HttpResponseRedirect
 from django.template.loader import render_to_string
 from django.urls import reverse
 from django.utils import timezone
-from .forms import UserCreateForm, ChangePasswordForm, CreateGroupForm, CustomUserRegistrationForm, GroupEditForm
+from .forms import UserCreateForm, CreateGroupForm, CustomUserRegistrationForm, GroupEditForm
 from django.shortcuts import render, redirect, get_object_or_404
 from .models import GroupLog, UserLog
 

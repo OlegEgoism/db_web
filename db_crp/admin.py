@@ -15,7 +15,7 @@ class CustomUserAdmin(admin.ModelAdmin):
             'fields': ('is_active', 'is_staff', 'is_superuser', 'groups', 'user_permissions',)}),
     )
     list_display = 'username', 'preview_photo', 'email', 'phone_number', 'last_login', 'is_active',
-    list_filter = 'is_staff', 'is_active', 'date_joined',
+    list_filter = 'is_staff', 'is_active', 'last_login', 'date_joined',
     list_editable = 'is_active',
     search_fields = 'username', 'email', 'phone_number',
     search_help_text = 'Поиск по имени пользователя, адресу электронной почты и номеру телефона'
@@ -46,6 +46,8 @@ class GroupLogAdmin(admin.ModelAdmin):
     list_display = 'groupname', 'created_at', 'updated_at'
     search_fields = 'groupname',
     search_help_text = 'Поиск по имени группы'
+    date_hierarchy = 'created_at'
+    list_filter = 'created_at', 'updated_at'
     list_per_page = 20
 
 
@@ -55,4 +57,6 @@ class UserLogAdmin(admin.ModelAdmin):
     list_display = 'username', 'email', 'created_at', 'updated_at'
     search_fields = 'username', 'email',
     search_help_text = 'Поиск по имени пользователя и адресу электронной почты'
+    date_hierarchy = 'created_at'
+    list_filter = 'created_at', 'updated_at'
     list_per_page = 20
