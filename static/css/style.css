@@ -106,7 +106,6 @@ main {
     cursor: pointer;
 }
 
-
 .no-groups {
     color: red;
     margin: 5px;
@@ -117,32 +116,18 @@ main {
     color: #333;
 }
 
-/*.group-item {*/
-/*    display: flex;*/
-/*    align-items: center;*/
-/*}*/
-
 .group-item {
     display: flex;
     align-items: center;
-    justify-content: flex-start; /* Выравниваем элементы в ряд */
-    gap: 10px; /* Отступ между колонками */
+    justify-content: flex-start;
+    gap: 10px;
 }
 
-/*.group-name {*/
-/*    min-width: 320px;*/
-/*}*/
-
 .group-name {
-    flex-grow: 1; /* Разрешает названию занимать оставшееся пространство */
+    flex-grow: 1;
     min-width: 300px;
 }
 
-/*.group-action {*/
-/*    margin-left: auto;*/
-/*    display: flex;*/
-/*    gap: 10px;*/
-/*}*/
 
 .group-container {
     display: flex;
@@ -150,12 +135,12 @@ main {
 }
 
 .group-container div {
-    border: 1px solid #333; /* Серый контур */
+    border: 1px solid #333;
     width: 45%;
     padding: 10px;
-    border-radius: 5px; /* Скругление углов */
+    border-radius: 5px;
     margin-bottom: 20px;
-    background-color: #eff2f6; /* Светлый фон */
+    background-color: #eff2f6;
 }
 
 .group-container h4 {
@@ -199,12 +184,6 @@ main {
     display: flex;
     align-items: center;
 }
-
-/*.info-label {*/
-/*    font-weight: bold;*/
-/*    color: #333;*/
-/*    min-width: 200px;*/
-/*}*/
 
 .info-value {
     color: #555;
@@ -351,17 +330,9 @@ main {
     margin-top: 10px;
 }
 
-/* Стили для кнопки */
-
-
-/*.group-number {*/
-/*    margin-right: 10px;*/
-/*}*/
-
-
 .group-number {
-    min-width: 20px; /* Фиксированная ширина для номера */
-    text-align: right; /* Выравниваем текст по правому краю */
+    min-width: 20px;
+    text-align: right;
 }
 
 .group-users-grid {
@@ -370,27 +341,6 @@ main {
     gap: 10px; /* Отступ между пользователями */
     padding: 15px 0;
 }
-
-/*.group-link-user {*/
-/*    display: block;*/
-/*    padding: 8px 12px;*/
-/*    background-color: #f3f3f3;*/
-/*    border-radius: 5px;*/
-/*    text-align: center;*/
-/*    font-weight: bold;*/
-/*    text-decoration: none;*/
-/*    color: #333;*/
-/*}*/
-
-/*.group-link-user:hover {*/
-/*    background-color: #e0e0e0;*/
-/*}*/
-
-/*.no-users {*/
-/*    text-align: center;*/
-/*    grid-column: span 4;*/
-/*}*/
-
 
 .group-search {
     width: 80%;
@@ -401,7 +351,6 @@ main {
     font-size: 16px;
 }
 
-
 .user-search {
     width: 80%;
     padding: 8px 12px;
@@ -410,7 +359,6 @@ main {
     border-radius: 5px;
     font-size: 16px;
 }
-
 
 .no-users {
     color: red;
@@ -421,14 +369,12 @@ main {
     color: red;
 }
 
-
 .user-item {
     display: flex;
     align-items: center;
     justify-content: space-between;
     border-bottom: 1px solid #eee;
 }
-
 
 .messages {
     margin-bottom: 15px;
