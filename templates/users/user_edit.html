@@ -5,11 +5,23 @@
     <div class="welcome-group">
         <h1 class="welcome-title">Редактирование пользователя: {{ username }}</h1>
         <hr>
+
+        <!-- Вывод сообщений об ошибках -->
+        {% if messages %}
+            <div class="messages">
+                {% for message in messages %}
+                    <div class="alert {% if message.tags == 'success' %}alert-success{% else %}alert-error{% endif %}" role="alert">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+
         <form method="post" id="user-edit-form">
             {% csrf_token %}
             <div class="info-item">
-                <label for="new_email" class="info-label">Email:</label>
-                <input type="email" id="new_email" name="new_email" value="{{ user_log.email|default:'' }}" placeholder="Введите email">
+                <label for="new_email" class="info-label">Почта:</label>
+                <input type="email" id="new_email" name="new_email" value="{{ user_log.email|default:'' }}" placeholder="Введите электронную почту">
             </div>
             <div class="info-item">
                 <label for="new_password" class="info-label">Пароль:</label>

@@ -200,7 +200,7 @@ def user_list(request):
 
 
 def user_create(request):
-    """Создать пользователя с проверкой логина и email"""
+    """Создать пользователя"""
     if request.method == "POST":
         form = UserCreateForm(request.POST)
         if form.is_valid():
@@ -210,8 +210,12 @@ def user_create(request):
             with connection.cursor() as cursor:
                 cursor.execute("SELECT 1 FROM pg_roles WHERE rolname = %s;", [username])
                 user_exists = cursor.fetchone()
+            email_exists = UserLog.objects.filter(email=email).exists() if email else False
             if user_exists:
-                messages.error(request, f"❌ Ошибка пользователь с логином {username} уже существует!")
+                messages.error(request, f"Пользователь с логином '{username}' уже существует!")
+                return render(request, 'users/user_create.html', {'form': form})
+            if email_exists:
+                messages.error(request, f"Почта '{email}' уже используется другим пользователем!")
                 return render(request, 'users/user_create.html', {'form': form})
             try:
                 with connection.cursor() as cursor:
@@ -226,12 +230,11 @@ def user_create(request):
                     email_message = EmailMultiAlternatives(subject, "", settings.EMAIL_HOST_USER, [email])
                     email_message.attach_alternative(html_message, "text/html")
                     email_message.send()
-                # messages.success(request, '')
                 return redirect('user_list')
             except IntegrityError:
-                messages.error(request, f"❌ Ошибка лог пользователя {username} уже существует в системе!")
+                messages.error(request, f"Пользователь с логином '{username}' уже существует в системе!")
             except Exception as e:
-                messages.error(request, f"⚠️ Ошибка: {str(e)}")
+                messages.error(request, f"Ошибка: {str(e)}")
     else:
         form = UserCreateForm()
     return render(request, 'users/user_create.html', {'form': form})
@@ -275,8 +278,11 @@ def user_info(request, username):
     return render(request, 'users/user_info.html', {'user_data': user_data})
 
 
+from django.contrib import messages
+
+
 def user_edit(request):
-    """Редактирование почты, пароля и управление группами пользователя с уведомлением"""
+    """Редактирование пользователя"""
     username = request.GET.get('username')
     user_log = get_object_or_404(UserLog, username=username)
     with connection.cursor() as cursor:
@@ -305,6 +311,14 @@ def user_edit(request):
         has_changes = False
         group_changes = []
         if user_log.email != new_email:
+            if UserLog.objects.filter(email=new_email).exclude(username=username).exists():
+                messages.error(request, f"Почта '{new_email}' уже используется другим пользователем!")
+                return render(request, 'users/user_edit.html', {
+                    'username': username,
+                    'user_log': user_log,
+                    'user_groups': sorted(current_groups),
+                    'available_groups': sorted(available_groups),
+                })
             try:
                 user_log.email = new_email if new_email else None
                 user_log.save()
@@ -346,7 +360,13 @@ def user_edit(request):
             email_message.attach_alternative(html_message, "text/html")
             email_message.send()
         if errors:
-            return HttpResponse("<br>".join(errors))
+            messages.error(request, "<br>".join(errors))
+            return render(request, 'users/user_edit.html', {
+                'username': username,
+                'user_log': user_log,
+                'user_groups': sorted(current_groups),
+                'available_groups': sorted(available_groups),
+            })
         return redirect('user_list')
     return render(request, 'users/user_edit.html', {
         'username': username,
