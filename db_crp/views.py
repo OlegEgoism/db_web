@@ -69,21 +69,20 @@ def group_list(request):
     })
 
 
-from django.contrib import messages
-from django.shortcuts import render, redirect
-from django.utils import timezone
-from django.db import connection
-from .models import GroupLog
-from .forms import CreateGroupForm
-
 def group_create(request):
-    """Создание группы с проверкой существования"""
+    """Создание группы"""
     if request.method == "POST":
         form = CreateGroupForm(request.POST)
         if form.is_valid():
             groupname = form.cleaned_data['groupname']
+            with connection.cursor() as cursor:
+                cursor.execute("SELECT 1 FROM pg_roles WHERE rolname = %s;", [groupname])
+                existing_group = cursor.fetchone()
+            if existing_group:
+                messages.error(request, f"Группа с именем '{groupname}' уже существует!")
+                return render(request, 'groups/group_create.html', {'form': form})
             if groupname.startswith('pg_'):
-                messages.error(request, "⚠️ Ошибка имя группы не может начинаться с 'pg_'")
+                messages.error(request, "Имя группы не может начинаться с 'pg_'.")
                 return render(request, 'groups/group_create.html', {'form': form})
             try:
                 with connection.cursor() as cursor:
@@ -91,11 +90,10 @@ def group_create(request):
                 GroupLog.objects.create(groupname=groupname, created_at=timezone.now(), updated_at=timezone.now())
                 return redirect('group_list')
             except Exception as e:
-                messages.error(request, f"❌ Ошибка при создании группы, такая группа уже есть")
+                messages.error(request, f"❌ Ошибка при создании группы: {e}")
     else:
         form = CreateGroupForm()
     return render(request, 'groups/group_create.html', {'form': form})
-
 
 
 def group_edit(request, group_name):
@@ -106,7 +104,22 @@ def group_edit(request, group_name):
         if form.is_valid():
             new_groupname = form.cleaned_data['groupname']
             if new_groupname.startswith('pg_'):
-                return HttpResponse("⚠️ Ошибка: Имя группы не может начинаться с 'pg_', так как это зарезервировано системой.")
+                messages.error(request, "Имя группы не может начинаться с 'pg_'.")
+                return render(request, 'groups/group_edit.html', {
+                    'form': form,
+                    'group_name': group_name,
+                    'group_log': group_log
+                })
+            with connection.cursor() as cursor:
+                cursor.execute("SELECT 1 FROM pg_roles WHERE rolname = %s;", [new_groupname])
+                existing_group = cursor.fetchone()
+            if existing_group:
+                messages.error(request, f"Группа с именем '{new_groupname}' уже существует!")
+                return render(request, 'groups/group_edit.html', {
+                    'form': form,
+                    'group_name': group_name,
+                    'group_log': group_log
+                })
             try:
                 with connection.cursor() as cursor:
                     cursor.execute(f"ALTER ROLE {group_name} RENAME TO {new_groupname};")
@@ -115,7 +128,7 @@ def group_edit(request, group_name):
                 group_log.save()
                 return redirect('group_list')
             except Exception as e:
-                return HttpResponse(f"Ошибка при редактировании группы: {e}")
+                messages.error(request, f"Ошибка при редактировании группы: {e}")
     else:
         form = GroupEditForm(initial={'groupname': group_log.groupname})
     return render(request, 'groups/group_edit.html', {

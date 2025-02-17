@@ -5,6 +5,18 @@
     <div class="welcome-edit">
         <h2 class="welcome-title">Редактирование группы: {{ group_name }}</h2>
         <hr>
+
+        <!-- Вывод сообщений об ошибках -->
+        {% if messages %}
+            <div class="messages">
+                {% for message in messages %}
+                    <div class="alert {% if message.tags == 'success' %}alert-success{% else %}alert-error{% endif %}" role="alert">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+
         <div class="info-item">
             <span class="info-label">Дата создания:</span>
             <span class="info-value">{% if group_log.created_at %}{{ group_log.created_at|date:"d.m.Y - H:i" }}{% else %}—{% endif %}</span>
@@ -23,5 +35,3 @@
         </form>
     </div>
 {% endblock %}
-
-
