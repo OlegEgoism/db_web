@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.utils.safestring import mark_safe
 
-from db_crp.models import CustomUser, GroupLog, UserLog
+from db_crp.models import CustomUser, GroupLog, UserLog, Audit
 
 
 @admin.register(CustomUser)
@@ -59,4 +59,16 @@ class UserLogAdmin(admin.ModelAdmin):
     search_help_text = 'Поиск по имени пользователя и адресу электронной почты'
     date_hierarchy = 'created_at'
     list_filter = 'created_at', 'updated_at'
+    list_per_page = 20
+
+
+@admin.register(Audit)
+class AuditAdmin(admin.ModelAdmin):
+    """Логи групп"""
+    list_display = 'username', 'action_type', 'entity_type', 'details', 'timestamp'
+    readonly_fields = 'username', 'action_type', 'entity_type', 'entity_name', 'timestamp', 'details'
+    search_fields = 'username',
+    search_help_text = 'Поиск по имени пользователя'
+    date_hierarchy = 'timestamp'
+    list_filter = 'action_type', 'entity_type'
     list_per_page = 20

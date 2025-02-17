@@ -6,9 +6,11 @@ from django.http import HttpResponse, HttpResponseRedirect
 from django.template.loader import render_to_string
 from django.urls import reverse
 from django.utils import timezone
+from django.utils.timezone import now
+
 from .forms import UserCreateForm, CreateGroupForm, CustomUserRegistrationForm, GroupEditForm
 from django.shortcuts import render, redirect, get_object_or_404
-from .models import GroupLog, UserLog
+from .models import GroupLog, UserLog, Audit
 
 
 def home(request):
@@ -16,12 +18,20 @@ def home(request):
 
 
 def register(request):
-    """Регистрация пользователя"""
+    """Регистрация пользователя с записью в журнал действий"""
     if request.method == 'POST':
         form = CustomUserRegistrationForm(request.POST, request.FILES)
         if form.is_valid():
             user = form.save()
             login(request, user)
+            Audit.objects.create(
+                username=user.username,
+                action_type='create',
+                entity_type='user',
+                entity_name=user.username,
+                timestamp=now(),
+                details=f"Пользователь {user.username} зарегистрирован."
+            )
             return redirect('home')
         else:
             for field, errors in form.errors.items():
@@ -29,7 +39,6 @@ def register(request):
                     messages.error(request, f"Ошибка в поле {form.fields[field].label}: {error}")
     else:
         form = CustomUserRegistrationForm()
-
     return render(request, 'registration/register.html', {'form': form})
 
 
@@ -76,22 +85,55 @@ def group_create(request):
         form = CreateGroupForm(request.POST)
         if form.is_valid():
             groupname = form.cleaned_data['groupname']
+            username = request.user.username if request.user.is_authenticated else "Аноним"
             with connection.cursor() as cursor:
                 cursor.execute("SELECT 1 FROM pg_roles WHERE rolname = %s;", [groupname])
                 existing_group = cursor.fetchone()
             if existing_group:
                 messages.error(request, f"Группа с именем '{groupname}' уже существует!")
+                Audit.objects.create(
+                    username=username,
+                    action_type='create',
+                    entity_type='group',
+                    entity_name=groupname,
+                    timestamp=now(),
+                    details=f"Неудачная попытка создания группы '{groupname}': группа уже существует."
+                )
                 return render(request, 'groups/group_create.html', {'form': form})
             if groupname.startswith('pg_'):
                 messages.error(request, "Имя группы не может начинаться с 'pg_'.")
+                Audit.objects.create(
+                    username=username,
+                    action_type='create',
+                    entity_type='group',
+                    entity_name=groupname,
+                    timestamp=now(),
+                    details=f"Неудачная попытка создания группы '{groupname}': запрещенный префикс 'pg_'."
+                )
                 return render(request, 'groups/group_create.html', {'form': form})
             try:
                 with connection.cursor() as cursor:
                     cursor.execute(f"CREATE ROLE {groupname};")
                 GroupLog.objects.create(groupname=groupname, created_at=timezone.now(), updated_at=timezone.now())
+                Audit.objects.create(
+                    username=username,
+                    action_type='create',
+                    entity_type='group',
+                    entity_name=groupname,
+                    timestamp=now(),
+                    details=f"Группа '{groupname}' успешно создана."
+                )
                 return redirect('group_list')
             except Exception as e:
-                messages.error(request, f"❌ Ошибка при создании группы: {e}")
+                messages.error(request, f"Ошибка при создании группы: {e}")
+                Audit.objects.create(
+                    username=username,
+                    action_type='create',
+                    entity_type='group',
+                    entity_name=groupname,
+                    timestamp=now(),
+                    details=f"Ошибка при создании группы '{groupname}': {str(e)}"
+                )
     else:
         form = CreateGroupForm()
     return render(request, 'groups/group_create.html', {'form': form})
