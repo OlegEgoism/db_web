@@ -1,7 +1,6 @@
 from django.conf import settings
-from django.contrib import messages
 from django.contrib.auth import login, logout
-from django.core.mail import send_mail, EmailMultiAlternatives
+from django.core.mail import EmailMultiAlternatives
 from django.db import connection, IntegrityError
 from django.http import HttpResponse, HttpResponseRedirect
 from django.template.loader import render_to_string
@@ -23,7 +22,6 @@ def register(request):
         if form.is_valid():
             user = form.save()
             login(request, user)
-            # messages.success(request, '✅ Регистрация прошла успешно!')
             return redirect('home')
         else:
             for field, errors in form.errors.items():
