@@ -23,12 +23,15 @@ def register(request):
         if form.is_valid():
             user = form.save()
             login(request, user)
-            messages.success(request, 'Регистрация прошла успешно!')
+            # messages.success(request, '✅ Регистрация прошла успешно!')
             return redirect('home')
         else:
-            messages.error(request, 'Ошибка регистрации. Проверьте введённые данные.')
+            for field, errors in form.errors.items():
+                for error in errors:
+                    messages.error(request, f"Ошибка в поле {form.fields[field].label}: {error}")
     else:
         form = CustomUserRegistrationForm()
+
     return render(request, 'registration/register.html', {'form': form})
 
 

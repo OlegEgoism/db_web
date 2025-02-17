@@ -4,6 +4,19 @@
 {% block content %}
     <div class="welcome-container">
         <h2 class="welcome-title">Регистрация</h2>
+        <hr>
+
+        <!-- Вывод сообщений об ошибках -->
+        {% if messages %}
+            <div class="messages">
+                {% for message in messages %}
+                    <div class="alert {% if message.tags == 'success' %}alert-success{% else %}alert-error{% endif %}" role="alert">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+
         <form method="post" enctype="multipart/form-data" class="login-form">
             {% csrf_token %}
             <div class="form-group">

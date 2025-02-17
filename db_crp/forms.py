@@ -12,6 +12,13 @@ class CustomUserRegistrationForm(UserCreationForm):
         model = CustomUser
         fields = ('username', 'email', 'phone_number', 'photo', 'password1', 'password2')
 
+    def clean_email(self):
+        """Проверка уникальности email"""
+        email = self.cleaned_data.get('email')
+        if CustomUser.objects.filter(email=email).exists():
+            raise forms.ValidationError("Почта уже используется другим пользователем!")
+        return email
+
 
 class UserCreateForm(forms.Form):
     """Форма для создания пользователя с уникальной почтой"""
@@ -33,4 +40,3 @@ class GroupEditForm(forms.Form):
 class CreateGroupForm(forms.Form):
     """Форма для создания группы с уникальным именем"""
     groupname = forms.CharField(label="Название", max_length=150)
-
