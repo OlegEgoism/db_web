@@ -67,8 +67,8 @@ class AuditAdmin(admin.ModelAdmin):
     """Логи групп"""
     list_display = 'username', 'action_type', 'entity_type', 'details', 'timestamp'
     readonly_fields = 'username', 'action_type', 'entity_type', 'entity_name', 'timestamp', 'details'
-    search_fields = 'username',
-    search_help_text = 'Поиск по имени пользователя'
+    search_fields = 'username', 'details',
+    search_help_text = 'Поиск по имени пользователя и информации из подробно'
     date_hierarchy = 'timestamp'
-    list_filter = 'action_type', 'entity_type'
+    list_filter = 'action_type', 'entity_type', 'username'
     list_per_page = 20

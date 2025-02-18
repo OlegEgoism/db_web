@@ -46,15 +46,13 @@ class UserLog(models.Model):
         verbose_name_plural = "Логи пользователей"
 
 
-
 class Audit(models.Model):
     """Журнал действий"""
     ACTION_TYPES = [
         ('create', 'Создание'),
         ('update', 'Обновление'),
         ('delete', 'Удаление'),
-        ('login', 'Вход'),
-        ('logout', 'Выход')
+        ('register', 'Регистрация пользователя')
     ]
 
     ENTITY_TYPES = [

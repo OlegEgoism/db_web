@@ -7,10 +7,10 @@ from django.template.loader import render_to_string
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.timezone import now
-
 from .forms import UserCreateForm, CreateGroupForm, CustomUserRegistrationForm, GroupEditForm
 from django.shortcuts import render, redirect, get_object_or_404
 from .models import GroupLog, UserLog, Audit
+from django.contrib import messages
 
 
 def home(request):
@@ -18,7 +18,7 @@ def home(request):
 
 
 def register(request):
-    """Регистрация пользователя с записью в журнал действий"""
+    """Регистрация пользователя"""
     if request.method == 'POST':
         form = CustomUserRegistrationForm(request.POST, request.FILES)
         if form.is_valid():
@@ -26,11 +26,11 @@ def register(request):
             login(request, user)
             Audit.objects.create(
                 username=user.username,
-                action_type='create',
+                action_type='register',
                 entity_type='user',
                 entity_name=user.username,
                 timestamp=now(),
-                details=f"Пользователь {user.username} зарегистрирован."
+                details=f"Пользователь {user.username} зарегистрирован, почта {user.email}, телефон {user.phone_number}."
             )
             return redirect('home')
         else:
@@ -142,12 +142,21 @@ def group_create(request):
 def group_edit(request, group_name):
     """Редактирование группы"""
     group_log = get_object_or_404(GroupLog, groupname=group_name)
+    username = request.user.username if request.user.is_authenticated else "Аноним"
     if request.method == "POST":
         form = GroupEditForm(request.POST)
         if form.is_valid():
             new_groupname = form.cleaned_data['groupname']
             if new_groupname.startswith('pg_'):
                 messages.error(request, "Имя группы не может начинаться с 'pg_'.")
+                Audit.objects.create(
+                    username=username,
+                    action_type='update',
+                    entity_type='group',
+                    entity_name=group_name,
+                    timestamp=now(),
+                    details=f"Неудачная попытка переименовать группу с '{group_name}' в '{new_groupname}', запрещенный префикс 'pg_'"
+                )
                 return render(request, 'groups/group_edit.html', {
                     'form': form,
                     'group_name': group_name,
@@ -158,6 +167,14 @@ def group_edit(request, group_name):
                 existing_group = cursor.fetchone()
             if existing_group:
                 messages.error(request, f"Группа с именем '{new_groupname}' уже существует!")
+                Audit.objects.create(
+                    username=username,
+                    action_type='update',
+                    entity_type='group',
+                    entity_name=group_name,
+                    timestamp=now(),
+                    details=f"Неудачная попытка переименовать группу с '{group_name}' в '{new_groupname}', группа уже существует."
+                )
                 return render(request, 'groups/group_edit.html', {
                     'form': form,
                     'group_name': group_name,
@@ -169,9 +186,26 @@ def group_edit(request, group_name):
                 group_log.groupname = new_groupname
                 group_log.updated_at = timezone.now()
                 group_log.save()
+                Audit.objects.create(
+                    username=username,
+                    action_type='update',
+                    entity_type='group',
+                    entity_name=new_groupname,
+                    timestamp=now(),
+                    details=f"Группа '{group_name}' успешно переименована в '{new_groupname}'."
+                )
+
                 return redirect('group_list')
             except Exception as e:
                 messages.error(request, f"Ошибка при редактировании группы: {e}")
+                Audit.objects.create(
+                    username=username,
+                    action_type='update',
+                    entity_type='group',
+                    entity_name=group_name,
+                    timestamp=now(),
+                    details=f"Ошибка при редактировании группы '{group_name}': {str(e)}"
+                )
     else:
         form = GroupEditForm(initial={'groupname': group_log.groupname})
     return render(request, 'groups/group_edit.html', {
@@ -182,16 +216,32 @@ def group_edit(request, group_name):
 
 
 def group_delete(request, group_name):
-    """Удаление группы из базы и логов"""
+    """Удаление группы"""
+    username = request.user.username if request.user.is_authenticated else "Аноним"
     try:
         with connection.cursor() as cursor:
             cursor.execute(f'DROP ROLE IF EXISTS "{group_name}";')
         group_log = GroupLog.objects.filter(groupname=group_name).first()
         if group_log:
             group_log.delete()
-        # messages.success(request, f'Группа "{group_name}" успешно удалена.')
+            Audit.objects.create(
+                username=username,
+                action_type='delete',
+                entity_type='group',
+                entity_name=group_name,
+                timestamp=now(),
+                details=f"Группа '{group_name}' успешно удалена."
+            )
     except Exception as e:
         messages.error(request, f'Ошибка при удалении группы: {e}')
+        Audit.objects.create(
+            username=username,
+            action_type='delete',
+            entity_type='group',
+            entity_name=group_name,
+            timestamp=now(),
+            details=f"Ошибка при удалении группы '{group_name}': {str(e)}"
+        )
     return HttpResponseRedirect(reverse('group_list'))
 
 
@@ -250,20 +300,45 @@ def user_create(request):
             username = form.cleaned_data['username']
             email = form.cleaned_data.get('email', None)
             password = form.cleaned_data['password']
+            user_requester = request.user.username if request.user.is_authenticated else "Аноним"
             with connection.cursor() as cursor:
                 cursor.execute("SELECT 1 FROM pg_roles WHERE rolname = %s;", [username])
                 user_exists = cursor.fetchone()
             email_exists = UserLog.objects.filter(email=email).exists() if email else False
             if user_exists:
                 messages.error(request, f"Пользователь с логином '{username}' уже существует!")
+                Audit.objects.create(
+                    username=user_requester,
+                    action_type='create',
+                    entity_type='user',
+                    entity_name=username,
+                    timestamp=now(),
+                    details=f"Неудачная попытка создания пользователя '{username}', пользователь уже существует."
+                )
                 return render(request, 'users/user_create.html', {'form': form})
             if email_exists:
                 messages.error(request, f"Почта '{email}' уже используется другим пользователем!")
+                Audit.objects.create(
+                    username=user_requester,
+                    action_type='create',
+                    entity_type='user',
+                    entity_name=username,
+                    timestamp=now(),
+                    details=f"Неудачная попытка создания почты '{email}' у пользователя '{username}', почта уже используется."
+                )
                 return render(request, 'users/user_create.html', {'form': form})
             try:
                 with connection.cursor() as cursor:
                     cursor.execute(f"CREATE USER {username} WITH PASSWORD %s;", [password])
                 UserLog.objects.create(username=username, email=email)
+                Audit.objects.create(
+                    username=user_requester,
+                    action_type='create',
+                    entity_type='user',
+                    entity_name=username,
+                    timestamp=now(),
+                    details=f"Пользователь '{username}' успешно создан, почта {email}"
+                )
                 if email:
                     subject = "Ваши учетные данные"
                     html_message = render_to_string('send_email/send_user_create.html', {
@@ -276,8 +351,24 @@ def user_create(request):
                 return redirect('user_list')
             except IntegrityError:
                 messages.error(request, f"Пользователь с логином '{username}' уже существует в системе!")
-            except Exception as e:
-                messages.error(request, f"Ошибка: {str(e)}")
+                Audit.objects.create(
+                    username=user_requester,
+                    action_type='create',
+                    entity_type='user',
+                    entity_name=username,
+                    timestamp=now(),
+                    details=f"Неудачная попытка создания пользователя '{username}', пользователь уже существует."
+                )
+            except Exception:
+                messages.error(request, f"Ошибка.")
+                Audit.objects.create(
+                    username=user_requester,
+                    action_type='create',
+                    entity_type='user',
+                    entity_name=username,
+                    timestamp=now(),
+                    details=f"Ошибка при создании пользователя '{username}'."
+                )
     else:
         form = UserCreateForm()
     return render(request, 'users/user_create.html', {'form': form})
@@ -321,13 +412,11 @@ def user_info(request, username):
     return render(request, 'users/user_info.html', {'user_data': user_data})
 
 
-from django.contrib import messages
-
-
 def user_edit(request):
     """Редактирование пользователя"""
     username = request.GET.get('username')
     user_log = get_object_or_404(UserLog, username=username)
+    user_requester = request.user.username if request.user.is_authenticated else "Аноним"
     with connection.cursor() as cursor:
         cursor.execute("""
             SELECT r.rolname
@@ -345,17 +434,25 @@ def user_edit(request):
         """)
         all_groups = {group[0] for group in cursor.fetchall()}
     available_groups = all_groups - current_groups
+    has_changes = False
+    errors = []
+    group_changes = []
     if request.method == "POST":
         new_email = request.POST.get('new_email')
         new_password = request.POST.get('new_password')
         selected_groups = set(filter(None, request.POST.get('selected_groups', '').split(',')))
         deleted_groups = set(filter(None, request.POST.get('deleted_groups', '').split(',')))
-        errors = []
-        has_changes = False
-        group_changes = []
         if user_log.email != new_email:
             if UserLog.objects.filter(email=new_email).exclude(username=username).exists():
-                messages.error(request, f"Почта '{new_email}' уже используется другим пользователем!")
+                messages.error(request, f"Почта '{new_email}' уже используется другим пользователем")
+                Audit.objects.create(
+                    username=user_requester,
+                    action_type='update',
+                    entity_type='user',
+                    entity_name=username,
+                    timestamp=now(),
+                    details=f"Неудачная попытка изменить почту '{new_email}' у пользователя '{username}', почта уже используется."
+                )
                 return render(request, 'users/user_edit.html', {
                     'username': username,
                     'user_log': user_log,
@@ -366,15 +463,48 @@ def user_edit(request):
                 user_log.email = new_email if new_email else None
                 user_log.save()
                 has_changes = True
-            except Exception as e:
-                errors.append(f"Ошибка при обновлении email: {e}")
-        if new_password:
-            try:
-                with connection.cursor() as cursor:
-                    cursor.execute(f"ALTER USER {username} WITH PASSWORD %s;", [new_password])
-                has_changes = True
-            except Exception as e:
-                errors.append(f"Ошибка при смене пароля: {e}")
+                Audit.objects.create(
+                    username=user_requester,
+                    action_type='update',
+                    entity_type='user',
+                    entity_name=username,
+                    timestamp=now(),
+                    details=f"Почта пользователя '{username}' изменена на '{new_email}'."
+                )
+            except Exception:
+                errors.append(f"Ошибка при обновлении почты.")
+                Audit.objects.create(
+                    username=user_requester,
+                    action_type='update',
+                    entity_type='user',
+                    entity_name=username,
+                    timestamp=now(),
+                    details=f"Ошибка при обновлении почты пользователя '{username}'."
+                )
+        # if new_password:
+        #     try:
+        #         with connection.cursor() as cursor:
+        #             cursor.execute(f"ALTER USER {username} WITH PASSWORD %s;", [new_password])
+        #         has_changes = True
+        #         Audit.objects.create(
+        #             username=user_requester,
+        #             action_type='update',
+        #             entity_type='user',
+        #             entity_name=username,
+        #             timestamp=now(),
+        #             details=f"✅ Пароль пользователя '{username}' был изменен."
+        #         )
+            # except Exception as e:
+            #     errors.append(f"Ошибка при смене пароля: {e}")
+            #     Audit.objects.create(
+            #         username=user_requester,
+            #         action_type='update',
+            #         entity_type='user',
+            #         entity_name=username,
+            #         timestamp=now(),
+            #         details=f"⚠️ Ошибка при смене пароля пользователя '{username}': {str(e)}"
+            #     )
+
         if selected_groups != current_groups:
             has_changes = True
             for groupname in deleted_groups:
@@ -382,16 +512,49 @@ def user_edit(request):
                     with connection.cursor() as cursor:
                         cursor.execute(f"REVOKE {groupname} FROM {username};")
                     group_changes.append(f"Удален из группы: {groupname}")
-                except Exception as e:
-                    errors.append(f"Ошибка при удалении группы '{groupname}': {e}")
+                    Audit.objects.create(
+                        username=user_requester,
+                        action_type='update',
+                        entity_type='user',
+                        entity_name=username,
+                        timestamp=now(),
+                        details=f"Пользователь '{username}' был удален из группы '{groupname}'."
+                    )
+                except Exception:
+                    errors.append(f"Ошибка при удалении группы '{groupname}'.")
+                    Audit.objects.create(
+                        username=user_requester,
+                        action_type='update',
+                        entity_type='user',
+                        entity_name=username,
+                        timestamp=now(),
+                        details=f"Ошибка при удалении '{username}' из группы '{groupname}'."
+                    )
+
             for groupname in selected_groups:
                 if groupname not in current_groups:
                     try:
                         with connection.cursor() as cursor:
                             cursor.execute(f"GRANT {groupname} TO {username};")
                         group_changes.append(f"Добавлен в группу: {groupname}")
-                    except Exception as e:
-                        errors.append(f"Ошибка при добавлении группы '{groupname}': {e}")
+                        Audit.objects.create(
+                            username=user_requester,
+                            action_type='update',
+                            entity_type='user',
+                            entity_name=username,
+                            timestamp=now(),
+                            details=f"Пользователь '{username}' был добавлен в группу '{groupname}'."
+                        )
+                    except Exception:
+                        errors.append(f"Ошибка при добавлении группы '{groupname}'.")
+                        Audit.objects.create(
+                            username=user_requester,
+                            action_type='update',
+                            entity_type='user',
+                            entity_name=username,
+                            timestamp=now(),
+                            details=f"Ошибка при добавлении '{username}' в группу '{groupname}'."
+                        )
         if has_changes and user_log.email:
             subject = "Изменение учетной записи"
             html_message = render_to_string('send_email/send_user_edit.html', {
@@ -402,6 +565,14 @@ def user_edit(request):
             email_message = EmailMultiAlternatives(subject, "", settings.EMAIL_HOST_USER, [user_log.email])
             email_message.attach_alternative(html_message, "text/html")
             email_message.send()
+            Audit.objects.create(
+                username=user_requester,
+                action_type='update',
+                entity_type='user',
+                entity_name=username,
+                timestamp=now(),
+                details=f"Уведомление об изменении учетной записи отправлено пользователю '{username}'."
+            )
         if errors:
             messages.error(request, "<br>".join(errors))
             return render(request, 'users/user_edit.html', {
@@ -421,6 +592,7 @@ def user_edit(request):
 
 def user_delete(request, username):
     """Удаление пользователя"""
+    user_requester = request.user.username if request.user.is_authenticated else "Аноним"
     try:
         user_log = UserLog.objects.filter(username=username).first()
         user_email = user_log.email if user_log else None
@@ -428,14 +600,50 @@ def user_delete(request, username):
             cursor.execute(f"DROP USER IF EXISTS {username};")
         if user_log:
             user_log.delete()
+        Audit.objects.create(
+            username=user_requester,
+            action_type='delete',
+            entity_type='user',
+            entity_name=username,
+            timestamp=now(),
+            details=f"Пользователь '{username}' был удален из системы."
+        )
         if user_email:
-            subject = "Ваш аккаунт был удален"
-            html_message = render_to_string('send_email/send_user_delete.html', {
-                'username': username
-            })
-            email_message = EmailMultiAlternatives(subject, "", settings.EMAIL_HOST_USER, [user_email])
-            email_message.attach_alternative(html_message, "text/html")
-            email_message.send()
+            try:
+                subject = "Ваш аккаунт был удален"
+                html_message = render_to_string('send_email/send_user_delete.html', {
+                    'username': username
+                })
+                email_message = EmailMultiAlternatives(subject, "", settings.EMAIL_HOST_USER, [user_email])
+                email_message.attach_alternative(html_message, "text/html")
+                email_message.send()
+                Audit.objects.create(
+                    username=user_requester,
+                    action_type='delete',
+                    entity_type='user',
+                    entity_name=username,
+                    timestamp=now(),
+                    details=f"Уведомление об удалении аккаунта отправлено на '{user_email}'."
+                )
+            except Exception:
+                Audit.objects.create(
+                    username=user_requester,
+                    action_type='delete',
+                    entity_type='user',
+                    entity_name=username,
+                    timestamp=now(),
+                    details=f"Ошибка при отправке почты об удалении '{username}'."
+                )
         return redirect('user_list')
-    except Exception as e:
-        return HttpResponse(f"Ошибка при удалении пользователя: {e}")
+    except Exception:
+        error_message = f"Ошибка при удалении пользователя '{username}'."
+        Audit.objects.create(
+            username=user_requester,
+            action_type='delete',
+            entity_type='user',
+            entity_name=username,
+            timestamp=now(),
+            details=error_message
+        )
+        return HttpResponse(error_message)
+
