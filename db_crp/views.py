@@ -1,5 +1,6 @@
 from django.conf import settings
 from django.contrib.auth import login, logout
+from django.contrib.auth.decorators import login_required
 from django.core.mail import EmailMultiAlternatives
 from django.db import connection, IntegrityError
 from django.http import HttpResponse, HttpResponseRedirect
@@ -49,6 +50,7 @@ def logout_view(request):
 
 
 # TODO ГРУППЫ
+@login_required
 def group_list(request):
     """Список групп"""
     with connection.cursor() as cursor:
@@ -79,6 +81,7 @@ def group_list(request):
     })
 
 
+@login_required
 def group_create(request):
     """Создание группы"""
     if request.method == "POST":
@@ -139,6 +142,7 @@ def group_create(request):
     return render(request, 'groups/group_create.html', {'form': form})
 
 
+@login_required
 def group_edit(request, group_name):
     """Редактирование группы"""
     group_log = get_object_or_404(GroupLog, groupname=group_name)
@@ -215,6 +219,7 @@ def group_edit(request, group_name):
     })
 
 
+@login_required
 def group_delete(request, group_name):
     """Удаление группы"""
     username = request.user.username if request.user.is_authenticated else "Аноним"
@@ -245,6 +250,7 @@ def group_delete(request, group_name):
     return HttpResponseRedirect(reverse('group_list'))
 
 
+@login_required
 def group_users(request, group_name):
     """Пользователи в группе"""
     group_log = get_object_or_404(GroupLog, groupname=group_name)
@@ -266,6 +272,7 @@ def group_users(request, group_name):
 
 
 # TODO ПОЛЬЗОВАТЕЛИ
+@login_required
 def user_list(request):
     """Список пользователей"""
     with connection.cursor() as cursor:
@@ -292,6 +299,7 @@ def user_list(request):
     return render(request, 'users/user_list.html', {'users_data': users_data})
 
 
+@login_required
 def user_create(request):
     """Создать пользователя"""
     if request.method == "POST":
@@ -374,6 +382,7 @@ def user_create(request):
     return render(request, 'users/user_create.html', {'form': form})
 
 
+@login_required
 def user_info(request, username):
     """Информация пользователя"""
     with connection.cursor() as cursor:
@@ -412,6 +421,7 @@ def user_info(request, username):
     return render(request, 'users/user_info.html', {'user_data': user_data})
 
 
+@login_required
 def user_edit(request):
     """Редактирование пользователя"""
     username = request.GET.get('username')
@@ -494,16 +504,16 @@ def user_edit(request):
         #             timestamp=now(),
         #             details=f"✅ Пароль пользователя '{username}' был изменен."
         #         )
-            # except Exception as e:
-            #     errors.append(f"Ошибка при смене пароля: {e}")
-            #     Audit.objects.create(
-            #         username=user_requester,
-            #         action_type='update',
-            #         entity_type='user',
-            #         entity_name=username,
-            #         timestamp=now(),
-            #         details=f"⚠️ Ошибка при смене пароля пользователя '{username}': {str(e)}"
-            #     )
+        # except Exception as e:
+        #     errors.append(f"Ошибка при смене пароля: {e}")
+        #     Audit.objects.create(
+        #         username=user_requester,
+        #         action_type='update',
+        #         entity_type='user',
+        #         entity_name=username,
+        #         timestamp=now(),
+        #         details=f"⚠️ Ошибка при смене пароля пользователя '{username}': {str(e)}"
+        #     )
 
         if selected_groups != current_groups:
             has_changes = True
@@ -590,6 +600,7 @@ def user_edit(request):
     })
 
 
+@login_required
 def user_delete(request, username):
     """Удаление пользователя"""
     user_requester = request.user.username if request.user.is_authenticated else "Аноним"
@@ -646,4 +657,3 @@ def user_delete(request, username):
             details=error_message
         )
         return HttpResponse(error_message)
-
