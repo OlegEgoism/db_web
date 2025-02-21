@@ -29,7 +29,7 @@
                         <small>Групп: {{ user.group_count }} шт.</small>
                     </div>
                     <div class="user-actions">
-                        <a href="{% url 'user_edit' %}?username={{ user.username }}" class="btn btn-edit">Редактировать</a>
+                        <a href="{% url 'user_edit' username=user.username %}" class="btn btn-edit">Редактировать</a>
                         <a href="{% url 'user_delete' username=user.username %}" class="btn btn-delete" onclick="return confirm('Удалить пользователя {{ user.username }}?')">Удалить</a>
                     </div>
                 </div>

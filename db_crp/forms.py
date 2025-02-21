@@ -21,7 +21,7 @@ class CustomUserRegistrationForm(UserCreationForm):
 
 
 class UserCreateForm(forms.Form):
-    """Форма для создания пользователя"""
+    """Создания пользователя"""
     username = forms.CharField(label="Логин", max_length=150)
     email = forms.EmailField(label="Почта")
     password = forms.CharField(label="Пароль", widget=forms.PasswordInput)
@@ -30,7 +30,7 @@ class UserCreateForm(forms.Form):
 
 
 class UserEditForm(forms.Form):
-    """Форма для редактирования пользователя"""
+    """Редактирование пользователя"""
     email = forms.EmailField(label="Почта", required=False)
     new_password = forms.CharField(label="Новый пароль", widget=forms.PasswordInput)
     can_create_db = forms.BooleanField(label="Может создавать БД", required=False)
@@ -43,5 +43,5 @@ class GroupEditForm(forms.Form):
 
 
 class CreateGroupForm(forms.Form):
-    """Форма для создания группы с уникальным именем"""
+    """Создание группы"""
     groupname = forms.CharField(label="Название", max_length=150)

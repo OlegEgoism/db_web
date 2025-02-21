@@ -454,33 +454,29 @@ def user_info(request, username):
 
 
 @login_required
-def user_edit(request):
+def user_edit(request, username):
     """Редактирование пользователя"""
-    username = request.GET.get('username')
     user_requester = request.user.username if request.user.is_authenticated else "Аноним"
-
-    # Проверяем, существует ли пользователь в PostgreSQL
     with connection.cursor() as cursor:
         cursor.execute("SELECT 1 FROM pg_user WHERE usename = %s;", [username])
-        existing_user = cursor.fetchone()
-    if not existing_user:
-        messages.error(request, f"Пользователь '{username}' не существует в системе баз данных!")
+    user_log, created = UserLog.objects.get_or_create(
+        username=username,
+        defaults={
+            'email': None,
+            'created_at': created_at,
+            'updated_at': updated_at
+        }
+    )
+    if created:
+        messages.info(request, f"Автоматическое создание 'Дата создания' и 'Дата изменения' пользователя '{username}'.")
         Audit.objects.create(
             username=user_requester,
-            action_type='update',
+            action_type='create',
             entity_type='user',
             entity_name=username,
             timestamp=now(),
-            details=f"Неудачная попытка редактирования несуществующего пользователя '{username}'."
+            details=f"Автоматическое создание 'Дата создания' и 'Дата изменения' пользователя '{username}'."
         )
-        return redirect('user_list')
-    # Проверяем, существует ли лог пользователя
-    user_log, created = UserLog.objects.get_or_create(
-        username=username,
-        defaults={'email': None, 'created_at': created_at, 'updated_at': updated_at}
-    )
-    if created:
-        messages.info(request, f"Лог пользователя '{username}' был создан автоматически.")
 
     with connection.cursor() as cursor:
         cursor.execute("""
@@ -491,29 +487,24 @@ def user_edit(request):
             WHERE u.usename = %s;
         """, [username])
         current_groups = {group[0] for group in cursor.fetchall()}
-
         cursor.execute("""
             SELECT rolname 
             FROM pg_roles 
             WHERE rolcanlogin = FALSE AND rolname NOT LIKE 'pg_%';
         """)
         all_groups = {group[0] for group in cursor.fetchall()}
-
     available_groups = all_groups - current_groups
     has_changes = False
     errors = []
     group_changes = []
-
     if request.method == "POST":
         new_email = request.POST.get('new_email')
         new_password = request.POST.get('new_password')
         selected_groups = set(filter(None, request.POST.get('selected_groups', '').split(',')))
         deleted_groups = set(filter(None, request.POST.get('deleted_groups', '').split(',')))
-
-        # Обработка почты пользователя
         if user_log.email != new_email:
             if UserLog.objects.filter(email=new_email).exclude(username=username).exists():
-                messages.error(request, f"Почта '{new_email}' уже используется другим пользователем")
+                messages.error(request, f"Неудачная попытка изменить почту '{new_email}' у пользователя '{username}', почта уже используется.")
                 Audit.objects.create(
                     username=user_requester,
                     action_type='update',
@@ -542,8 +533,6 @@ def user_edit(request):
                 )
             except Exception as e:
                 errors.append(f"Ошибка при обновлении почты: {str(e)}")
-
-        # Обработка групп пользователя
         if selected_groups != current_groups:
             has_changes = True
             for groupname in deleted_groups:
@@ -561,7 +550,6 @@ def user_edit(request):
                     )
                 except Exception as e:
                     errors.append(f"Ошибка при удалении группы '{groupname}': {str(e)}")
-
             for groupname in selected_groups:
                 if groupname not in current_groups:
                     try:
@@ -578,8 +566,6 @@ def user_edit(request):
                         )
                     except Exception as e:
                         errors.append(f"Ошибка при добавлении группы '{groupname}': {str(e)}")
-
-        # Отправка уведомления пользователю по почте
         if has_changes and user_log.email:
             subject = "Изменение учетной записи"
             html_message = render_to_string('send_email/send_user_edit.html', {
@@ -598,7 +584,6 @@ def user_edit(request):
                 timestamp=now(),
                 details=f"Уведомление об изменении учетной записи отправлено пользователю '{username}'."
             )
-
         if errors:
             messages.error(request, "<br>".join(errors))
             return render(request, 'users/user_edit.html', {

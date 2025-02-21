@@ -71,7 +71,7 @@
             </div>
             <div class="all-btn">
                 <a href="{% url 'user_list' %}" class="btn btn-cancel">Назад</a>
-                <a href="{% url 'user_edit' %}?username={{ user_data.username }}" class="btn btn-edit">Редактировать</a>
+                <a href="{% url 'user_edit' username=user.username %}" class="btn btn-edit">Редактировать</a>
             </div>
         {% else %}
             <h1 class="welcome-title">Пользователь не найден</h1>

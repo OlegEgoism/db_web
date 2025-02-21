@@ -56,7 +56,7 @@ urlpatterns = [
     # Создание группы
     path('group_create/', group_create, name='group_create'),
     # Редактирование группы
-    path('groups/edit/<str:group_name>/', group_edit, name='group_edit'),
+    path('groups_edit/<str:group_name>/', group_edit, name='group_edit'),
     # Удаление группы
     path('group_delete/<str:group_name>/', group_delete, name='group_delete'),
     # Пользователи в группе
@@ -69,7 +69,7 @@ urlpatterns = [
     # Информация о пользователе
     path('user_info/<str:username>/', user_info, name='user_info'),
     # Редактирование пользователя
-    path('user_edit/', user_edit, name='user_edit'),
+    path('user_edit/<str:username>/', user_edit, name='user_edit'),
     # Удаление пользователя
     path('user_delete/<str:username>/', user_delete, name='user_delete'),
 
