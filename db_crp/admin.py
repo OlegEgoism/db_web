@@ -44,6 +44,7 @@ class CustomUserAdmin(admin.ModelAdmin):
 class GroupLogAdmin(admin.ModelAdmin):
     """Логи групп"""
     list_display = 'groupname', 'created_at', 'updated_at'
+    readonly_fields = 'groupname', 'created_at', 'updated_at'
     search_fields = 'groupname',
     search_help_text = 'Поиск по имени группы'
     date_hierarchy = 'created_at'
@@ -55,6 +56,7 @@ class GroupLogAdmin(admin.ModelAdmin):
 class UserLogAdmin(admin.ModelAdmin):
     """Логи пользователей"""
     list_display = 'username', 'email', 'created_at', 'updated_at'
+    readonly_fields = 'username', 'created_at', 'updated_at'
     search_fields = 'username', 'email',
     search_help_text = 'Поиск по имени пользователя и адресу электронной почты'
     date_hierarchy = 'created_at'

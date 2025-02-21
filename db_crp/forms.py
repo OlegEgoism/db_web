@@ -27,9 +27,17 @@ class UserCreateForm(forms.Form):
     password = forms.CharField(label="Пароль", widget=forms.PasswordInput)
 
 
-class ChangePasswordForm(forms.Form):
-    """Смена пароля"""
+# class ChangePasswordForm(forms.Form):
+#     """Смена пароля"""
+#     new_password = forms.CharField(label="Новый пароль", widget=forms.PasswordInput)
+
+class UserEditForm(forms.Form):
+    """Форма для редактирования пользователя"""
+    email = forms.EmailField(label="Почта", required=False)
     new_password = forms.CharField(label="Новый пароль", widget=forms.PasswordInput)
+    can_create_db = forms.BooleanField(label="Может создавать БД", required=False)
+    is_superuser = forms.BooleanField(label="Суперпользователь", required=False)
+
 
 
 class GroupEditForm(forms.Form):

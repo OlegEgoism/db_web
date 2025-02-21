@@ -6,6 +6,18 @@
         {% if user_data %}
             <h1 class="welcome-title">Информация пользователя: {{ user_data.username }}</h1>
             <hr>
+
+            <!-- Вывод сообщений об ошибках -->
+            {% if messages %}
+                <div class="messages">
+                    {% for message in messages %}
+                        <div class="alert {% if message.tags == 'success' %}alert-success{% else %}alert-error{% endif %}" role="alert">
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+
             <div class="info-item">
                 <span class="info-label">ID пользователя:</span>
                 <span class="info-value">{{ user_data.user_id }}</span>
