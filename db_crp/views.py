@@ -607,7 +607,6 @@ def user_edit(request, username):
 
 
 
-
 @login_required
 def user_delete(request, username):
     """Удаление пользователя"""
@@ -615,7 +614,21 @@ def user_delete(request, username):
     user_log = UserLog.objects.filter(username=username).first()
     user_email = user_log.email if user_log else None
     with connection.cursor() as cursor:
-        cursor.execute(f"DROP USER IF EXISTS {username};")
+        try:
+            cursor.execute(f"REASSIGN OWNED BY {username} TO postgres;")
+            cursor.execute(f"DROP OWNED BY {username};")
+            cursor.execute(f"DROP USER IF EXISTS {username};")
+        except Exception:
+            messages.error(request, f"Неудачная попытка при удалении пользователя '{username}', не может быть удален, так как существуют зависимые объекты в базе данных.")
+            Audit.objects.create(
+                username=user_requester,
+                action_type='delete',
+                entity_type='user',
+                entity_name=username,
+                timestamp=now(),
+                details=f"Неудачная попытка при удалении пользователя '{username}', не может быть удален, так как существуют зависимые объекты в базе данных."
+            )
+            return redirect('user_list')
     if user_log:
         user_log.delete()
     Audit.objects.create(
