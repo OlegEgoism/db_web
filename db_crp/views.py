@@ -624,7 +624,7 @@ def user_delete(request, username):
         entity_type='user',
         entity_name=username,
         timestamp=now(),
-        details=f"Пользователь '{username}' был удален из системы."
+        details=f"Пользователь '{username}' был удален из системы"
     )
     if user_email:
         subject = "Ваш аккаунт был удален"
@@ -640,8 +640,7 @@ def user_delete(request, username):
             entity_type='user',
             entity_name=username,
             timestamp=now(),
-            details=f"Уведомление об удалении аккаунта отправлено на '{user_email}'."
+            details=f"Уведомление об удалении аккаунта пользователя '{username}' отправлено на '{user_email}'."
         )
-
     return redirect('user_list')
 
