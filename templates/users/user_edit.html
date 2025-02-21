@@ -28,16 +28,14 @@
                 <input type="password" id="new_password" name="new_password" placeholder="Введите новый пароль">
             </div>
             <div class="info-item">
-                <label for="can_create_db" class="info-label">Может создавать БД:</label>
-                <input type="checkbox" id="can_create_db" name="can_create_db"
-                       {% if can_create_db %}checked{% endif %}>
+                <label for="new_can_create_db" class="info-label">Может создавать БД:</label>
+                <input type="checkbox" id="new_can_create_db" name="can_create_db" {% if form.can_create_db.value %}checked{% endif %}>
+            </div>
+            <div class="info-item">
+                <label for="new_is_superuser" class="info-label">Суперпользователь:</label>
+                <input type="checkbox" id="new_is_superuser" name="is_superuser" {% if form.is_superuser.value %}checked{% endif %}>
             </div>
 
-            <div class="info-item">
-                <label for="is_superuser" class="info-label">Суперпользователь:</label>
-                <input type="checkbox" id="is_superuser" name="is_superuser"
-                       {% if is_superuser %}checked{% endif %}>
-            </div>
             <div class="group-container">
                 <div>
                     <h4>Группы пользователя</h4>

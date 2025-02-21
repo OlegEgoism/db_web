@@ -612,56 +612,36 @@ def user_edit(request, username):
 def user_delete(request, username):
     """Удаление пользователя"""
     user_requester = request.user.username if request.user.is_authenticated else "Аноним"
-    try:
-        user_log = UserLog.objects.filter(username=username).first()
-        user_email = user_log.email if user_log else None
-        with connection.cursor() as cursor:
-            cursor.execute(f"DROP USER IF EXISTS {username};")
-        if user_log:
-            user_log.delete()
+    user_log = UserLog.objects.filter(username=username).first()
+    user_email = user_log.email if user_log else None
+    with connection.cursor() as cursor:
+        cursor.execute(f"DROP USER IF EXISTS {username};")
+    if user_log:
+        user_log.delete()
+    Audit.objects.create(
+        username=user_requester,
+        action_type='delete',
+        entity_type='user',
+        entity_name=username,
+        timestamp=now(),
+        details=f"Пользователь '{username}' был удален из системы."
+    )
+    if user_email:
+        subject = "Ваш аккаунт был удален"
+        html_message = render_to_string('send_email/send_user_delete.html', {
+            'username': username
+        })
+        email_message = EmailMultiAlternatives(subject, "", settings.EMAIL_HOST_USER, [user_email])
+        email_message.attach_alternative(html_message, "text/html")
+        email_message.send()
         Audit.objects.create(
             username=user_requester,
             action_type='delete',
             entity_type='user',
             entity_name=username,
             timestamp=now(),
-            details=f"Пользователь '{username}' был удален из системы."
+            details=f"Уведомление об удалении аккаунта отправлено на '{user_email}'."
         )
-        if user_email:
-            try:
-                subject = "Ваш аккаунт был удален"
-                html_message = render_to_string('send_email/send_user_delete.html', {
-                    'username': username
-                })
-                email_message = EmailMultiAlternatives(subject, "", settings.EMAIL_HOST_USER, [user_email])
-                email_message.attach_alternative(html_message, "text/html")
-                email_message.send()
-                Audit.objects.create(
-                    username=user_requester,
-                    action_type='delete',
-                    entity_type='user',
-                    entity_name=username,
-                    timestamp=now(),
-                    details=f"Уведомление об удалении аккаунта отправлено на '{user_email}'."
-                )
-            except Exception:
-                Audit.objects.create(
-                    username=user_requester,
-                    action_type='delete',
-                    entity_type='user',
-                    entity_name=username,
-                    timestamp=now(),
-                    details=f"Ошибка при отправке почты об удалении '{username}'."
-                )
-        return redirect('user_list')
-    except Exception:
-        error_message = f"Ошибка при удалении пользователя '{username}'."
-        Audit.objects.create(
-            username=user_requester,
-            action_type='delete',
-            entity_type='user',
-            entity_name=username,
-            timestamp=now(),
-            details=error_message
-        )
-        return HttpResponse(error_message)
+
+    return redirect('user_list')
+

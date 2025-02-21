@@ -32,7 +32,7 @@ class UserCreateForm(forms.Form):
 class UserEditForm(forms.Form):
     """Редактирование пользователя"""
     email = forms.EmailField(label="Почта", required=False)
-    new_password = forms.CharField(label="Новый пароль", widget=forms.PasswordInput)
+    password = forms.CharField(label="Пароль", widget=forms.PasswordInput, required=False)
     can_create_db = forms.BooleanField(label="Может создавать БД", required=False)
     is_superuser = forms.BooleanField(label="Суперпользователь", required=False)
 
