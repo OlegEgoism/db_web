@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from django.conf import settings
 from django.contrib.auth import login, logout
 from django.contrib.auth.decorators import login_required
@@ -145,8 +147,34 @@ def group_create(request):
 @login_required
 def group_edit(request, group_name):
     """Редактирование группы"""
-    group_log = get_object_or_404(GroupLog, groupname=group_name)
     username = request.user.username if request.user.is_authenticated else "Аноним"
+
+    # Проверяем, существует ли группа в PostgreSQL
+    with connection.cursor() as cursor:
+        cursor.execute("SELECT 1 FROM pg_roles WHERE rolname = %s;", [group_name])
+        existing_group = cursor.fetchone()
+
+    if not existing_group:
+        messages.error(request, f"Группа '{group_name}' не существует в системе баз данных!")
+        Audit.objects.create(
+            username=username,
+            action_type='update',
+            entity_type='group',
+            entity_name=group_name,
+            timestamp=now(),
+            details=f"Неудачная попытка редактирования несуществующей группы '{group_name}'."
+        )
+        return redirect('group_list')
+
+    # Проверяем, существует ли лог группы, если нет — создаём его
+    group_log, created = GroupLog.objects.get_or_create(
+        groupname=group_name,
+        defaults={'created_at': timezone.now(), 'updated_at': timezone.now()}
+    )
+
+    if created:
+        messages.info(request, f"Лог группы '{group_name}' был создан автоматически.")
+
     if request.method == "POST":
         form = GroupEditForm(request.POST)
         if form.is_valid():
@@ -166,9 +194,11 @@ def group_edit(request, group_name):
                     'group_name': group_name,
                     'group_log': group_log
                 })
+
             with connection.cursor() as cursor:
                 cursor.execute("SELECT 1 FROM pg_roles WHERE rolname = %s;", [new_groupname])
                 existing_group = cursor.fetchone()
+
             if existing_group:
                 messages.error(request, f"Группа с именем '{new_groupname}' уже существует!")
                 Audit.objects.create(
@@ -184,12 +214,15 @@ def group_edit(request, group_name):
                     'group_name': group_name,
                     'group_log': group_log
                 })
+
             try:
                 with connection.cursor() as cursor:
                     cursor.execute(f"ALTER ROLE {group_name} RENAME TO {new_groupname};")
+
                 group_log.groupname = new_groupname
                 group_log.updated_at = timezone.now()
                 group_log.save()
+
                 Audit.objects.create(
                     username=username,
                     action_type='update',
@@ -198,8 +231,8 @@ def group_edit(request, group_name):
                     timestamp=now(),
                     details=f"Группа '{group_name}' успешно переименована в '{new_groupname}'."
                 )
-
                 return redirect('group_list')
+
             except Exception as e:
                 messages.error(request, f"Ошибка при редактировании группы: {e}")
                 Audit.objects.create(
@@ -212,6 +245,7 @@ def group_edit(request, group_name):
                 )
     else:
         form = GroupEditForm(initial={'groupname': group_log.groupname})
+
     return render(request, 'groups/group_edit.html', {
         'form': form,
         'group_name': group_name,
@@ -421,12 +455,38 @@ def user_info(request, username):
     return render(request, 'users/user_info.html', {'user_data': user_data})
 
 
+from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib import messages
+from django.utils.timezone import now
+from django.contrib.auth.decorators import login_required
+from django.core.mail import EmailMultiAlternatives
+from django.conf import settings
+from django.template.loader import render_to_string
+from .models import UserLog, Audit
+from django.db import connection
+
 @login_required
 def user_edit(request):
     """Редактирование пользователя"""
     username = request.GET.get('username')
-    user_log = get_object_or_404(UserLog, username=username)
+
+    # Проверка, указан ли username в GET параметрах
+    if not username:
+        messages.error(request, "Имя пользователя не указано.")
+        return redirect('user_list')
+
+    # Получение пользователя или создание пустого UserLog, если не найден
+    user_log, created = UserLog.objects.get_or_create(
+        username=username,
+        defaults={'created_at': datetime(2000, 1, 1, 11, 11), 'updated_at': now()}
+    )
+
+    if created:
+        messages.warning(request, f"Пользователь '{username}' не найден, создана пустая запись в логах.")
+
     user_requester = request.user.username if request.user.is_authenticated else "Аноним"
+
+    # Получение текущих групп пользователя
     with connection.cursor() as cursor:
         cursor.execute("""
             SELECT r.rolname
@@ -436,6 +496,8 @@ def user_edit(request):
             WHERE u.usename = %s;
         """, [username])
         current_groups = {group[0] for group in cursor.fetchall()}
+
+    # Получение всех доступных групп (исключая системные pg_ группы)
     with connection.cursor() as cursor:
         cursor.execute("""
             SELECT rolname 
@@ -443,15 +505,19 @@ def user_edit(request):
             WHERE rolcanlogin = FALSE AND rolname NOT LIKE 'pg_%';
         """)
         all_groups = {group[0] for group in cursor.fetchall()}
+
     available_groups = all_groups - current_groups
     has_changes = False
     errors = []
     group_changes = []
+
     if request.method == "POST":
         new_email = request.POST.get('new_email')
         new_password = request.POST.get('new_password')
         selected_groups = set(filter(None, request.POST.get('selected_groups', '').split(',')))
         deleted_groups = set(filter(None, request.POST.get('deleted_groups', '').split(',')))
+
+        # Проверка и обновление email
         if user_log.email != new_email:
             if UserLog.objects.filter(email=new_email).exclude(username=username).exists():
                 messages.error(request, f"Почта '{new_email}' уже используется другим пользователем")
@@ -463,14 +529,10 @@ def user_edit(request):
                     timestamp=now(),
                     details=f"Неудачная попытка изменить почту '{new_email}' у пользователя '{username}', почта уже используется."
                 )
-                return render(request, 'users/user_edit.html', {
-                    'username': username,
-                    'user_log': user_log,
-                    'user_groups': sorted(current_groups),
-                    'available_groups': sorted(available_groups),
-                })
+                return redirect('user_list')
             try:
                 user_log.email = new_email if new_email else None
+                user_log.updated_at = now()
                 user_log.save()
                 has_changes = True
                 Audit.objects.create(
@@ -491,30 +553,8 @@ def user_edit(request):
                     timestamp=now(),
                     details=f"Ошибка при обновлении почты пользователя '{username}'."
                 )
-        # if new_password:
-        #     try:
-        #         with connection.cursor() as cursor:
-        #             cursor.execute(f"ALTER USER {username} WITH PASSWORD %s;", [new_password])
-        #         has_changes = True
-        #         Audit.objects.create(
-        #             username=user_requester,
-        #             action_type='update',
-        #             entity_type='user',
-        #             entity_name=username,
-        #             timestamp=now(),
-        #             details=f"✅ Пароль пользователя '{username}' был изменен."
-        #         )
-        # except Exception as e:
-        #     errors.append(f"Ошибка при смене пароля: {e}")
-        #     Audit.objects.create(
-        #         username=user_requester,
-        #         action_type='update',
-        #         entity_type='user',
-        #         entity_name=username,
-        #         timestamp=now(),
-        #         details=f"⚠️ Ошибка при смене пароля пользователя '{username}': {str(e)}"
-        #     )
 
+        # Обработка групп пользователя
         if selected_groups != current_groups:
             has_changes = True
             for groupname in deleted_groups:
@@ -565,33 +605,13 @@ def user_edit(request):
                             timestamp=now(),
                             details=f"Ошибка при добавлении '{username}' в группу '{groupname}'."
                         )
-        if has_changes and user_log.email:
-            subject = "Изменение учетной записи"
-            html_message = render_to_string('send_email/send_user_edit.html', {
-                'username': username,
-                'password': new_password if new_password else "Пароль не изменен",
-                'group_changes': group_changes if group_changes else None
-            })
-            email_message = EmailMultiAlternatives(subject, "", settings.EMAIL_HOST_USER, [user_log.email])
-            email_message.attach_alternative(html_message, "text/html")
-            email_message.send()
-            Audit.objects.create(
-                username=user_requester,
-                action_type='update',
-                entity_type='user',
-                entity_name=username,
-                timestamp=now(),
-                details=f"Уведомление об изменении учетной записи отправлено пользователю '{username}'."
-            )
+
         if errors:
             messages.error(request, "<br>".join(errors))
-            return render(request, 'users/user_edit.html', {
-                'username': username,
-                'user_log': user_log,
-                'user_groups': sorted(current_groups),
-                'available_groups': sorted(available_groups),
-            })
+            return redirect('user_list')
+
         return redirect('user_list')
+
     return render(request, 'users/user_edit.html', {
         'username': username,
         'user_log': user_log,
