@@ -391,10 +391,6 @@ def user_create(request):
     return render(request, 'users/user_create.html', {'form': form})
 
 
-
-
-
-
 @login_required
 def user_info(request, username):
     """Информация пользователя"""

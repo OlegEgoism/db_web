@@ -58,7 +58,7 @@ class Audit(models.Model):
     ENTITY_TYPES = [
         ('user', 'Пользователь'),
         ('group', 'Группа'),
-        ('add', 'Добавление'),
+        # ('add', 'Добавление'),
         ('other', 'Другое'),
     ]
 
