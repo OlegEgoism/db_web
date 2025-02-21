@@ -58,7 +58,7 @@ class UserLogAdmin(admin.ModelAdmin):
     list_display = 'username', 'email', 'created_at', 'updated_at'
     readonly_fields = 'username', 'created_at', 'updated_at'
     search_fields = 'username', 'email',
-    search_help_text = 'Поиск по имени пользователя и адресу электронной почты'
+    search_help_text = 'Поиск по имени пользователя и почте'
     date_hierarchy = 'created_at'
     list_filter = 'created_at', 'updated_at'
     list_per_page = 20

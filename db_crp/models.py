@@ -34,7 +34,7 @@ class GroupLog(models.Model):
 class UserLog(models.Model):
     """Логи пользователей"""
     username = models.CharField(verbose_name="Имя пользователя", max_length=150, unique=True)
-    email = models.EmailField(verbose_name="Email", blank=True, null=True, unique=True)
+    email = models.EmailField(verbose_name="Почта", blank=True, null=True, unique=True)
     created_at = models.DateTimeField(verbose_name="Дата создания", default=timezone.now)
     updated_at = models.DateTimeField(verbose_name="Дата последнего изменения", auto_now=True)
 
@@ -58,6 +58,7 @@ class Audit(models.Model):
     ENTITY_TYPES = [
         ('user', 'Пользователь'),
         ('group', 'Группа'),
+        ('add', 'Добавление'),
         ('other', 'Другое'),
     ]
 

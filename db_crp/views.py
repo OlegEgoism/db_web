@@ -386,8 +386,6 @@ def user_create(request):
     return render(request, 'users/user_create.html', {'form': form})
 
 
-
-
 @login_required
 def user_info(request, username):
     """Информация пользователя"""
@@ -403,14 +401,14 @@ def user_info(request, username):
         }
     )
     if created:
-        messages.info(request, f"Автоматическое создание информации 'Дата создания', 'Дата изменения' пользователя '{username}'.")
+        messages.info(request, f"Автоматическое создание 'Дата создания' и 'Дата изменения' пользователя '{username}'.")
         Audit.objects.create(
             username=user_requester,
             action_type='create',
-            entity_type='user_log',
+            entity_type='add',
             entity_name=username,
             timestamp=now(),
-            details=f"Автоматическое создание информации 'Дата создания', 'Дата изменения' пользователя '{username}'."
+            details=f"Автоматическое создание 'Дата создания' и 'Дата изменения' пользователя '{username}'."
         )
     with connection.cursor() as cursor:
         cursor.execute("""
