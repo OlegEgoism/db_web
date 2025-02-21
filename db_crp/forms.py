@@ -21,15 +21,13 @@ class CustomUserRegistrationForm(UserCreationForm):
 
 
 class UserCreateForm(forms.Form):
-    """Форма для создания пользователя с уникальной почтой"""
+    """Форма для создания пользователя"""
     username = forms.CharField(label="Логин", max_length=150)
     email = forms.EmailField(label="Почта")
     password = forms.CharField(label="Пароль", widget=forms.PasswordInput)
+    can_create_db = forms.BooleanField(label="Может создавать БД", required=False)
+    is_superuser = forms.BooleanField(label="Суперпользователь", required=False)
 
-
-# class ChangePasswordForm(forms.Form):
-#     """Смена пароля"""
-#     new_password = forms.CharField(label="Новый пароль", widget=forms.PasswordInput)
 
 class UserEditForm(forms.Form):
     """Форма для редактирования пользователя"""
@@ -37,7 +35,6 @@ class UserEditForm(forms.Form):
     new_password = forms.CharField(label="Новый пароль", widget=forms.PasswordInput)
     can_create_db = forms.BooleanField(label="Может создавать БД", required=False)
     is_superuser = forms.BooleanField(label="Суперпользователь", required=False)
-
 
 
 class GroupEditForm(forms.Form):

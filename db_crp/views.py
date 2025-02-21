@@ -298,27 +298,28 @@ def user_list(request):
             "username": user,
             "created_at": user_logs[user].created_at if user in user_logs else None,
             "updated_at": user_logs[user].updated_at if user in user_logs else None,
-            "group_count": group_count  # Количество групп пользователя
+            "group_count": group_count
         })
     return render(request, 'users/user_list.html', {'users_data': users_data})
 
 
-@login_required
 def user_create(request):
-    """Создать пользователя"""
+    """Создание пользователя"""
     if request.method == "POST":
         form = UserCreateForm(request.POST)
         if form.is_valid():
             username = form.cleaned_data['username']
             email = form.cleaned_data.get('email', None)
             password = form.cleaned_data['password']
+            can_create_db = form.cleaned_data['can_create_db']
+            is_superuser = form.cleaned_data['is_superuser']
             user_requester = request.user.username if request.user.is_authenticated else "Аноним"
             with connection.cursor() as cursor:
                 cursor.execute("SELECT 1 FROM pg_roles WHERE rolname = %s;", [username])
                 user_exists = cursor.fetchone()
             email_exists = UserLog.objects.filter(email=email).exists() if email else False
             if user_exists:
-                messages.error(request, f"Пользователь с логином '{username}' уже существует!")
+                messages.error(request, f"Неудачная попытка создания пользователя '{username}', пользователь уже существует.")
                 Audit.objects.create(
                     username=user_requester,
                     action_type='create',
@@ -329,7 +330,7 @@ def user_create(request):
                 )
                 return render(request, 'users/user_create.html', {'form': form})
             if email_exists:
-                messages.error(request, f"Почта '{email}' уже используется другим пользователем!")
+                messages.error(request, f"Неудачная попытка создания почты '{email}' у пользователя '{username}', почта уже используется.")
                 Audit.objects.create(
                     username=user_requester,
                     action_type='create',
@@ -341,7 +342,9 @@ def user_create(request):
                 return render(request, 'users/user_create.html', {'form': form})
             try:
                 with connection.cursor() as cursor:
-                    cursor.execute(f"CREATE USER {username} WITH PASSWORD %s;", [password])
+                    create_db_privilege = ' CREATEDB' if can_create_db else ''
+                    superuser_privilege = ' SUPERUSER' if is_superuser else ''
+                    cursor.execute(f"CREATE USER {username} WITH PASSWORD %s{create_db_privilege}{superuser_privilege};", [password])
                 UserLog.objects.create(username=username, email=email)
                 Audit.objects.create(
                     username=user_requester,
@@ -349,13 +352,15 @@ def user_create(request):
                     entity_type='user',
                     entity_name=username,
                     timestamp=now(),
-                    details=f"Пользователь '{username}' успешно создан, почта {email}"
+                    details=f"Пользователь '{username}' успешно создан, почта {email}. Права: Может создавать БД={can_create_db}, Суперпользователь={is_superuser}"
                 )
                 if email:
                     subject = "Ваши учетные данные"
                     html_message = render_to_string('send_email/send_user_create.html', {
                         'username': username,
-                        'password': password
+                        'password': password,
+                        'can_create_db': can_create_db,
+                        'is_superuser': is_superuser
                     })
                     email_message = EmailMultiAlternatives(subject, "", settings.EMAIL_HOST_USER, [email])
                     email_message.attach_alternative(html_message, "text/html")
@@ -371,8 +376,8 @@ def user_create(request):
                     timestamp=now(),
                     details=f"Неудачная попытка создания пользователя '{username}', пользователь уже существует."
                 )
-            except Exception:
-                messages.error(request, f"Ошибка.")
+            except Exception as e:
+                messages.error(request, f"Ошибка: {str(e)}.")
                 Audit.objects.create(
                     username=user_requester,
                     action_type='create',
@@ -384,6 +389,10 @@ def user_create(request):
     else:
         form = UserCreateForm()
     return render(request, 'users/user_create.html', {'form': form})
+
+
+
+
 
 
 @login_required
@@ -405,7 +414,7 @@ def user_info(request, username):
         Audit.objects.create(
             username=user_requester,
             action_type='create',
-            entity_type='add',
+            entity_type='user',
             entity_name=username,
             timestamp=now(),
             details=f"Автоматическое создание 'Дата создания' и 'Дата изменения' пользователя '{username}'."
