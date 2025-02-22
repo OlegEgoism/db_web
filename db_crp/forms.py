@@ -1,6 +1,6 @@
 from django import forms
 from django.contrib.auth.forms import UserCreationForm
-from .models import CustomUser
+from .models import CustomUser, UserLog
 
 
 class CustomUserRegistrationForm(UserCreationForm):
@@ -34,12 +34,27 @@ class UserCreateForm(forms.Form):
     bypass_rls = forms.BooleanField(label="Bypass RLS", required=False)
 
 
+
 class UserEditForm(forms.Form):
-    """Редактирование пользователя"""
+    """Форма для редактирования пользователя"""
     email = forms.EmailField(label="Почта", required=False)
     password = forms.CharField(label="Пароль", widget=forms.PasswordInput, required=False)
     can_create_db = forms.BooleanField(label="Может создавать БД", required=False)
     is_superuser = forms.BooleanField(label="Суперпользователь", required=False)
+    inherit = forms.BooleanField(label="Наследование", required=False)
+    create_role = forms.BooleanField(label="Право создания роли", required=False)
+    login = forms.BooleanField(label="Право входа", required=False)
+    replication = forms.BooleanField(label="Право репликации", required=False)
+    bypass_rls = forms.BooleanField(label="Bypass RLS", required=False)
+
+
+
+# class UserEditForm(forms.Form):
+#     """Редактирование пользователя"""
+#     email = forms.EmailField(label="Почта", required=False)
+#     password = forms.CharField(label="Пароль", widget=forms.PasswordInput, required=False)
+#     can_create_db = forms.BooleanField(label="Может создавать БД", required=False)
+#     is_superuser = forms.BooleanField(label="Суперпользователь", required=False)
 
 
 class GroupEditForm(forms.Form):
