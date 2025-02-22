@@ -47,8 +47,14 @@
         <p>Ваша учетная запись была успешно создана.</p>
         <p><strong>Логин:</strong> {{ username }}</p>
         <p><strong>Пароль:</strong> {{ password }}</p>
+        <h2>Доступные права доступа</h2>
         <p><strong>Может создавать БД:</strong> {{ can_create_db }}</p>
         <p><strong>Суперпользователь:</strong> {{ is_superuser }}</p>
+        <p><strong>Наследование:</strong> {{ inherit }}</p>
+        <p><strong>Право создания роли:</strong> {{ create_role }}</p>
+        <p><strong>Право входа:</strong> {{ login }}</p>
+        <p><strong>Право репликации:</strong> {{ replication }}</p>
+        <p><strong>Bypass RLS:</strong> {{ bypass_rls }}</p>
         <p>Если вы не запрашивали доступ к ресурсу свяжитесь со службой поддержки.</p>
         <div class="footer">
             <p>С уважением, Администрация сайта.</p>

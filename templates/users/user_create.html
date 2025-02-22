@@ -20,10 +20,22 @@
         <form method="post">
             {% csrf_token %}
             {{ form.as_p }}
+            <hr>
+            <strong>Описание прав доступа</strong>
+            <ul style="text-align: left; margin-top: 20px; font-size: 12px">
+                <li><strong>Может создавать БД:</strong> Разрешение на создание баз данных.</li>
+                <li><strong>Суперпользователь:</strong> Полный доступ ко всем объектам базы данных.</li>
+                <li><strong>Наследование:</strong> Наследование привилегий от групп, в которые входит пользователь.</li>
+                <li><strong>Право создания роли:</strong> Разрешение на создание, изменение и удаление ролей.</li>
+                <li><strong>Право входа:</strong> Разрешение на вход в базу данных.</li>
+                <li><strong>Право репликации:</strong> Разрешение на выполнение логической и физической репликации данных.</li>
+                <li><strong>Bypass RLS:</strong> Игнорирование политик безопасности на уровне строк (Row-Level Security).</li>
+            </ul>
             <div class="all-btn">
                 <a href="{% url 'user_list' %}" class="btn btn-cancel">Назад</a>
                 <button type="submit" class="btn btn-save">Создать</button>
             </div>
         </form>
+
     </div>
 {% endblock %}

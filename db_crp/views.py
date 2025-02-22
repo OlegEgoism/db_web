@@ -18,6 +18,7 @@ from django.contrib import messages
 created_at = datetime(2000, 1, 1, 0, 0)
 updated_at = timezone.now()
 
+
 def home(request):
     return render(request, 'home.html')
 
@@ -313,6 +314,12 @@ def user_create(request):
             password = form.cleaned_data['password']
             can_create_db = form.cleaned_data['can_create_db']
             is_superuser = form.cleaned_data['is_superuser']
+            inherit = form.cleaned_data['inherit']
+            create_role = form.cleaned_data['create_role']
+            login = form.cleaned_data.get('login', True)
+            replication = form.cleaned_data['replication']
+            bypass_rls = form.cleaned_data['bypass_rls']
+
             user_requester = request.user.username if request.user.is_authenticated else "Аноним"
             with connection.cursor() as cursor:
                 cursor.execute("SELECT 1 FROM pg_roles WHERE rolname = %s;", [username])
@@ -342,17 +349,41 @@ def user_create(request):
                 return render(request, 'users/user_create.html', {'form': form})
             try:
                 with connection.cursor() as cursor:
-                    create_db_privilege = ' CREATEDB' if can_create_db else ''
-                    superuser_privilege = ' SUPERUSER' if is_superuser else ''
-                    cursor.execute(f"CREATE USER {username} WITH PASSWORD %s{create_db_privilege}{superuser_privilege};", [password])
-                UserLog.objects.create(username=username, email=email)
+                    privileges = ' '.join([
+                        'CREATEDB' if can_create_db else 'NOCREATEDB',
+                        'SUPERUSER' if is_superuser else 'NOSUPERUSER',
+                        'INHERIT' if inherit else 'NOINHERIT',
+                        'CREATEROLE' if create_role else 'NOCREATEROLE',
+                        'LOGIN' if login else 'NOLOGIN',
+                        'REPLICATION' if replication else 'NOREPLICATION',
+                        'BYPASSRLS' if bypass_rls else 'NOBYPASSRLS'
+                    ])
+                    cursor.execute(f"CREATE USER {username} WITH PASSWORD %s {privileges};", [password])
+                UserLog.objects.create(
+                    username=username,
+                    email=email,
+                    can_create_db=can_create_db,
+                    is_superuser=is_superuser,
+                    inherit=inherit,
+                    create_role=create_role,
+                    login=login,
+                    replication=replication,
+                    bypass_rls=bypass_rls
+                )
                 Audit.objects.create(
                     username=user_requester,
                     action_type='create',
                     entity_type='user',
                     entity_name=username,
                     timestamp=now(),
-                    details=f"Пользователь '{username}' успешно создан, почта {email}. Права: Может создавать БД={can_create_db}, Суперпользователь={is_superuser}"
+                    details=f"Пользователь '{username}' успешно создан, почта {email}. "
+                            f"Права: Может создавать БД={can_create_db}. "
+                            f"Суперпользователь={is_superuser}. "
+                            f"Наследование={inherit}. "
+                            f"Право создания роли={create_role}. "
+                            f"Право входа={login}. "
+                            f"Право репликации={replication}. "
+                            f"Bypass RLS={bypass_rls}. "
                 )
                 if email:
                     subject = "Ваши учетные данные"
@@ -360,7 +391,12 @@ def user_create(request):
                         'username': username,
                         'password': password,
                         'can_create_db': can_create_db,
-                        'is_superuser': is_superuser
+                        'is_superuser': is_superuser,
+                        'inherit': inherit,
+                        'create_role': create_role,
+                        'login': login,
+                        'replication': replication,
+                        'bypass_rls': bypass_rls
                     })
                     email_message = EmailMultiAlternatives(subject, "", settings.EMAIL_HOST_USER, [email])
                     email_message.attach_alternative(html_message, "text/html")
@@ -375,16 +411,6 @@ def user_create(request):
                     entity_name=username,
                     timestamp=now(),
                     details=f"Неудачная попытка создания пользователя '{username}', пользователь уже существует."
-                )
-            except Exception as e:
-                messages.error(request, f"Ошибка: {str(e)}.")
-                Audit.objects.create(
-                    username=user_requester,
-                    action_type='create',
-                    entity_type='user',
-                    entity_name=username,
-                    timestamp=now(),
-                    details=f"Ошибка при создании пользователя '{username}'."
                 )
     else:
         form = UserCreateForm()
@@ -415,19 +441,31 @@ def user_info(request, username):
             timestamp=now(),
             details=f"Автоматическое создание 'Дата создания' и 'Дата изменения' пользователя '{username}'."
         )
+
     with connection.cursor() as cursor:
         cursor.execute("""
-            SELECT usename, usesysid, usecreatedb, usesuper, passwd, valuntil
-            FROM pg_user
-            WHERE usename = %s;
+            SELECT 
+                r.rolname,         -- Имя роли (логин пользователя или имя группы)
+                r.oid,             -- Уникальный идентификатор роли в системе (Object ID)
+                r.rolcreatedb,     -- Может ли роль создавать базы данных (True/False)
+                r.rolsuper,        -- Является ли роль суперпользователем (True/False)
+                r.rolinherit,      -- Наследует ли роль права групп, в которых состоит (True/False)
+                r.rolcreaterole,   -- Может ли роль создавать другие роли (True/False)
+                r.rolcanlogin,     -- Разрешен ли вход в систему под этой ролью (True/False)
+                r.rolreplication,  -- Разрешено ли использовать роль для репликации данных (True/False)
+                r.rolbypassrls,    -- Игнорирует ли роль политики безопасности на уровне строк (RLS) (True/False)
+                r.rolpassword     -- Хешированный пароль роли (если он установлен)
+            FROM pg_roles r
+            WHERE r.rolname = %s;
         """, [username])
         user_info = cursor.fetchone()
+        print(user_info)
         cursor.execute("""
             SELECT r.rolname 
-            FROM pg_user u
-            JOIN pg_auth_members m ON u.usesysid = m.member
-            JOIN pg_roles r ON m.roleid = r.oid
-            WHERE u.usename = %s;
+            FROM pg_roles r
+            JOIN pg_auth_members m ON r.oid = m.roleid
+            JOIN pg_roles u ON u.oid = m.member
+            WHERE u.rolname = %s;
         """, [username])
         groups = cursor.fetchall()
     if user_info:
@@ -437,22 +475,25 @@ def user_info(request, username):
             'user_id': user_info[1],
             'can_create_db': user_info[2],
             'is_superuser': user_info[3],
-            'password_hash': user_info[4],
-            'valid_until': user_info[5],
+            'inherit': user_info[4],
+            'create_role': user_info[5],
+            'login': user_info[6],
+            'replication': user_info[7],
+            'bypass_rls': user_info[8],
+            'password_hash': user_info[9],
             'groups': group_list,
             'group_count': len(group_list),
             'email': user_log.email,
-            'created_at': user_log.created_at if user_log.created_at else created_at,
-            'updated_at': user_log.updated_at if user_log.updated_at else updated_at,
+            'created_at': user_log.created_at,
+            'updated_at': user_log.updated_at,
         }
     else:
         user_data = None
-        messages.error(request, f"Не удалось получить информацию о пользователе '{username}'!")
+        messages.error(request, f"Не удалось получить информацию о пользователе '{username}'.")
     return render(request, 'users/user_info.html', {'user_data': user_data})
 
 
-
-
+# TODO ДОРАБОТАТЬ ВЫПОЛНЕНИЕ ОТПАВКИ ПИСЕМ И РОЛЕЙ
 @login_required
 def user_edit(request, username):
     """Редактирование пользователя"""
@@ -603,10 +644,6 @@ def user_edit(request, username):
     })
 
 
-
-
-
-
 @login_required
 def user_delete(request, username):
     """Удаление пользователя"""
@@ -656,4 +693,3 @@ def user_delete(request, username):
             details=f"Уведомление об удалении аккаунта пользователя '{username}' отправлено на '{user_email}'."
         )
     return redirect('user_list')
-

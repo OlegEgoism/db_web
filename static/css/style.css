@@ -229,7 +229,7 @@ main {
     font-size: 14px;
     margin: 5px 0;
     border: 1px solid #4a6a8e;
-    padding: 8px 12px;
+    padding: 4px 8px;
     border-radius: 5px;
     transition: background-color 0.3s;
     cursor: pointer;
@@ -246,7 +246,7 @@ main {
 .btn {
     text-decoration: none;
     color: white;
-    padding: 8px 8px;
+    padding: 4px 8px;
     font-size: 0.9em;
     border-radius: 5px;
     transition: background-color 0.3s ease;
@@ -397,4 +397,10 @@ main {
     background-color: #f8d7da;
     color: #721c24;
     border: 1px solid #f5c6cb;
+}
+
+
+.info-description {
+    text-align: left;
+    margin-top: 20px;
 }

@@ -18,6 +18,7 @@
                 </div>
             {% endif %}
 
+            <!-- Информация пользователя -->
             <div class="info-item">
                 <span class="info-label">ID пользователя:</span>
                 <span class="info-value">{{ user_data.user_id }}</span>
@@ -32,19 +33,7 @@
             </div>
             <div class="info-item">
                 <span class="info-label">Email:</span>
-                {% if user_data.email %}
-                    <span class="info-value">{{ user_data.email }}</span>
-                {% else %}
-                    <span class="info-value no-email">Почта не указана</span>
-                {% endif %}
-            </div>
-            <div class="info-item">
-                <span class="info-label">Может создавать БД:</span>
-                <span class="info-value">{{ user_data.can_create_db }}</span>
-            </div>
-            <div class="info-item">
-                <span class="info-label">Суперпользователь:</span>
-                <span class="info-value">{{ user_data.is_superuser }}</span>
+                <span class="info-value">{{ user_data.email|default:"Почта не указана" }}</span>
             </div>
             <div class="info-item">
                 <span class="info-label">Дата создания:</span>
@@ -54,6 +43,36 @@
                 <span class="info-label">Дата изменения:</span>
                 <span class="info-value">{{ user_data.updated_at|date:"d.m.Y - H:i" }}</span>
             </div>
+            <h3>Права доступа</h3>
+            <div class="info-item">
+                <span class="info-label">Может создавать БД:</span>
+                <span class="info-value">{{ user_data.can_create_db }}</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">Суперпользователь:</span>
+                <span class="info-value">{{ user_data.is_superuser }}</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">Наследование:</span>
+                <span class="info-value">{{ user_data.inherit }}</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">Право создания роли:</span>
+                <span class="info-value">{{ user_data.create_role }}</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">Право входа:</span>
+                <span class="info-value">{{ user_data.login }}</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">Право репликации:</span>
+                <span class="info-value">{{ user_data.replication }}</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">Bypass RLS:</span>
+                <span class="info-value">{{ user_data.bypass_rls }}</span>
+            </div>
+            <h3>Группы</h3>
             <div class="info-item">
                 <span class="info-label">Количество групп пользователя:</span>
                 <span class="info-value">{{ user_data.group_count }} шт.</span>

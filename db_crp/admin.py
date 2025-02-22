@@ -6,7 +6,7 @@ from db_crp.models import CustomUser, GroupLog, UserLog, Audit
 
 @admin.register(CustomUser)
 class CustomUserAdmin(admin.ModelAdmin):
-    """Пользователь"""
+    """Администратор"""
     fieldsets = (
         ('ЛИЧНЫЕ ДАННЫЕ', {
             'fields': ('username', 'preview_photo', 'photo', 'email', 'phone_number', 'last_login', 'date_joined',)},),
@@ -42,7 +42,7 @@ class CustomUserAdmin(admin.ModelAdmin):
 
 @admin.register(GroupLog)
 class GroupLogAdmin(admin.ModelAdmin):
-    """Логи групп"""
+    """Группы в базе данных"""
     list_display = 'groupname', 'created_at', 'updated_at'
     readonly_fields = 'groupname', 'created_at', 'updated_at'
     search_fields = 'groupname',
@@ -54,19 +54,19 @@ class GroupLogAdmin(admin.ModelAdmin):
 
 @admin.register(UserLog)
 class UserLogAdmin(admin.ModelAdmin):
-    """Логи пользователей"""
-    list_display = 'username', 'email', 'created_at', 'updated_at'
-    readonly_fields = 'username', 'created_at', 'updated_at'
+    """Пользователи в базе данных"""
+    list_display = 'username', 'email', 'can_create_db', 'is_superuser', 'inherit', 'create_role', 'login', 'replication', 'bypass_rls', 'created_at', 'updated_at'
+    readonly_fields = 'username', 'email', 'can_create_db', 'is_superuser', 'inherit', 'create_role', 'login', 'replication', 'bypass_rls', 'created_at', 'updated_at'
     search_fields = 'username', 'email',
     search_help_text = 'Поиск по имени пользователя и почте'
     date_hierarchy = 'created_at'
-    list_filter = 'created_at', 'updated_at'
+    list_filter = 'created_at', 'updated_at', 'can_create_db', 'is_superuser', 'inherit', 'create_role', 'login', 'replication', 'bypass_rls',
     list_per_page = 20
 
 
 @admin.register(Audit)
 class AuditAdmin(admin.ModelAdmin):
-    """Логи групп"""
+    """Группы в базе данных"""
     list_display = 'username', 'action_type', 'entity_type', 'details', 'timestamp'
     readonly_fields = 'username', 'action_type', 'entity_type', 'entity_name', 'timestamp', 'details'
     search_fields = 'username', 'details',

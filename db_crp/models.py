@@ -5,7 +5,7 @@ from django.utils.timezone import now
 
 
 class CustomUser(AbstractUser):
-    """Пользователь"""
+    """Администраторы"""
     photo = models.ImageField(verbose_name="Фото", upload_to='user_photo/', default='user_photo/default.png', blank=True, null=True)
     phone_number = models.CharField(verbose_name="Телефон", max_length=15, blank=True, null=True)
 
@@ -13,12 +13,12 @@ class CustomUser(AbstractUser):
         return self.username
 
     class Meta:
-        verbose_name = "Пользователь"
-        verbose_name_plural = "Пользователи"
+        verbose_name = "Администратор"
+        verbose_name_plural = "Администраторы"
 
 
 class GroupLog(models.Model):
-    """Логи групп"""
+    """Группы в базе данных"""
     groupname = models.CharField(verbose_name="Имя группы", max_length=100, unique=True)
     created_at = models.DateTimeField(verbose_name="Дата создания", default=timezone.now)
     updated_at = models.DateTimeField(verbose_name="Дата последнего изменения", auto_now=True)
@@ -27,14 +27,21 @@ class GroupLog(models.Model):
         return self.groupname
 
     class Meta:
-        verbose_name = "Лог группы"
-        verbose_name_plural = "Логи групп"
+        verbose_name = "- Группа в базе данных"
+        verbose_name_plural = "- Группы в базе данных"
 
 
 class UserLog(models.Model):
-    """Логи пользователей"""
+    """Пользователи в базе данных"""
     username = models.CharField(verbose_name="Имя пользователя", max_length=150, unique=True)
     email = models.EmailField(verbose_name="Почта", blank=True, null=True, unique=True)
+    can_create_db = models.BooleanField(verbose_name="Может создавать БД")
+    is_superuser = models.BooleanField(verbose_name="Суперпользователь")
+    inherit = models.BooleanField(verbose_name="Наследование")
+    create_role = models.BooleanField(verbose_name="Право создания роли")
+    login = models.BooleanField(verbose_name="Право входа")
+    replication = models.BooleanField(verbose_name="Право репликации")
+    bypass_rls = models.BooleanField(verbose_name="Bypass RLS")
     created_at = models.DateTimeField(verbose_name="Дата создания", default=timezone.now)
     updated_at = models.DateTimeField(verbose_name="Дата последнего изменения", auto_now=True)
 
@@ -42,8 +49,8 @@ class UserLog(models.Model):
         return self.username
 
     class Meta:
-        verbose_name = "Лог пользователя"
-        verbose_name_plural = "Логи пользователей"
+        verbose_name = "- Пользователь в базе данных"
+        verbose_name_plural = "- Пользователи в базе данных"
 
 
 class Audit(models.Model):
