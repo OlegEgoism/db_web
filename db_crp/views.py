@@ -510,24 +510,11 @@ def user_info(request, username):
 
 
 # TODO ДОРАБОТАТЬ ВЫПОЛНЕНИЕ ОТПАВКИ ПИСЕМ И РОЛЕЙ
-# views.py
-
-from django.contrib import messages
-from django.shortcuts import render, redirect
-from django.db import connection
-from django.utils.timezone import now
-from django.contrib.auth.decorators import login_required
-from django.core.mail import EmailMultiAlternatives
-from django.template.loader import render_to_string
-from django.conf import settings
-
-from .forms import UserEditForm
-from .models import Audit, UserLog
 
 
 @login_required
 def user_edit(request, username):
-    """Редактирование пользователя в PostgreSQL"""
+    """Редактирование пользователя"""
     user_requester = request.user.username if request.user.is_authenticated else "Аноним"
 
     # Проверка существования пользователя в PostgreSQL
@@ -544,7 +531,7 @@ def user_edit(request, username):
         user_info = cursor.fetchone()
 
     if not user_info:
-        messages.error(request, f"Пользователь '{username}' не существует в PostgreSQL!")
+        messages.error(request, f"Неудачная попытка редактирования несуществующего пользователя '{username}'.")
         Audit.objects.create(
             username=user_requester,
             action_type='update',
@@ -556,10 +543,7 @@ def user_edit(request, username):
         return redirect('user_list')
 
     # Получаем данные пользователя
-    (
-        username, user_id, can_create_db, is_superuser, valid_until,
-        rolname, inherit, create_role, login, replication, bypass_rls
-    ) = user_info
+    (username, user_id, can_create_db, is_superuser, valid_until, rolname, inherit, create_role, login, replication, bypass_rls) = user_info
 
     # Получаем или создаем лог пользователя
     user_log, _ = UserLog.objects.get_or_create(
@@ -569,7 +553,6 @@ def user_edit(request, username):
 
     if request.method == "POST":
         form = UserEditForm(request.POST)
-
         if form.is_valid():
             new_email = form.cleaned_data['email']
             new_password = form.cleaned_data['password']
@@ -580,7 +563,6 @@ def user_edit(request, username):
             login = form.cleaned_data['login']
             replication = form.cleaned_data['replication']
             bypass_rls = form.cleaned_data['bypass_rls']
-
             try:
                 with connection.cursor() as cursor:
                     # Обновление прав пользователя в PostgreSQL
@@ -594,8 +576,23 @@ def user_edit(request, username):
 
                     if new_password:
                         cursor.execute(f"ALTER USER {username} WITH PASSWORD %s;", [new_password])
-
-                # Обновление email в UserLog
+                        Audit.objects.create(
+                            username=user_requester,
+                            action_type='update',
+                            entity_type='user',
+                            entity_name=username,
+                            timestamp=now(),
+                            details=f"Обновление пароля пользователя '{username}'."
+                        )
+                    if new_email != user_log.email:
+                        Audit.objects.create(
+                            username=user_requester,
+                            action_type='update',
+                            entity_type='user',
+                            entity_name=username,
+                            timestamp=now(),
+                            details=f"Обновление почты пользователя '{username}' c '{user_log.email}' на '{new_email}'."
+                        )
                 user_log.email = new_email
                 user_log.save()
 
@@ -618,22 +615,6 @@ def user_edit(request, username):
         })
 
     return render(request, 'users/user_edit.html', {'form': form, 'username': username})
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 # def user_edit(request, username):
