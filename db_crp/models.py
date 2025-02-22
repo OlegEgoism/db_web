@@ -4,6 +4,14 @@ from django.utils import timezone
 from django.utils.timezone import now
 
 
+class DT(models.Model):
+    created_at = models.DateTimeField(verbose_name="Дата создания", default=timezone.now)
+    updated_at = models.DateTimeField(verbose_name="Дата последнего изменения", auto_now=True)
+
+    class Meta:
+        abstract = True
+
+
 class CustomUser(AbstractUser):
     """Администраторы"""
     photo = models.ImageField(verbose_name="Фото", upload_to='user_photo/', default='user_photo/default.png', blank=True, null=True)
@@ -17,11 +25,9 @@ class CustomUser(AbstractUser):
         verbose_name_plural = "Администраторы"
 
 
-class GroupLog(models.Model):
+class GroupLog(DT):
     """Группы в базе данных"""
     groupname = models.CharField(verbose_name="Имя группы", max_length=100, unique=True)
-    created_at = models.DateTimeField(verbose_name="Дата создания", default=timezone.now)
-    updated_at = models.DateTimeField(verbose_name="Дата последнего изменения", auto_now=True)
 
     def __str__(self):
         return self.groupname
@@ -31,19 +37,17 @@ class GroupLog(models.Model):
         verbose_name_plural = "- Группы в базе данных"
 
 
-class UserLog(models.Model):
+class UserLog(DT):
     """Пользователи в базе данных"""
     username = models.CharField(verbose_name="Имя пользователя", max_length=150, unique=True)
     email = models.EmailField(verbose_name="Почта", blank=True, null=True, unique=True)
-    can_create_db = models.BooleanField(verbose_name="Может создавать БД")
-    is_superuser = models.BooleanField(verbose_name="Суперпользователь")
-    inherit = models.BooleanField(verbose_name="Наследование")
-    create_role = models.BooleanField(verbose_name="Право создания роли")
-    login = models.BooleanField(verbose_name="Право входа")
-    replication = models.BooleanField(verbose_name="Право репликации")
-    bypass_rls = models.BooleanField(verbose_name="Bypass RLS")
-    created_at = models.DateTimeField(verbose_name="Дата создания", default=timezone.now)
-    updated_at = models.DateTimeField(verbose_name="Дата последнего изменения", auto_now=True)
+    can_create_db = models.BooleanField(verbose_name="Может создавать БД", default=False)
+    is_superuser = models.BooleanField(verbose_name="Суперпользователь", default=False)
+    inherit = models.BooleanField(verbose_name="Наследование", default=False)
+    create_role = models.BooleanField(verbose_name="Право создания роли", default=False)
+    login = models.BooleanField(verbose_name="Право входа", default=True)
+    replication = models.BooleanField(verbose_name="Право репликации", default=False)
+    bypass_rls = models.BooleanField(verbose_name="Bypass RLS", default=False)
 
     def __str__(self):
         return self.username

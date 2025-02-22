@@ -304,6 +304,7 @@ def user_list(request):
     return render(request, 'users/user_list.html', {'users_data': users_data})
 
 
+@login_required
 def user_create(request):
     """Создание пользователя"""
     if request.method == "POST":
@@ -319,13 +320,16 @@ def user_create(request):
             login = form.cleaned_data.get('login', True)
             replication = form.cleaned_data['replication']
             bypass_rls = form.cleaned_data['bypass_rls']
-
             user_requester = request.user.username if request.user.is_authenticated else "Аноним"
+
+            # Проверка наличия пользователя в PostgreSQL
             with connection.cursor() as cursor:
                 cursor.execute("SELECT 1 FROM pg_roles WHERE rolname = %s;", [username])
-                user_exists = cursor.fetchone()
+                user_exists_in_pg = cursor.fetchone()
+
+            # Проверка наличия email в UserLog
             email_exists = UserLog.objects.filter(email=email).exists() if email else False
-            if user_exists:
+            if user_exists_in_pg:
                 messages.error(request, f"Неудачная попытка создания пользователя '{username}', пользователь уже существует.")
                 Audit.objects.create(
                     username=user_requester,
@@ -337,17 +341,19 @@ def user_create(request):
                 )
                 return render(request, 'users/user_create.html', {'form': form})
             if email_exists:
-                messages.error(request, f"Неудачная попытка создания почты '{email}' у пользователя '{username}', почта уже используется.")
+                messages.error(request, f"Неудачная попытка создания почты '{email}' у пользователя '{username}'. Почта уже используется.")
                 Audit.objects.create(
                     username=user_requester,
                     action_type='create',
                     entity_type='user',
                     entity_name=username,
                     timestamp=now(),
-                    details=f"Неудачная попытка создания почты '{email}' у пользователя '{username}', почта уже используется."
+                    details=f"Неудачная попытка создания почты '{email}' у пользователя '{username}'. Почта уже используется."
                 )
                 return render(request, 'users/user_create.html', {'form': form})
+
             try:
+                # Создание пользователя в PostgreSQL
                 with connection.cursor() as cursor:
                     privileges = ' '.join([
                         'CREATEDB' if can_create_db else 'NOCREATEDB',
@@ -359,6 +365,8 @@ def user_create(request):
                         'BYPASSRLS' if bypass_rls else 'NOBYPASSRLS'
                     ])
                     cursor.execute(f"CREATE USER {username} WITH PASSWORD %s {privileges};", [password])
+
+                # Логирование в UserLog после успешного создания в PostgreSQL
                 UserLog.objects.create(
                     username=username,
                     email=email,
@@ -370,23 +378,20 @@ def user_create(request):
                     replication=replication,
                     bypass_rls=bypass_rls
                 )
+
+                # Запись в журнал действий
                 Audit.objects.create(
                     username=user_requester,
                     action_type='create',
                     entity_type='user',
                     entity_name=username,
                     timestamp=now(),
-                    details=f"Пользователь '{username}' успешно создан, почта {email}. "
-                            f"Права: Может создавать БД={can_create_db}. "
-                            f"Суперпользователь={is_superuser}. "
-                            f"Наследование={inherit}. "
-                            f"Право создания роли={create_role}. "
-                            f"Право входа={login}. "
-                            f"Право репликации={replication}. "
-                            f"Bypass RLS={bypass_rls}. "
+                    details=f"Пользователь '{username}' успешно создан в системе."
                 )
+
+                # Отправка уведомления на почту
                 if email:
-                    subject = "Ваши учетные данные"
+                    subject = "Ваш аккаунт создан"
                     html_message = render_to_string('send_email/send_user_create.html', {
                         'username': username,
                         'password': password,
@@ -401,20 +406,145 @@ def user_create(request):
                     email_message = EmailMultiAlternatives(subject, "", settings.EMAIL_HOST_USER, [email])
                     email_message.attach_alternative(html_message, "text/html")
                     email_message.send()
+                    Audit.objects.create(
+                        username=user_requester,
+                        action_type='create',
+                        entity_type='user',
+                        entity_name=username,
+                        timestamp=now(),
+                        details=f"Уведомление об успешном создании пользователя '{username}' в системе отправлено на почту '{email}'. Права: "
+                                f"Может создавать БД={can_create_db}. "
+                                f"Суперпользователь={is_superuser}. "
+                                f"Наследование={inherit}. "
+                                f"Право создания роли={create_role}. "
+                                f"Право входа={login}. "
+                                f"Право репликации={replication}. "
+                                f"Bypass RLS={bypass_rls}."
+                    )
+                messages.success(request, f"Пользователь '{username}' успешно создан в PostgreSQL.")
                 return redirect('user_list')
-            except IntegrityError:
-                messages.error(request, f"Пользователь с логином '{username}' уже существует в системе!")
-                Audit.objects.create(
-                    username=user_requester,
-                    action_type='create',
-                    entity_type='user',
-                    entity_name=username,
-                    timestamp=now(),
-                    details=f"Неудачная попытка создания пользователя '{username}', пользователь уже существует."
-                )
+
+            except Exception as e:
+                messages.error(request, f"Ошибка при создании пользователя в PostgreSQL: {str(e)}.")
+                return render(request, 'users/user_create.html', {'form': form})
+
     else:
         form = UserCreateForm()
     return render(request, 'users/user_create.html', {'form': form})
+
+
+# @login_required
+# def user_create(request):
+#     """Создание пользователя"""
+#     if request.method == "POST":
+#         form = UserCreateForm(request.POST)
+#         if form.is_valid():
+#             username = form.cleaned_data['username']
+#             email = form.cleaned_data.get('email', None)
+#             password = form.cleaned_data['password']
+#             can_create_db = form.cleaned_data['can_create_db']
+#             is_superuser = form.cleaned_data['is_superuser']
+#             inherit = form.cleaned_data['inherit']
+#             create_role = form.cleaned_data['create_role']
+#             login = form.cleaned_data.get('login', True)
+#             replication = form.cleaned_data['replication']
+#             bypass_rls = form.cleaned_data['bypass_rls']
+#
+#             user_requester = request.user.username if request.user.is_authenticated else "Аноним"
+#             with connection.cursor() as cursor:
+#                 cursor.execute("SELECT 1 FROM pg_roles WHERE rolname = %s;", [username])
+#                 user_exists = cursor.fetchone()
+#             email_exists = UserLog.objects.filter(email=email).exists() if email else False
+#             if user_exists:
+#                 messages.error(request, f"Неудачная попытка создания пользователя '{username}', пользователь уже существует.")
+#                 Audit.objects.create(
+#                     username=user_requester,
+#                     action_type='create',
+#                     entity_type='user',
+#                     entity_name=username,
+#                     timestamp=now(),
+#                     details=f"Неудачная попытка создания пользователя '{username}', пользователь уже существует."
+#                 )
+#                 return render(request, 'users/user_create.html', {'form': form})
+#             if email_exists:
+#                 messages.error(request, f"Неудачная попытка создания почты '{email}' у пользователя '{username}', почта уже используется.")
+#                 Audit.objects.create(
+#                     username=user_requester,
+#                     action_type='create',
+#                     entity_type='user',
+#                     entity_name=username,
+#                     timestamp=now(),
+#                     details=f"Неудачная попытка создания почты '{email}' у пользователя '{username}', почта уже используется."
+#                 )
+#                 return render(request, 'users/user_create.html', {'form': form})
+#             try:
+#                 with connection.cursor() as cursor:
+#                     privileges = ' '.join([
+#                         'CREATEDB' if can_create_db else 'NOCREATEDB',
+#                         'SUPERUSER' if is_superuser else 'NOSUPERUSER',
+#                         'INHERIT' if inherit else 'NOINHERIT',
+#                         'CREATEROLE' if create_role else 'NOCREATEROLE',
+#                         'LOGIN' if login else 'NOLOGIN',
+#                         'REPLICATION' if replication else 'NOREPLICATION',
+#                         'BYPASSRLS' if bypass_rls else 'NOBYPASSRLS'
+#                     ])
+#                     cursor.execute(f"CREATE USER {username} WITH PASSWORD %s {privileges};", [password])
+#                 UserLog.objects.create(
+#                     username=username,
+#                     email=email,
+#                     can_create_db=can_create_db,
+#                     is_superuser=is_superuser,
+#                     inherit=inherit,
+#                     create_role=create_role,
+#                     login=login,
+#                     replication=replication,
+#                     bypass_rls=bypass_rls
+#                 )
+#                 Audit.objects.create(
+#                     username=user_requester,
+#                     action_type='create',
+#                     entity_type='user',
+#                     entity_name=username,
+#                     timestamp=now(),
+#                     details=f"Пользователь '{username}' успешно создан, почта {email}. "
+#                             f"Права: Может создавать БД={can_create_db}. "
+#                             f"Суперпользователь={is_superuser}. "
+#                             f"Наследование={inherit}. "
+#                             f"Право создания роли={create_role}. "
+#                             f"Право входа={login}. "
+#                             f"Право репликации={replication}. "
+#                             f"Bypass RLS={bypass_rls}. "
+#                 )
+#                 if email:
+#                     subject = "Ваши учетные данные"
+#                     html_message = render_to_string('send_email/send_user_create.html', {
+#                         'username': username,
+#                         'password': password,
+#                         'can_create_db': can_create_db,
+#                         'is_superuser': is_superuser,
+#                         'inherit': inherit,
+#                         'create_role': create_role,
+#                         'login': login,
+#                         'replication': replication,
+#                         'bypass_rls': bypass_rls
+#                     })
+#                     email_message = EmailMultiAlternatives(subject, "", settings.EMAIL_HOST_USER, [email])
+#                     email_message.attach_alternative(html_message, "text/html")
+#                     email_message.send()
+#                 return redirect('user_list')
+#             except IntegrityError:
+#                 messages.error(request, f"Пользователь с логином '{username}' уже существует в системе!")
+#                 Audit.objects.create(
+#                     username=user_requester,
+#                     action_type='create',
+#                     entity_type='user',
+#                     entity_name=username,
+#                     timestamp=now(),
+#                     details=f"Неудачная попытка создания пользователя '{username}', пользователь уже существует."
+#                 )
+#     else:
+#         form = UserCreateForm()
+#     return render(request, 'users/user_create.html', {'form': form})
 
 
 @login_required
