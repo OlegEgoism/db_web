@@ -19,60 +19,30 @@ from django.conf.urls.static import static
 from django.contrib import admin
 from django.urls import path
 from django.contrib.auth import views as auth_views
-from db_crp.views import (
-    home,
-
-    register,
-    logout_view,
-
-    group_list,
-    group_create,
-    group_edit,
-    group_delete,
-    group_users,
-
-    user_list,
-    user_create,
-    user_info,
-    user_edit,
-    user_delete,
-
-)
+from db_crp.views import home, register, logout_view
+from db_crp.views_group import group_list, group_create, group_edit, group_delete, group_info
+from db_crp.views_user import user_list, user_create, user_info, user_edit, user_delete
 
 urlpatterns = [
-    # Админка
-    path('admin/', admin.site.urls),
-    # Главная
-    path('', home, name='home'),
-    # Регистрация пользователя
-    path('register/', register, name='register'),
-    # Вход пользователя
-    path('login/', auth_views.LoginView.as_view(), name='login'),
-    # Выход пользователя
-    path('logout/', logout_view, name='logout'),
 
-    # Список групп
-    path('group_list/', group_list, name='group_list'),
-    # Создание группы
-    path('group_create/', group_create, name='group_create'),
-    # Редактирование группы
-    path('groups_edit/<str:group_name>/', group_edit, name='group_edit'),
-    # Удаление группы
-    path('group_delete/<str:group_name>/', group_delete, name='group_delete'),
-    # Пользователи в группе
-    path('group_users/<str:group_name>/', group_users, name='group_users'),
+    path('admin/', admin.site.urls),  # Админка
+    path('', home, name='home'),  # Главная
+    path('register/', register, name='register'),  # Регистрация пользователя
+    path('login/', auth_views.LoginView.as_view(), name='login'),  # Вход пользователя
+    path('logout/', logout_view, name='logout'),  # Выход пользователя
 
-    # Список пользователей
-    path('user_list/', user_list, name='user_list'),
-    # Создать пользователя
-    path('user_create/', user_create, name='user_create'),
-    # Информация о пользователе
-    path('user_info/<str:username>/', user_info, name='user_info'),
-    # Редактирование пользователя
-    path('user_edit/<str:username>/', user_edit, name='user_edit'),
-    # Удаление пользователя
-    path('user_delete/<str:username>/', user_delete, name='user_delete'),
+    path('group_list/', group_list, name='group_list'),  # Список групп
+    path('group_create/', group_create, name='group_create'),  # Создание группы
+    path('groups_edit/<str:group_name>/', group_edit, name='group_edit'),  # Редактирование группы
+    path('group_delete/<str:group_name>/', group_delete, name='group_delete'),  # Удаление группы
+    path('group_info/<str:group_name>/', group_info, name='group_info'),  # Пользователи в группе
 
+    path('user_list/', user_list, name='user_list'),  # Список пользователей
+    path('user_create/', user_create, name='user_create'),  # Создать пользователя
+    path('user_info/<str:username>/', user_info, name='user_info'),  # Информация о пользователе
+    path('user_edit/<str:username>/', user_edit, name='user_edit'),  # Редактирование пользователя
+    path('user_delete/<str:username>/', user_delete, name='user_delete'),  # Удаление пользователя
 ]
+
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

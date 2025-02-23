@@ -9,30 +9,41 @@
         </div>
         <hr>
 
+        <!-- Вывод сообщений -->
+        {% if messages %}
+            <div class="messages">
+                {% for message in messages %}
+                    <div class="alert {% if message.tags == 'success' %}alert-success{% elif message.tags == 'warning' %}alert-warning{% else %}alert-error{% endif %}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+
         <!-- Поле поиска -->
         <input type="text" id="groupSearch" class="group-search" onkeyup="filterGroups()" placeholder="Поиск группы..."/>
 
         <div id="groupList">
             {% for group, count, created_at, updated_at in user_groups_data %}
-<div class="group-item">
-    <div class="group-number">
-        <strong>{{ forloop.counter }}</strong>
-    </div>
-    <div class="group-name">
-        <a href="{% url 'group_users' group %}" class="group-link-user">{{ group }}</a>
-    </div>
-    <div class="group-dates">
-        <small>Создан: {% if created_at %}{{ created_at|date:"d.m.Y H:i" }}{% else %}—{% endif %}</small>
-        <small>Изменен: {% if updated_at %}{{ updated_at|date:"d.m.Y H:i" }}{% else %}—{% endif %}</small>
-    </div>
-    <div class="group-user-count">
-        <small>Пользователей: {{ count }} шт.</small>
-    </div>
-    <div class="user-action">
-        <a href="{% url 'group_edit' group %}" class="btn btn-edit">Редактировать</a>
-        <a href="{% url 'group_delete' group %}" class="btn btn-delete" onclick="return confirm('Удалить группу {{ group }}?')">Удалить</a>
-    </div>
-</div>
+                <div class="group-item">
+                    <div class="group-number">
+                        <strong>{{ forloop.counter }}</strong>
+                    </div>
+                    <div class="group-name">
+                        <a href="{% url 'group_info' group %}" class="group-link-user">{{ group }}</a>
+                    </div>
+                    <div class="group-dates">
+                        <small>Создан: {% if created_at %}{{ created_at|date:"d.m.Y H:i" }}{% else %}—{% endif %}</small>
+                        <small>Изменен: {% if updated_at %}{{ updated_at|date:"d.m.Y H:i" }}{% else %}—{% endif %}</small>
+                    </div>
+                    <div class="group-user-count">
+                        <small>Пользователей: {{ count }} шт.</small>
+                    </div>
+                    <div class="user-action">
+                        <a href="{% url 'group_edit' group %}" class="btn btn-edit">Редактировать</a>
+                        <a href="{% url 'group_delete' group %}" class="btn btn-delete" onclick="return confirm('Удалить группу {{ group }}?')">Удалить</a>
+                    </div>
+                </div>
 
             {% empty %}
                 <li>Нет пользовательских групп</li>

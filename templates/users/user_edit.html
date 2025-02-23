@@ -1,47 +1,3 @@
-{% extends 'base.html' %}
-<title>{% block title %}Редактирование пользователя{% endblock %}</title>
-
-{% block content %}
-    <div class="welcome-group">
-        <h1 class="welcome-title">Редактирование пользователя: {{ username }}</h1>
-        <hr>
-
-        {% if messages %}
-            <div class="messages">
-                {% for message in messages %}
-                    <div class="alert {% if message.tags == 'success' %}alert-success{% else %}alert-error{% endif %}">
-                        {{ message }}
-                    </div>
-                {% endfor %}
-            </div>
-        {% endif %}
-
-        <form method="post">
-            {% csrf_token %}
-            {{ form.as_p }}
-            <div class="all-btn">
-                <a href="{% url 'user_list' %}" class="btn btn-cancel">Назад</a>
-                <button type="submit" class="btn btn-save">Сохранить</button>
-            </div>
-        </form>
-    </div>
-
-{% endblock %}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 {#{% extends 'base.html' %}#}
 {#<title>{% block title %}Редактирование пользователя{% endblock %}</title>#}
 {##}
@@ -54,31 +10,22 @@
 {#        {% if messages %}#}
 {#            <div class="messages">#}
 {#                {% for message in messages %}#}
-{#                    <div class="alert {% if message.tags == 'success' %}alert-success{% else %}alert-error{% endif %}" role="alert">#}
+{#                    <div class="alert {% if message.tags == 'success' %}alert-success{% else %}alert-error{% endif %}">#}
 {#                        {{ message }}#}
 {#                    </div>#}
 {#                {% endfor %}#}
 {#            </div>#}
 {#        {% endif %}#}
 {##}
-{#        <form method="post" id="user-edit-form">#}
+{##}
+{#        <form method="post">#}
 {#            {% csrf_token %}#}
-{#            <div class="info-item">#}
-{#                <label for="new_email" class="info-label">Почта:</label>#}
-{#                <input type="email" id="new_email" name="new_email" value="{{ user_log.email|default:'' }}" placeholder="Введите электронную почту">#}
+{#            {{ form.as_p }}#}
+{#            <div class="all-btn">#}
+{#                <a href="{% url 'user_list' %}" class="btn btn-cancel">Назад</a>#}
+{#                <button type="submit" class="btn btn-save">Сохранить</button>#}
 {#            </div>#}
-{#            <div class="info-item">#}
-{#                <label for="new_password" class="info-label">Пароль:</label>#}
-{#                <input type="password" id="new_password" name="new_password" placeholder="Введите новый пароль">#}
-{#            </div>#}
-{#            <div class="info-item">#}
-{#                <label for="new_can_create_db" class="info-label">Может создавать БД:</label>#}
-{#                <input type="checkbox" id="new_can_create_db" name="can_create_db" {% if form.can_create_db.value %}checked{% endif %}>#}
-{#            </div>#}
-{#            <div class="info-item">#}
-{#                <label for="new_is_superuser" class="info-label">Суперпользователь:</label>#}
-{#                <input type="checkbox" id="new_is_superuser" name="is_superuser" {% if form.is_superuser.value %}checked{% endif %}>#}
-{#            </div>#}
+{##}
 {##}
 {#            <div class="group-container">#}
 {#                <div>#}
@@ -104,25 +51,27 @@
 {#            <!-- Скрытые поля для передачи данных о группах -->#}
 {#            <input type="hidden" name="selected_groups" id="selected-groups">#}
 {#            <input type="hidden" name="deleted_groups" id="deleted-groups">#}
+{##}
 {#            <div class="all-btn">#}
 {#                <a href="{% url 'user_list' %}" class="btn btn-cancel">Назад</a>#}
 {#                <button type="submit" class="btn btn-save">Сохранить</button>#}
 {#            </div>#}
+{##}
+{##}
+{##}
 {#        </form>#}
 {#    </div>#}
+{##}
 {##}
 {#    <script>#}
 {#        let draggedElement = null;#}
 {#        let deletedGroups = [];#}
-{##}
 {#        function allowDrop(event) {#}
 {#            event.preventDefault();#}
 {#        }#}
-{##}
 {#        function drag(event) {#}
 {#            draggedElement = event.target;#}
 {#        }#}
-{##}
 {#        function drop(event, targetId) {#}
 {#            event.preventDefault();#}
 {#            if (draggedElement) {#}
@@ -139,7 +88,6 @@
 {#                draggedElement = null;#}
 {#            }#}
 {#        }#}
-{##}
 {#        document.getElementById('user-edit-form').addEventListener('submit', () => {#}
 {#            const selectedGroups = Array.from(document.getElementById('user-groups').children)#}
 {#                .map(item => item.textContent);#}
@@ -147,4 +95,126 @@
 {#            document.getElementById('deleted-groups').value = deletedGroups.join(',');#}
 {#        });#}
 {#    </script>#}
+{##}
 {#{% endblock %}#}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+{% extends 'base.html' %}
+<title>{% block title %}Редактирование пользователя{% endblock %}</title>
+
+{% block content %}
+    <div class="welcome-group">
+        <h1 class="welcome-title">Редактирование пользователя: {{ username }}</h1>
+        <hr>
+
+        <!-- Вывод сообщений об ошибках -->
+        {% if messages %}
+            <div class="messages">
+                {% for message in messages %}
+                    <div class="alert {% if message.tags == 'success' %}alert-success{% else %}alert-error{% endif %}" role="alert">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        <form method="post" id="user-edit-form">
+            {% csrf_token %}
+            <div class="info-item">
+                <label for="new_email" class="info-label">Почта:</label>
+                <input type="email" id="new_email" name="new_email" value="{{ user_log.email|default:'' }}" placeholder="Введите электронную почту">
+            </div>
+            <div class="info-item">
+                <label for="new_password" class="info-label">Пароль:</label>
+                <input type="password" id="new_password" name="new_password" placeholder="Введите новый пароль">
+            </div>
+            <div class="info-item">
+                <label for="new_can_create_db" class="info-label">Может создавать БД:</label>
+                <input type="checkbox" id="new_can_create_db" name="can_create_db" {% if form.can_create_db.value %}checked{% endif %}>
+            </div>
+            <div class="info-item">
+                <label for="new_is_superuser" class="info-label">Суперпользователь:</label>
+                <input type="checkbox" id="new_is_superuser" name="is_superuser" {% if form.is_superuser.value %}checked{% endif %}>
+            </div>
+
+            <div class="group-container">
+                <div>
+                    <h4>Группы пользователя</h4>
+                    <hr>
+                    <ul class="group-list" id="user-groups" ondrop="drop(event, 'user-groups')" ondragover="allowDrop(event)">
+                        {% for group in user_groups %}
+                            <li draggable="true" ondragstart="drag(event)" id="group_{{ group }}">{{ group }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                <div>
+                    <h4>Доступные группы</h4>
+                    <hr>
+                    <ul class="group-list" id="available-groups" ondrop="drop(event, 'available-groups')" ondragover="allowDrop(event)">
+                        {% for group in available_groups %}
+                            <li draggable="true" ondragstart="drag(event)" id="group_{{ group }}">{{ group }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Скрытые поля для передачи данных о группах -->
+            <input type="hidden" name="selected_groups" id="selected-groups">
+            <input type="hidden" name="deleted_groups" id="deleted-groups">
+            <div class="all-btn">
+                <a href="{% url 'user_list' %}" class="btn btn-cancel">Назад</a>
+                <button type="submit" class="btn btn-save">Сохранить</button>
+            </div>
+        </form>
+    </div>
+
+    <script>
+        let draggedElement = null;
+        let deletedGroups = [];
+
+        function allowDrop(event) {
+            event.preventDefault();
+        }
+
+        function drag(event) {
+            draggedElement = event.target;
+        }
+
+        function drop(event, targetId) {
+            event.preventDefault();
+            if (draggedElement) {
+                const targetList = document.getElementById(targetId);
+                const sourceList = draggedElement.parentNode;
+
+                if (targetList !== sourceList) {
+                    targetList.appendChild(draggedElement);
+
+                    if (sourceList.id === 'user-groups' && targetList.id === 'available-groups') {
+                        deletedGroups.push(draggedElement.textContent);
+                    }
+                }
+                draggedElement = null;
+            }
+        }
+
+        document.getElementById('user-edit-form').addEventListener('submit', () => {
+            const selectedGroups = Array.from(document.getElementById('user-groups').children)
+                .map(item => item.textContent);
+            document.getElementById('selected-groups').value = selectedGroups.join(',');
+            document.getElementById('deleted-groups').value = deletedGroups.join(',');
+        });
+    </script>
+{% endblock %}
