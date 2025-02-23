@@ -6,6 +6,8 @@ from django.db import connection
 from django.template.loader import render_to_string
 from django.utils import timezone
 from django.utils.timezone import now
+
+from .audit_views import messages_delete_user_success, messages_delete_user_error, messages_delete_user_email
 from .forms import UserCreateForm, UserEditForm
 from django.shortcuts import render, redirect
 from .models import UserLog, Audit
@@ -247,6 +249,7 @@ def user_info(request, username):
     return render(request, 'users/user_info.html', {'user_data': user_data})
 
 
+# ДОРАБОТАТЬ
 # @login_required
 # def user_edit(request, username):
 #     """Редактирование пользователя"""
@@ -624,26 +627,27 @@ def user_delete(request, username):
             cursor.execute(f"DROP OWNED BY {username};")
             cursor.execute(f"DROP USER IF EXISTS {username};")
         except Exception:
-            messages.error(request, f"Неудачная попытка при удалении пользователя '{username}', не может быть удален, так как существуют зависимые объекты в базе данных.")
+            messages.error(request, messages_delete_user_error(username))
             Audit.objects.create(
                 username=user_requester,
                 action_type='delete',
                 entity_type='user',
                 entity_name=username,
                 timestamp=now(),
-                details=f"Неудачная попытка при удалении пользователя '{username}', не может быть удален, так как существуют зависимые объекты в базе данных."
+                details=messages_delete_user_error(username)
             )
             return redirect('user_list')
     if user_log:
         user_log.delete()
-    Audit.objects.create(
-        username=user_requester,
-        action_type='delete',
-        entity_type='user',
-        entity_name=username,
-        timestamp=now(),
-        details=f"Пользователь '{username}' был удален из системы"
-    )
+        messages.success(request, messages_delete_user_success(username))
+        Audit.objects.create(
+            username=user_requester,
+            action_type='delete',
+            entity_type='user',
+            entity_name=username,
+            timestamp=now(),
+            details=messages_delete_user_success(username)
+        )
     if user_email:
         subject = "Ваш аккаунт был удален"
         html_message = render_to_string('send_email/send_user_delete.html', {
@@ -652,12 +656,16 @@ def user_delete(request, username):
         email_message = EmailMultiAlternatives(subject, "", settings.EMAIL_HOST_USER, [user_email])
         email_message.attach_alternative(html_message, "text/html")
         email_message.send()
+        messages.success(request, messages_delete_user_email(username, user_email))
         Audit.objects.create(
             username=user_requester,
             action_type='delete',
             entity_type='user',
             entity_name=username,
             timestamp=now(),
-            details=f"Уведомление об удалении аккаунта пользователя '{username}' отправлено на '{user_email}'."
+            details=messages_delete_user_email(username, user_email)
         )
     return redirect('user_list')
+
+
+

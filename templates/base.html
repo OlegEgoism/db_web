@@ -15,6 +15,8 @@
         <a href="/">Главная</a>
         {% if user.is_authenticated %}
             <a href="{% url 'group_list' %}">Список групп</a>
+            <a href="{% url 'databases_and_tables_list' %}">Список таблиц</a>
+            <a href="{% url 'grant_privileges_view' %}">11111 таблиц</a>
             <a href="{% url 'user_list' %}">Список пользователей</a>
             <a href="{% url 'logout' %}">Выйти</a>
         {% else %}
@@ -26,7 +28,6 @@
 <main>
     {% block content %}{% endblock %}
 </main>
-
 </body>
 
 </html>

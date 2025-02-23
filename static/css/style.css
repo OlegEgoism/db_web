@@ -404,3 +404,38 @@ main {
     text-align: left;
     margin-top: 20px;
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+.table-list {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.table-list th, .table-list td {
+    padding: 10px;
+    border: 1px solid #ddd;
+}
+
+.table-list th {
+    background-color: #f4f4f4;
+    text-align: left;
+}
+
+.table-item:nth-child(even) {
+    background-color: #f9f9f9;
+}
+
+.table-item:hover {
+    background-color: #e9e9e9;
+}

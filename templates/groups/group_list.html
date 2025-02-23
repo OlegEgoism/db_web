@@ -27,7 +27,7 @@
             {% for group, count, created_at, updated_at in user_groups_data %}
                 <div class="group-item">
                     <div class="group-number">
-                        <strong>{{ forloop.counter }}</strong>
+                        <strong>{{ forloop.counter }}.</strong>
                     </div>
                     <div class="group-name">
                         <a href="{% url 'group_info' group %}" class="group-link-user">{{ group }}</a>

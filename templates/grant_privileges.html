@@ -1,0 +1,25 @@
+{% extends 'base.html' %}
+<title>{% block title %}Назначение привилегий на таблицы{% endblock %}</title>
+
+{% block content %}
+<h2>Назначение прав доступа к таблицам</h2>
+<hr>
+
+<!-- Вывод сообщений об ошибках -->
+{% if messages %}
+    <div class="messages">
+        {% for message in messages %}
+            <div class="alert {% if message.tags == 'success' %}alert-success{% else %}alert-error{% endif %}">
+                {{ message }}
+            </div>
+        {% endfor %}
+    </div>
+{% endif %}
+
+<form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+
+    <button type="submit" class="btn btn-save">Назначить привилегии</button>
+</form>
+{% endblock %}

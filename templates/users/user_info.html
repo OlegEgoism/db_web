@@ -82,7 +82,7 @@
                 <span class="info-label">Группы пользователя:</span>
                 {% if user_data.groups %}
                     {% for group in user_data.groups %}
-                        <a href="{% url 'group_users' group %}" class="group-link-user">{{ group }}</a>
+                        <a href="{% url 'group_info' group %}" class="group-link-user">{{ group }}</a>
                     {% endfor %}
                 {% else %}
                     <span class="no-groups"> Пользователь не состоит в группах</span>

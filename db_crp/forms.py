@@ -1,5 +1,7 @@
 from django import forms
 from django.contrib.auth.forms import UserCreationForm
+from django.db import connection
+
 from .models import CustomUser, UserLog
 
 
@@ -56,3 +58,85 @@ class GroupEditForm(forms.Form):
 class CreateGroupForm(forms.Form):
     """Создание группы"""
     groupname = forms.CharField(label="Название", max_length=150)
+
+
+
+
+
+PRIVILEGES_CHOICES = [
+    ('SELECT', 'Чтение (SELECT)'),
+    ('INSERT', 'Вставка (INSERT)'),
+    ('UPDATE', 'Обновление (UPDATE)'),
+    ('DELETE', 'Удаление (DELETE)'),
+    ('TRUNCATE', 'Очистка (TRUNCATE)'),
+    ('REFERENCES', 'Ссылки (REFERENCES)'),
+    ('TRIGGER', 'Триггер (TRIGGER)'),
+]
+
+def get_roles_from_db():
+    """Получить список ролей из базы данных PostgreSQL"""
+    with connection.cursor() as cursor:
+        cursor.execute("""
+            SELECT rolname 
+            FROM pg_roles 
+            WHERE rolcanlogin = FALSE AND rolname NOT LIKE 'pg_%';
+        """)
+        roles = cursor.fetchall()
+    return [(role[0], role[0]) for role in roles]  # Преобразуем кортежи в формат для формы
+
+def get_tables_from_db():
+    """Получить список таблиц из базы данных PostgreSQL"""
+    with connection.cursor() as cursor:
+        cursor.execute("""
+            SELECT table_schema || '.' || table_name AS full_table_name
+            FROM information_schema.tables
+            WHERE table_schema NOT IN ('information_schema', 'pg_catalog')
+            ORDER BY table_schema, table_name;
+        """)
+        tables = cursor.fetchall()
+    return [(table[0], table[0]) for table in tables]
+
+
+
+
+PRIVILEGES_CHOICES = [
+    ('SELECT', 'Чтение (SELECT)'),
+    ('INSERT', 'Вставка (INSERT)'),
+    ('UPDATE', 'Обновление (UPDATE)'),
+    ('DELETE', 'Удаление (DELETE)'),
+]
+
+class GrantPrivilegesForm(forms.Form):
+    # role_name = forms.CharField(label='Имя роли')
+    # table_name = forms.CharField(label='Имя таблицы')
+    # privileges = forms.MultipleChoiceField(
+    #     choices=PRIVILEGES_CHOICES,
+    #     widget=forms.CheckboxSelectMultiple,
+    #     label='Привилегии'
+    # )
+
+#
+#
+# class GrantPrivilegesForm(forms.Form):
+    role_name = forms.ChoiceField(
+        label='Имя роли',
+        choices=[],  # Заполним в конструкторе
+        widget=forms.Select(attrs={'class': 'form-control'})
+    )
+
+    table_name = forms.ChoiceField(
+        label='Имя таблицы',
+        choices=[],  # Заполним в конструкторе
+        widget=forms.Select(attrs={'class': 'form-control'})
+    )
+
+    privileges = forms.MultipleChoiceField(
+        choices=PRIVILEGES_CHOICES,
+        widget=forms.CheckboxSelectMultiple,
+        label='Привилегии'
+    )
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['role_name'].choices = get_roles_from_db()
+        self.fields['table_name'].choices = get_tables_from_db()
