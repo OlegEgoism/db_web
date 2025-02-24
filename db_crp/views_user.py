@@ -5,13 +5,13 @@ from django.core.mail import EmailMultiAlternatives
 from django.db import connection
 from django.template.loader import render_to_string
 from django.utils import timezone
-from django.utils.timezone import now
-
-from .audit_views import messages_delete_user_success, messages_delete_user_error, messages_delete_user_email
-from .forms import UserCreateForm, UserEditForm
+from .forms import UserCreateForm
 from django.shortcuts import render, redirect
-from .models import UserLog, Audit
+from .models import UserLog
 from django.contrib import messages
+from .audit_views import delete_user_messages_email, delete_user_messages_success, delete_user_messages_error, create_audit_log, create_user_messages_error, create_user_messages_error_email, create_user_messages_success, create_user_messages_email, \
+    user_info_error, user_data, edit_user_messages_email_error, edit_user_messages_success, edit_user_messages_email_success, edit_user_messages_add_group_error, edit_user_messages_delete_group_success, edit_user_messages_delete_group_error, \
+    edit_user_messages_add_group_success
 
 created_at = datetime(2000, 1, 1, 0, 0)
 updated_at = timezone.now()
@@ -66,30 +66,18 @@ def user_create(request):
             with connection.cursor() as cursor:
                 cursor.execute("SELECT 1 FROM pg_roles WHERE rolname = %s;", [username])
                 user_exists_in_pg = cursor.fetchone()
-
-            # Проверка наличия email в UserLog
-            email_exists = UserLog.objects.filter(email=email).exists() if email else False
             if user_exists_in_pg:
-                messages.error(request, f"Неудачная попытка создания пользователя '{username}', пользователь уже существует.")
-                Audit.objects.create(
-                    username=user_requester,
-                    action_type='create',
-                    entity_type='user',
-                    entity_name=username,
-                    timestamp=now(),
-                    details=f"Неудачная попытка создания пользователя '{username}', пользователь уже существует."
-                )
+                message = create_user_messages_error(username)
+                messages.error(request, message)
+                create_audit_log(user_requester, 'create', 'user', username, message)
                 return render(request, 'users/user_create.html', {'form': form})
+
+            # Проверка почты
+            email_exists = UserLog.objects.filter(email=email).exists() if email else False
             if email_exists:
-                messages.error(request, f"Неудачная попытка создания почты '{email}' у пользователя '{username}'. Почта уже используется.")
-                Audit.objects.create(
-                    username=user_requester,
-                    action_type='create',
-                    entity_type='user',
-                    entity_name=username,
-                    timestamp=now(),
-                    details=f"Неудачная попытка создания почты '{email}' у пользователя '{username}'. Почта уже используется."
-                )
+                message = create_user_messages_error_email(username, email)
+                messages.error(request, message)
+                create_audit_log(user_requester, 'create', 'user', username, message)
                 return render(request, 'users/user_create.html', {'form': form})
 
             try:
@@ -105,8 +93,6 @@ def user_create(request):
                         'BYPASSRLS' if bypass_rls else 'NOBYPASSRLS'
                     ])
                     cursor.execute(f"CREATE USER {username} WITH PASSWORD %s {privileges};", [password])
-
-                # Логирование в UserLog после успешного создания в PostgreSQL
                 UserLog.objects.create(
                     username=username,
                     email=email,
@@ -118,17 +104,9 @@ def user_create(request):
                     replication=replication,
                     bypass_rls=bypass_rls
                 )
-
-                # Запись в журнал действий
-                Audit.objects.create(
-                    username=user_requester,
-                    action_type='create',
-                    entity_type='user',
-                    entity_name=username,
-                    timestamp=now(),
-                    details=f"Пользователь '{username}' успешно создан в системе."
-                )
-
+                message = create_user_messages_success(username)
+                messages.success(request, message)
+                create_audit_log(user_requester, 'create', 'user', username, message)
                 # Отправка уведомления на почту
                 if email:
                     subject = "Ваш аккаунт создан"
@@ -146,28 +124,13 @@ def user_create(request):
                     email_message = EmailMultiAlternatives(subject, "", settings.EMAIL_HOST_USER, [email])
                     email_message.attach_alternative(html_message, "text/html")
                     email_message.send()
-                    Audit.objects.create(
-                        username=user_requester,
-                        action_type='create',
-                        entity_type='user',
-                        entity_name=username,
-                        timestamp=now(),
-                        details=f"Уведомление об успешном создании пользователя '{username}' в системе отправлено на почту '{email}'. Права: "
-                                f"Может создавать БД={can_create_db}. "
-                                f"Суперпользователь={is_superuser}. "
-                                f"Наследование={inherit}. "
-                                f"Право создания роли={create_role}. "
-                                f"Право входа={login}. "
-                                f"Право репликации={replication}. "
-                                f"Bypass RLS={bypass_rls}."
-                    )
-                messages.success(request, f"Пользователь '{username}' успешно создан в PostgreSQL.")
+                    message = create_user_messages_email(username, email, can_create_db, is_superuser, inherit, create_role, login, replication, bypass_rls)
+                    messages.success(request, message)
+                    create_audit_log(user_requester, 'create', 'user', username, message)
                 return redirect('user_list')
-
             except Exception as e:
-                messages.error(request, f"Ошибка при создании пользователя в PostgreSQL: {str(e)}.")
+                messages.error(request, f"Ошибка при создании пользователя '{username}: {str(e)}.")
                 return render(request, 'users/user_create.html', {'form': form})
-
     else:
         form = UserCreateForm()
     return render(request, 'users/user_create.html', {'form': form})
@@ -188,15 +151,9 @@ def user_info(request, username):
         }
     )
     if created:
-        messages.info(request, f"Автоматическое создание 'Дата создания' и 'Дата изменения' пользователя '{username}'.")
-        Audit.objects.create(
-            username=user_requester,
-            action_type='create',
-            entity_type='user',
-            entity_name=username,
-            timestamp=now(),
-            details=f"Автоматическое создание 'Дата создания' и 'Дата изменения' пользователя '{username}'."
-        )
+        message = user_data(username)
+        messages.success(request, message)
+        create_audit_log(user_requester, 'create', 'user', username, message)
 
     with connection.cursor() as cursor:
         cursor.execute("""
@@ -215,7 +172,6 @@ def user_info(request, username):
             WHERE r.rolname = %s;
         """, [username])
         user_info = cursor.fetchone()
-        print(user_info)
         cursor.execute("""
             SELECT r.rolname 
             FROM pg_roles r
@@ -245,9 +201,207 @@ def user_info(request, username):
         }
     else:
         user_data = None
-        messages.error(request, f"Не удалось получить информацию о пользователе '{username}'.")
+        message = user_info_error(username)
+        messages.success(request, message)
+        create_audit_log(user_requester, 'create', 'user', username, message)
     return render(request, 'users/user_info.html', {'user_data': user_data})
 
+
+def user_edit(request, username):
+    """Редактирование пользователя"""
+    user_requester = request.user.username if request.user.is_authenticated else "Аноним"
+    with connection.cursor() as cursor:
+        cursor.execute("SELECT 1 FROM pg_user WHERE usename = %s;", [username])
+    user_log, created = UserLog.objects.get_or_create(
+        username=username,
+        defaults={
+            'email': None,
+            'created_at': created_at,
+            'updated_at': updated_at
+        }
+    )
+    if created:
+        message = user_data(username)
+        messages.success(request, message)
+        create_audit_log(user_requester, 'create', 'user', username, message)
+    with connection.cursor() as cursor:
+        cursor.execute("""
+            SELECT r.rolname
+            FROM pg_user u
+            JOIN pg_auth_members m ON u.usesysid = m.member
+            JOIN pg_roles r ON m.roleid = r.oid
+            WHERE u.usename = %s;
+        """, [username])
+        current_groups = {group[0] for group in cursor.fetchall()}
+        cursor.execute("""
+            SELECT rolname
+            FROM pg_roles
+            WHERE rolcanlogin = FALSE AND rolname NOT LIKE 'pg_%';
+        """)
+        all_groups = {group[0] for group in cursor.fetchall()}
+    available_groups = all_groups - current_groups
+    has_changes = False
+    # errors = []
+    group_changes = []
+    if request.method == "POST":
+        new_email = request.POST.get('new_email')
+        new_password = request.POST.get('new_password')
+        selected_groups = set(filter(None, request.POST.get('selected_groups', '').split(',')))
+        deleted_groups = set(filter(None, request.POST.get('deleted_groups', '').split(',')))
+        if user_log.email != new_email:
+            if UserLog.objects.filter(email=new_email).exclude(username=username).exists():
+                message = edit_user_messages_email_error(username, new_email)
+                messages.error(request, message)
+                create_audit_log(user_requester, 'update', 'user', username, message)
+                return render(request, 'users/user_edit.html', {
+                    'username': username,
+                    'user_log': user_log,
+                    'user_groups': sorted(current_groups),
+                    'available_groups': sorted(available_groups),
+                })
+            try:
+                user_log.email = new_email if new_email else None
+                user_log.save()
+                has_changes = True
+                message = edit_user_messages_success(username, new_email)
+                messages.success(request, message)
+                create_audit_log(user_requester, 'update', 'user', username, message)
+            except Exception:
+                message = edit_user_messages_email_error(username, new_email)
+                messages.error(request, message)
+                create_audit_log(user_requester, 'update', 'user', username, message)
+        if selected_groups != current_groups:
+            has_changes = True
+            for groupname in deleted_groups:
+                try:
+                    with connection.cursor() as cursor:
+                        cursor.execute(f"REVOKE {groupname} FROM {username};")
+                    group_changes.append(f"Удален из группы: {groupname}")
+                    message = edit_user_messages_delete_group_success(username, groupname)
+                    messages.success(request, message)
+                    create_audit_log(user_requester, 'update', 'user', username, message)
+                except Exception:
+                    message = edit_user_messages_delete_group_error(username, groupname)
+                    messages.success(request, message)
+                    create_audit_log(user_requester, 'update', 'user', username, message)
+            for groupname in selected_groups:
+                if groupname not in current_groups:
+                    try:
+                        with connection.cursor() as cursor:
+                            cursor.execute(f"GRANT {groupname} TO {username};")
+                        group_changes.append(f"Добавлен в группу: {groupname}")
+                        message = edit_user_messages_add_group_success(username, groupname)
+                        messages.success(request, message)
+                        create_audit_log(user_requester, 'update', 'user', username, message)
+                    except Exception:
+                        message = edit_user_messages_add_group_error(username, groupname)
+                        messages.success(request, message)
+                        create_audit_log(user_requester, 'update', 'user', username, message)
+        if has_changes and user_log.email:
+            subject = "Изменение учетной записи"
+            html_message = render_to_string('send_email/send_user_edit.html', {
+                'username': username,
+                'password': new_password if new_password else "Пароль не изменен",
+                'group_changes': group_changes if group_changes else None
+            })
+            email_message = EmailMultiAlternatives(subject, "", settings.EMAIL_HOST_USER, [user_log.email])
+            email_message.attach_alternative(html_message, "text/html")
+            email_message.send()
+            message = edit_user_messages_email_success(username, user_log.email)
+            messages.success(request, message)
+            create_audit_log(user_requester, 'create', 'user', username, message)
+        return redirect('user_list')
+    return render(request, 'users/user_edit.html', {
+        'username': username,
+        'user_log': user_log,
+        'user_groups': sorted(current_groups),
+        'available_groups': sorted(available_groups),
+    })
+
+
+@login_required
+def user_delete(request, username):
+    """Удаление пользователя"""
+    user_requester = request.user.username if request.user.is_authenticated else "Аноним"
+    user_log = UserLog.objects.filter(username=username).first()
+    user_email = user_log.email if user_log else None
+    with connection.cursor() as cursor:
+        try:
+            cursor.execute(f"REASSIGN OWNED BY {username} TO postgres;")
+            cursor.execute(f"DROP OWNED BY {username};")
+            cursor.execute(f"DROP USER IF EXISTS {username};")
+        except Exception:
+            message = delete_user_messages_error(username)
+            messages.error(request, message)
+            create_audit_log(user_requester, 'delete', 'user', username, message)
+            return redirect('user_list')
+    if user_log:
+        message = delete_user_messages_success(username)
+        user_log.delete()
+        messages.success(request, message)
+        create_audit_log(user_requester, 'delete', 'user', username, message)
+    if user_email:
+        subject = "Ваш аккаунт был удален"
+        html_message = render_to_string('send_email/send_user_delete.html', {'username': username})
+        email_message = EmailMultiAlternatives(subject, "", settings.EMAIL_HOST_USER, [user_email])
+        email_message.attach_alternative(html_message, "text/html")
+        email_message.send()
+        message = delete_user_messages_email(username, user_email)
+        messages.success(request, message)
+        create_audit_log(user_requester, 'delete', 'user', username, message)
+    return redirect('user_list')
+
+# @login_required
+# def user_delete(request, username):
+#     """Удаление пользователя"""
+#     user_requester = request.user.username if request.user.is_authenticated else "Аноним"
+#     user_log = UserLog.objects.filter(username=username).first()
+#     user_email = user_log.email if user_log else None
+#     with connection.cursor() as cursor:
+#         try:
+#             cursor.execute(f"REASSIGN OWNED BY {username} TO postgres;")
+#             cursor.execute(f"DROP OWNED BY {username};")
+#             cursor.execute(f"DROP USER IF EXISTS {username};")
+#         except Exception:
+#             messages.error(request, messages_delete_user_error(username))
+#             Audit.objects.create(
+#                 username=user_requester,
+#                 action_type='delete',
+#                 entity_type='user',
+#                 entity_name=username,
+#                 timestamp=now(),
+#                 details=messages_delete_user_error(username)
+#             )
+#             return redirect('user_list')
+#     if user_log:
+#         user_log.delete()
+#         messages.success(request, messages_delete_user_success(username))
+#         Audit.objects.create(
+#             username=user_requester,
+#             action_type='delete',
+#             entity_type='user',
+#             entity_name=username,
+#             timestamp=now(),
+#             details=messages_delete_user_success(username)
+#         )
+#     if user_email:
+#         subject = "Ваш аккаунт был удален"
+#         html_message = render_to_string('send_email/send_user_delete.html', {
+#             'username': username
+#         })
+#         email_message = EmailMultiAlternatives(subject, "", settings.EMAIL_HOST_USER, [user_email])
+#         email_message.attach_alternative(html_message, "text/html")
+#         email_message.send()
+#         messages.success(request, messages_delete_user_email(username, user_email))
+#         Audit.objects.create(
+#             username=user_requester,
+#             action_type='delete',
+#             entity_type='user',
+#             entity_name=username,
+#             timestamp=now(),
+#             details=messages_delete_user_email(username, user_email)
+#         )
+#     return redirect('user_list')
 
 # ДОРАБОТАТЬ
 # @login_required
@@ -450,222 +604,3 @@ def user_info(request, username):
 #         })
 #
 #     return render(request, 'users/user_edit.html', {'form': form, 'username': username})
-
-
-
-
-
-def user_edit(request, username):
-    """Редактирование пользователя"""
-    user_requester = request.user.username if request.user.is_authenticated else "Аноним"
-    with connection.cursor() as cursor:
-        cursor.execute("SELECT 1 FROM pg_user WHERE usename = %s;", [username])
-    user_log, created = UserLog.objects.get_or_create(
-        username=username,
-        defaults={
-            'email': None,
-            'created_at': created_at,
-            'updated_at': updated_at
-        }
-    )
-    if created:
-        messages.info(request, f"Автоматическое создание 'Дата создания' и 'Дата изменения' пользователя '{username}'.")
-        Audit.objects.create(
-            username=user_requester,
-            action_type='create',
-            entity_type='user',
-            entity_name=username,
-            timestamp=now(),
-            details=f"Автоматическое создание 'Дата создания' и 'Дата изменения' пользователя '{username}'."
-        )
-
-    # groups
-    with connection.cursor() as cursor:
-        cursor.execute("""
-            SELECT r.rolname
-            FROM pg_user u
-            JOIN pg_auth_members m ON u.usesysid = m.member
-            JOIN pg_roles r ON m.roleid = r.oid
-            WHERE u.usename = %s;
-        """, [username])
-        current_groups = {group[0] for group in cursor.fetchall()}
-        cursor.execute("""
-            SELECT rolname
-            FROM pg_roles
-            WHERE rolcanlogin = FALSE AND rolname NOT LIKE 'pg_%';
-        """)
-        all_groups = {group[0] for group in cursor.fetchall()}
-    available_groups = all_groups - current_groups
-    has_changes = False
-    errors = []
-    group_changes = []
-    # groups
-
-    if request.method == "POST":
-        new_email = request.POST.get('new_email')
-        new_password = request.POST.get('new_password')
-
-        # groups
-        selected_groups = set(filter(None, request.POST.get('selected_groups', '').split(',')))
-        deleted_groups = set(filter(None, request.POST.get('deleted_groups', '').split(',')))
-        # groups
-
-        if user_log.email != new_email:
-            if UserLog.objects.filter(email=new_email).exclude(username=username).exists():
-                messages.error(request, f"Неудачная попытка изменить почту '{new_email}' у пользователя '{username}', почта уже используется.")
-                Audit.objects.create(
-                    username=user_requester,
-                    action_type='update',
-                    entity_type='user',
-                    entity_name=username,
-                    timestamp=now(),
-                    details=f"Неудачная попытка изменить почту '{new_email}' у пользователя '{username}', почта уже используется."
-                )
-                return render(request, 'users/user_edit.html', {
-                    'username': username,
-                    'user_log': user_log,
-                    'user_groups': sorted(current_groups),
-                    'available_groups': sorted(available_groups),
-                })
-            try:
-                user_log.email = new_email if new_email else None
-                user_log.save()
-                has_changes = True
-                Audit.objects.create(
-                    username=user_requester,
-                    action_type='update',
-                    entity_type='user',
-                    entity_name=username,
-                    timestamp=now(),
-                    details=f"Почта пользователя '{username}' изменена на '{new_email}'."
-                )
-            except Exception as e:
-                errors.append(f"Ошибка при обновлении почты: {str(e)}")
-
-        # groups
-        if selected_groups != current_groups:
-            has_changes = True
-            for groupname in deleted_groups:
-                try:
-                    with connection.cursor() as cursor:
-                        cursor.execute(f"REVOKE {groupname} FROM {username};")
-                    group_changes.append(f"Удален из группы: {groupname}")
-                    Audit.objects.create(
-                        username=user_requester,
-                        action_type='update',
-                        entity_type='user',
-                        entity_name=username,
-                        timestamp=now(),
-                        details=f"Пользователь '{username}' был удален из группы '{groupname}'."
-                    )
-                except Exception as e:
-                    errors.append(f"Ошибка при удалении группы '{groupname}': {str(e)}")
-            for groupname in selected_groups:
-                if groupname not in current_groups:
-                    try:
-                        with connection.cursor() as cursor:
-                            cursor.execute(f"GRANT {groupname} TO {username};")
-                        group_changes.append(f"Добавлен в группу: {groupname}")
-                        Audit.objects.create(
-                            username=user_requester,
-                            action_type='update',
-                            entity_type='user',
-                            entity_name=username,
-                            timestamp=now(),
-                            details=f"Пользователь '{username}' был добавлен в группу '{groupname}'."
-                        )
-                    except Exception as e:
-                        errors.append(f"Ошибка при добавлении группы '{groupname}': {str(e)}")
-        # groups
-
-        if has_changes and user_log.email:
-            subject = "Изменение учетной записи"
-            html_message = render_to_string('send_email/send_user_edit.html', {
-                'username': username,
-                'password': new_password if new_password else "Пароль не изменен",
-                'group_changes': group_changes if group_changes else None
-            })
-            email_message = EmailMultiAlternatives(subject, "", settings.EMAIL_HOST_USER, [user_log.email])
-            email_message.attach_alternative(html_message, "text/html")
-            email_message.send()
-            Audit.objects.create(
-                username=user_requester,
-                action_type='update',
-                entity_type='user',
-                entity_name=username,
-                timestamp=now(),
-                details=f"Уведомление об изменении учетной записи отправлено пользователю '{username}'."
-            )
-        if errors:
-            messages.error(request, "<br>".join(errors))
-            return render(request, 'users/user_edit.html', {
-                'username': username,
-                'user_log': user_log,
-                'user_groups': sorted(current_groups),
-                'available_groups': sorted(available_groups),
-            })
-
-        return redirect('user_list')
-
-    return render(request, 'users/user_edit.html', {
-        'username': username,
-        'user_log': user_log,
-        'user_groups': sorted(current_groups),
-        'available_groups': sorted(available_groups),
-    })
-
-
-@login_required
-def user_delete(request, username):
-    """Удаление пользователя"""
-    user_requester = request.user.username if request.user.is_authenticated else "Аноним"
-    user_log = UserLog.objects.filter(username=username).first()
-    user_email = user_log.email if user_log else None
-    with connection.cursor() as cursor:
-        try:
-            cursor.execute(f"REASSIGN OWNED BY {username} TO postgres;")
-            cursor.execute(f"DROP OWNED BY {username};")
-            cursor.execute(f"DROP USER IF EXISTS {username};")
-        except Exception:
-            messages.error(request, messages_delete_user_error(username))
-            Audit.objects.create(
-                username=user_requester,
-                action_type='delete',
-                entity_type='user',
-                entity_name=username,
-                timestamp=now(),
-                details=messages_delete_user_error(username)
-            )
-            return redirect('user_list')
-    if user_log:
-        user_log.delete()
-        messages.success(request, messages_delete_user_success(username))
-        Audit.objects.create(
-            username=user_requester,
-            action_type='delete',
-            entity_type='user',
-            entity_name=username,
-            timestamp=now(),
-            details=messages_delete_user_success(username)
-        )
-    if user_email:
-        subject = "Ваш аккаунт был удален"
-        html_message = render_to_string('send_email/send_user_delete.html', {
-            'username': username
-        })
-        email_message = EmailMultiAlternatives(subject, "", settings.EMAIL_HOST_USER, [user_email])
-        email_message.attach_alternative(html_message, "text/html")
-        email_message.send()
-        messages.success(request, messages_delete_user_email(username, user_email))
-        Audit.objects.create(
-            username=user_requester,
-            action_type='delete',
-            entity_type='user',
-            entity_name=username,
-            timestamp=now(),
-            details=messages_delete_user_email(username, user_email)
-        )
-    return redirect('user_list')
-
-
-
