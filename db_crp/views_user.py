@@ -241,7 +241,6 @@ def user_edit(request, username):
         all_groups = {group[0] for group in cursor.fetchall()}
     available_groups = all_groups - current_groups
     has_changes = False
-    # errors = []
     group_changes = []
     if request.method == "POST":
         new_email = request.POST.get('new_email')
