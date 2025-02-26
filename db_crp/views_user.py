@@ -247,6 +247,38 @@ def user_edit(request, username):
         new_password = request.POST.get('new_password')
         selected_groups = set(filter(None, request.POST.get('selected_groups', '').split(',')))
         deleted_groups = set(filter(None, request.POST.get('deleted_groups', '').split(',')))
+
+        # Получение значений чекбоксов
+        can_create_db = 'can_create_db' in request.POST
+        is_superuser = 'is_superuser' in request.POST
+        inherit = 'inherit' in request.POST
+        create_role = 'create_role' in request.POST
+        login = 'login' in request.POST
+        replication = 'replication' in request.POST
+        bypass_rls = 'bypass_rls' in request.POST
+
+        user_log.can_create_db = can_create_db
+        user_log.is_superuser = is_superuser
+        user_log.inherit = inherit
+        user_log.create_role = create_role
+        user_log.login = login
+        user_log.replication = replication
+        user_log.bypass_rls = bypass_rls
+        user_log.save()
+
+        # Сохранение в PostgreSQL
+        with connection.cursor() as cursor:
+            cursor.execute(f"""
+                ALTER ROLE {username}
+                {'CREATEDB' if can_create_db else 'NOCREATEDB'}
+                {'SUPERUSER' if is_superuser else 'NOSUPERUSER'}
+                {'INHERIT' if inherit else 'NOINHERIT'}
+                {'CREATEROLE' if create_role else 'NOCREATEROLE'}
+                {'LOGIN' if login else 'NOLOGIN'}
+                {'REPLICATION' if replication else 'NOREPLICATION'}
+                {'BYPASSRLS' if bypass_rls else 'NOBYPASSRLS'};
+            """)
+
         if user_log.email != new_email:
             if UserLog.objects.filter(email=new_email).exclude(username=username).exists():
                 message = edit_user_messages_email_error(username, new_email)
@@ -310,13 +342,19 @@ def user_edit(request, username):
             messages.success(request, message)
             create_audit_log(user_requester, 'create', 'user', username, message)
         return redirect('user_list')
+    # return render(request, 'users/user_edit.html', {
+    #     'username': username,
+    #     'user_log': user_log,
+    #     'user_groups': sorted(current_groups),
+    #     'available_groups': sorted(available_groups),
+    # })
     return render(request, 'users/user_edit.html', {
         'username': username,
         'user_log': user_log,
         'user_groups': sorted(current_groups),
         'available_groups': sorted(available_groups),
+        'form': user_log  # Передача формы в шаблон
     })
-
 
 @login_required
 def user_delete(request, username):
