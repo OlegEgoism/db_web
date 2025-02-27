@@ -131,32 +131,38 @@
 
             <div class="info-item">
                 <label for="new_can_create_db" class="info-label">Может создавать БД:</label>
-                <input type="checkbox" id="new_can_create_db" name="can_create_db" {% if form.can_create_db.value %}checked{% endif %}>
+                <input type="checkbox" id="new_can_create_db" name="can_create_db"
+                       {% if role_permissions.can_create_db %}checked{% endif %}>
             </div>
             <div class="info-item">
                 <label for="new_is_superuser" class="info-label">Суперпользователь:</label>
-                <input type="checkbox" id="new_is_superuser" name="is_superuser" {% if form.is_superuser.value %}checked{% endif %}>
+                <input type="checkbox" id="new_is_superuser" name="is_superuser"
+                       {% if role_permissions.is_superuser %}checked{% endif %}>
             </div>
-
             <div class="info-item">
                 <label for="new_inherit" class="info-label">Наследование:</label>
-                <input type="checkbox" id="new_inherit" name="inherit" {% if form.inherit.value %}checked{% endif %}>
+                <input type="checkbox" id="new_inherit" name="inherit"
+                       {% if role_permissions.inherit %}checked{% endif %}>
             </div>
             <div class="info-item">
                 <label for="new_create_role" class="info-label">Право создания роли:</label>
-                <input type="checkbox" id="new_create_role" name="create_role" {% if form.create_role.value %}checked{% endif %}>
+                <input type="checkbox" id="new_create_role" name="create_role"
+                       {% if role_permissions.create_role %}checked{% endif %}>
             </div>
             <div class="info-item">
                 <label for="new_login" class="info-label">Право входа:</label>
-                <input type="checkbox" id="new_login" name="login" {% if form.login.value %}checked{% endif %}>
+                <input type="checkbox" id="new_login" name="login"
+                       {% if role_permissions.login %}checked{% endif %}>
             </div>
             <div class="info-item">
                 <label for="new_replication" class="info-label">Право репликации:</label>
-                <input type="checkbox" id="new_replication" name="replication" {% if form.replication.value %}checked{% endif %}>
+                <input type="checkbox" id="new_replication" name="replication"
+                       {% if role_permissions.replication %}checked{% endif %}>
             </div>
             <div class="info-item">
                 <label for="new_bypass_rls" class="info-label">Bypass RLS:</label>
-                <input type="checkbox" id="new_bypass_rls" name="bypass_rls" {% if form.bypass_rls.value %}checked{% endif %}>
+                <input type="checkbox" id="new_bypass_rls" name="bypass_rls"
+                       {% if role_permissions.bypass_rls %}checked{% endif %}>
             </div>
 
 

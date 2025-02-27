@@ -72,8 +72,10 @@ def edit_user_messages_add_group_success(username, groupname):
 def edit_user_messages_add_group_error(username, groupname):
     return f"Ошибка при добавлении группы '{groupname}' пользователю '{username}'"
 
-
-
+######
+def edit_user_messages_role_permissions(username, role_permissions):
+    return f"Изменение прав доступа пользователя '{username}'. Обновленные права: '{role_permissions}'."
+######
 
 # УДАЛЕНИЕ ПОЬЗОВАТЕЛЯ
 def delete_user_messages_error(username):

@@ -3,6 +3,7 @@ from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.core.mail import EmailMultiAlternatives
 from django.db import connection
+from django.http import HttpResponseNotFound
 from django.template.loader import render_to_string
 from django.utils import timezone
 from .forms import UserCreateForm
@@ -11,7 +12,7 @@ from .models import UserLog
 from django.contrib import messages
 from .audit_views import delete_user_messages_email, delete_user_messages_success, delete_user_messages_error, create_audit_log, create_user_messages_error, create_user_messages_error_email, create_user_messages_success, create_user_messages_email, \
     user_info_error, user_data, edit_user_messages_email_error, edit_user_messages_success, edit_user_messages_email_success, edit_user_messages_add_group_error, edit_user_messages_delete_group_success, edit_user_messages_delete_group_error, \
-    edit_user_messages_add_group_success
+    edit_user_messages_add_group_success, edit_user_messages_role_permissions
 
 created_at = datetime(2000, 1, 1, 0, 0)
 updated_at = timezone.now()
@@ -207,11 +208,104 @@ def user_info(request, username):
     return render(request, 'users/user_info.html', {'user_data': user_data})
 
 
+
+
+
+
+# def user_edit(request, username):
+#     """Редактирование пользователя"""
+#     user_requester = request.user.username if request.user.is_authenticated else "Аноним"
+#
+#     # Проверка наличия пользователя в PostgreSQL
+#     with connection.cursor() as cursor:
+#         cursor.execute("SELECT 1 FROM pg_user WHERE usename = %s;", [username])
+#         user_exists = cursor.fetchone()
+#
+#     if not user_exists:
+#         return HttpResponseNotFound(f"Пользователь '{username}' не найден в базе данных PostgreSQL.")
+#
+#     # Получение или создание записи в UserLog
+#     user_log, created = UserLog.objects.get_or_create(
+#         username=username,
+#         defaults={
+#             'email': None,
+#             'created_at': created_at,
+#             'updated_at': updated_at
+#         }
+#     )
+#
+#     # Получение актуальных прав пользователя из PostgreSQL
+#     with connection.cursor() as cursor:
+#         cursor.execute("""
+#             SELECT rolcreatedb, rolsuper, rolinherit, rolcreaterole,
+#                    rolcanlogin, rolreplication, rolbypassrls
+#             FROM pg_roles
+#             WHERE rolname = %s;
+#         """, [username])
+#
+#         result = cursor.fetchone()
+#
+#         if result:
+#             role_permissions = {
+#                 'can_create_db': result[0],
+#                 'is_superuser': result[1],
+#                 'inherit': result[2],
+#                 'create_role': result[3],
+#                 'login': result[4],
+#                 'replication': result[5],
+#                 'bypass_rls': result[6]
+#             }
+#             print("Роль пользователя:", role_permissions)  # Отладка
+#         else:
+#             role_permissions = {key: False for key in [
+#                 'can_create_db', 'is_superuser', 'inherit',
+#                 'create_role', 'login', 'replication', 'bypass_rls'
+#             ]}
+#
+#     if request.method == "POST":
+#         # Обработка данных из формы
+#         role_permissions = {
+#             'can_create_db': 'can_create_db' in request.POST,
+#             'is_superuser': 'is_superuser' in request.POST,
+#             'inherit': 'inherit' in request.POST,
+#             'create_role': 'create_role' in request.POST,
+#             'login': 'login' in request.POST,
+#             'replication': 'replication' in request.POST,
+#             'bypass_rls': 'bypass_rls' in request.POST
+#         }
+#
+#         # Сохранение прав в базе данных PostgreSQL
+#         with connection.cursor() as cursor:
+#             cursor.execute(f"""
+#                 ALTER ROLE {username}
+#                 {'CREATEDB' if role_permissions['can_create_db'] else 'NOCREATEDB'}
+#                 {'SUPERUSER' if role_permissions['is_superuser'] else 'NOSUPERUSER'}
+#                 {'INHERIT' if role_permissions['inherit'] else 'NOINHERIT'}
+#                 {'CREATEROLE' if role_permissions['create_role'] else 'NOCREATEROLE'}
+#                 {'LOGIN' if role_permissions['login'] else 'NOLOGIN'}
+#                 {'REPLICATION' if role_permissions['replication'] else 'NOREPLICATION'}
+#                 {'BYPASSRLS' if role_permissions['bypass_rls'] else 'NOBYPASSRLS'};
+#             """)
+#         return redirect('user_list')
+#
+#     return render(request, 'users/user_edit.html', {
+#         'username': username,
+#         'user_log': user_log,
+#         'role_permissions': role_permissions
+#     })
+
+
 def user_edit(request, username):
     """Редактирование пользователя"""
     user_requester = request.user.username if request.user.is_authenticated else "Аноним"
+    # Проверка наличия пользователя в PostgreSQL
     with connection.cursor() as cursor:
         cursor.execute("SELECT 1 FROM pg_user WHERE usename = %s;", [username])
+        user_exists = cursor.fetchone()
+
+    if not user_exists:
+        return HttpResponseNotFound(f"Пользователь '{username}' не найден в базе данных PostgreSQL.")
+
     user_log, created = UserLog.objects.get_or_create(
         username=username,
         defaults={
@@ -220,6 +314,50 @@ def user_edit(request, username):
             'updated_at': updated_at
         }
     )
+
+    # Получение актуальных прав пользователя из PostgreSQL
+    with connection.cursor() as cursor:
+        cursor.execute("""
+            SELECT rolcreatedb, rolsuper, rolinherit, rolcreaterole, 
+                   rolcanlogin, rolreplication, rolbypassrls
+            FROM pg_roles 
+            WHERE rolname = %s;
+        """, [username])
+
+        result = cursor.fetchone()
+        if result:
+            role_permissions = {
+                'can_create_db': result[0],
+                'is_superuser': result[1],
+                'inherit': result[2],
+                'create_role': result[3],
+                'login': result[4],
+                'replication': result[5],
+                'bypass_rls': result[6]
+            }
+            print("Роль пользователя:", role_permissions)  # Отладка
+        else:
+            role_permissions = {key: False for key in [
+                'can_create_db', 'is_superuser', 'inherit',
+                'create_role', 'login', 'replication', 'bypass_rls'
+            ]}
+    if request.method == "POST":
+        # Обработка данных из формы
+        role_permissions = {
+            'can_create_db': 'can_create_db' in request.POST,
+            'is_superuser': 'is_superuser' in request.POST,
+            'inherit': 'inherit' in request.POST,
+            'create_role': 'create_role' in request.POST,
+            'login': 'login' in request.POST,
+            'replication': 'replication' in request.POST,
+            'bypass_rls': 'bypass_rls' in request.POST
+        }
+        ##########
+        message = edit_user_messages_role_permissions(username, role_permissions)
+        messages.success(request, message)
+        create_audit_log(user_requester, 'update', 'user', username, message)
+        ##########
+
     if created:
         message = user_data(username)
         messages.success(request, message)
@@ -342,18 +480,14 @@ def user_edit(request, username):
             messages.success(request, message)
             create_audit_log(user_requester, 'create', 'user', username, message)
         return redirect('user_list')
-    # return render(request, 'users/user_edit.html', {
-    #     'username': username,
-    #     'user_log': user_log,
-    #     'user_groups': sorted(current_groups),
-    #     'available_groups': sorted(available_groups),
-    # })
+
     return render(request, 'users/user_edit.html', {
         'username': username,
         'user_log': user_log,
         'user_groups': sorted(current_groups),
         'available_groups': sorted(available_groups),
-        'form': user_log  # Передача формы в шаблон
+        'form': user_log,
+        'role_permissions': role_permissions
     })
 
 @login_required
