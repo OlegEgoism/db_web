@@ -1,5 +1,4 @@
 from django.utils.timezone import now
-
 from db_crp.models import Audit
 
 
@@ -13,6 +12,11 @@ def create_audit_log(user_requester, action_type, entity_type, entity_name, deta
         timestamp=now(),
         details=details
     )
+
+
+# РЕГИСТРАЦИЯ ПОЛЬЗОВАТЕЛЯ
+def user_register(username, email, phone_number):
+    return f"Пользователь {username} зарегистрирован, почта {email}, телефон {phone_number}."
 
 
 # ИНФОРМАЦИЯ ПОЛЗОВАТЕЛЯ
@@ -56,7 +60,6 @@ def edit_user_messages_email_success(username, email):
     return f"Уведомление об изменении учетной записи отправлено пользователю '{username}' на почту '{email}'."
 
 
-
 def edit_user_messages_delete_group_success(username, groupname):
     return f"Пользователь '{username}' удален из группы '{groupname}'."
 
@@ -72,10 +75,10 @@ def edit_user_messages_add_group_success(username, groupname):
 def edit_user_messages_add_group_error(username, groupname):
     return f"Ошибка при добавлении группы '{groupname}' пользователю '{username}'"
 
-######
+
 def edit_user_messages_role_permissions(username, role_permissions):
     return f"Изменение прав доступа пользователя '{username}'. Обновленные права: '{role_permissions}'."
-######
+
 
 # УДАЛЕНИЕ ПОЬЗОВАТЕЛЯ
 def delete_user_messages_error(username):
@@ -88,3 +91,35 @@ def delete_user_messages_success(username):
 
 def delete_user_messages_email(username, user_email):
     return f"Уведомление об удалении пользователя '{username}' из базы данных отправлено на почту'{user_email}'."
+
+
+# ---------------------------------------------------------------------------------------------------------------
+# ИНФОРМАЦИЯ ГРУППЫ
+def group_data(groupname):
+    return f"Автоматическое создание 'Дата создания' и 'Дата изменения' группы '{groupname}'."
+
+
+# УДАЛЕНИЕ ГРУППЫ
+def delete_group_messages_success(groupname):
+    return f"Группа '{groupname}' была удалена из базы данных."
+
+
+def delete_group_messages_error(groupname):
+    return f"Неудачная попытка при удалении группы '{groupname}' из базы данных, группа не может быть удален, так как существуют зависимые объекты в базе данных."
+
+
+# СОЗДАНИЕ ГРУППЫ
+def create_group_messages_error(groupname):
+    return f"Неудачная попытка создания группы '{groupname}', группа уже существует."
+
+
+def create_group_messages_error_pg(groupname):
+    return f"Неудачная попытка создания группы '{groupname}', запрещенный префикс 'pg_'."
+
+
+def edit_group_messages_group_success(groupname):
+    return f"Группа '{groupname}' успешно создана."
+
+
+def create_group_messages_error_info(groupname):
+    return f"Неудачная попытка создания группы '{groupname}'."

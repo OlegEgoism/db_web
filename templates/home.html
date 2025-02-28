@@ -2,6 +2,18 @@
 
 {% block content %}
     <div class="welcome-container">
+
+        <!-- Вывод сообщений об ошибках -->
+        {% if messages %}
+            <div class="messages">
+                {% for message in messages %}
+                    <div class="alert {% if message.tags == 'success' %}alert-success{% else %}alert-error{% endif %}" role="alert">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+
         {% if user.is_authenticated %}
             <h2 class="welcome-title">Добро пожаловать!</h2>
             <h3>Вы вошли в систему как пользователь <strong class="user-log ">{{ user.username }}</strong></h3>

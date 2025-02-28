@@ -5,8 +5,10 @@ from django.http import HttpResponseRedirect
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.timezone import now
+
+from .audit_views import group_data, create_audit_log, delete_group_messages_success, delete_group_messages_error, create_group_messages_error, create_group_messages_error_pg, edit_group_messages_group_success, create_group_messages_error_info
 from .forms import CreateGroupForm, GroupEditForm
-from django.shortcuts import render, redirect, get_object_or_404
+from django.shortcuts import render, redirect
 from .models import GroupLog, Audit
 from django.contrib import messages
 
@@ -46,7 +48,7 @@ def group_list(request):
 @login_required
 def group_create(request):
     """Создание группы"""
-    username = request.user.username if request.user.is_authenticated else "Аноним"
+    user_requester = request.user.username if request.user.is_authenticated else "Аноним"
     if request.method == "POST":
         form = CreateGroupForm(request.POST)
         if form.is_valid():
@@ -55,51 +57,28 @@ def group_create(request):
                 cursor.execute("SELECT 1 FROM pg_roles WHERE rolname = %s;", [groupname])
                 existing_group = cursor.fetchone()
             if existing_group:
-                messages.error(request, f"Неудачная попытка создания группы '{groupname}', группа уже существует.")
-                Audit.objects.create(
-                    username=username,
-                    action_type='create',
-                    entity_type='group',
-                    entity_name=groupname,
-                    timestamp=now(),
-                    details=f"Неудачная попытка создания группы '{groupname}', группа уже существует."
-                )
+                message = create_group_messages_error(groupname)
+                messages.error(request, message)
+                create_audit_log(user_requester, 'create', 'group', groupname, message)
                 return render(request, 'groups/group_create.html', {'form': form})
             if groupname.startswith('pg_'):
-                messages.error(request, f"Неудачная попытка создания группы '{groupname}', запрещенный префикс 'pg_'.")
-                Audit.objects.create(
-                    username=username,
-                    action_type='create',
-                    entity_type='group',
-                    entity_name=groupname,
-                    timestamp=now(),
-                    details=f"Неудачная попытка создания группы '{groupname}', запрещенный префикс 'pg_'."
-                )
+                message = create_group_messages_error_pg(groupname)
+                messages.error(request, message)
+                create_audit_log(user_requester, 'create', 'group', groupname, message)
                 return render(request, 'groups/group_create.html', {'form': form})
             try:
                 with connection.cursor() as cursor:
                     cursor.execute(f"CREATE ROLE {groupname};")
-                GroupLog.objects.create(groupname=groupname, created_at=timezone.now(), updated_at=timezone.now())
-                messages.success(request, f"Группа '{groupname}' успешно создана.")
-                Audit.objects.create(
-                    username=username,
-                    action_type='create',
-                    entity_type='group',
-                    entity_name=groupname,
-                    timestamp=now(),
-                    details=f"Группа '{groupname}' успешно создана."
-                )
+                GroupLog.objects.create(groupname=groupname, created_at=timezone.now(), updated_at=updated_at)
+                message = edit_group_messages_group_success(groupname)
+                messages.success(request, message)
+                create_audit_log(user_requester, 'create', 'group', groupname, message)
                 return redirect('group_list')
-            except Exception as e:
-                messages.error(request, f"Ошибка при создании группы: {e}")
-                Audit.objects.create(
-                    username=username,
-                    action_type='create',
-                    entity_type='group',
-                    entity_name=groupname,
-                    timestamp=now(),
-                    details=f"Ошибка при создании группы '{groupname}': {str(e)}"
-                )
+
+            except Exception:
+                message = create_group_messages_error_info(groupname)
+                messages.error(request, message)
+                create_audit_log(user_requester, 'create', 'group', groupname, message)
     else:
         form = CreateGroupForm()
     return render(request, 'groups/group_create.html', {'form': form})
@@ -108,8 +87,18 @@ def group_create(request):
 @login_required
 def group_edit(request, group_name):
     """Редактирование группы"""
-    group_log = get_object_or_404(GroupLog, groupname=group_name)
-    username = request.user.username if request.user.is_authenticated else "Аноним"
+    user_requester = request.user.username if request.user.is_authenticated else "Аноним"
+    group_log, created = GroupLog.objects.get_or_create(
+        groupname=group_name,
+        defaults={
+            'created_at': created_at,
+            'updated_at': updated_at
+        }
+    )
+    if created:
+        message = group_data(group_name)
+        messages.success(request, message)
+        create_audit_log(user_requester, 'create', 'group', group_name, message)
     if request.method == "POST":
         form = GroupEditForm(request.POST)
         if form.is_valid():
@@ -117,7 +106,7 @@ def group_edit(request, group_name):
             if new_groupname.startswith('pg_'):
                 messages.error(request, f"Неудачная попытка переименовать группу с '{group_name}' в '{new_groupname}', запрещенный префикс 'pg_'.")
                 Audit.objects.create(
-                    username=username,
+                    username=user_requester,
                     action_type='update',
                     entity_type='group',
                     entity_name=group_name,
@@ -135,7 +124,7 @@ def group_edit(request, group_name):
             if existing_group:
                 messages.error(request, f"Неудачная попытка переименовать группу с '{group_name}' в '{new_groupname}', группа уже существует.")
                 Audit.objects.create(
-                    username=username,
+                    username=user_requester,
                     action_type='update',
                     entity_type='group',
                     entity_name=group_name,
@@ -155,7 +144,7 @@ def group_edit(request, group_name):
                 group_log.save()
                 messages.success(request, f"Группа '{group_name}' успешно переименована в '{new_groupname}'.")
                 Audit.objects.create(
-                    username=username,
+                    username=user_requester,
                     action_type='update',
                     entity_type='group',
                     entity_name=new_groupname,
@@ -167,7 +156,7 @@ def group_edit(request, group_name):
             except Exception as e:
                 messages.error(request, f"Ошибка при редактировании группы: {e}")
                 Audit.objects.create(
-                    username=username,
+                    username=user_requester,
                     action_type='update',
                     entity_type='group',
                     entity_name=group_name,
@@ -186,32 +175,20 @@ def group_edit(request, group_name):
 @login_required
 def group_delete(request, group_name):
     """Удаление группы"""
-    username = request.user.username if request.user.is_authenticated else "Аноним"
+    user_requester = request.user.username if request.user.is_authenticated else "Аноним"
+    group_log = GroupLog.objects.filter(groupname=group_name).first()
     try:
         with connection.cursor() as cursor:
             cursor.execute(f'DROP ROLE IF EXISTS "{group_name}";')
-        group_log = GroupLog.objects.filter(groupname=group_name).first()
         if group_log:
             group_log.delete()
-            messages.success(request, f"Группа '{group_name}' успешно удалена.")
-            Audit.objects.create(
-                username=username,
-                action_type='delete',
-                entity_type='group',
-                entity_name=group_name,
-                timestamp=now(),
-                details=f"Группа '{group_name}' успешно удалена."
-            )
-    except Exception as e:
-        messages.error(request, f'Ошибка при удалении группы: {e}')
-        Audit.objects.create(
-            username=username,
-            action_type='delete',
-            entity_type='group',
-            entity_name=group_name,
-            timestamp=now(),
-            details=f"Ошибка при удалении группы '{group_name}': {str(e)}"
-        )
+            message = delete_group_messages_success(group_name)
+            messages.success(request, message)
+            create_audit_log(user_requester, 'delete', 'group', group_name, message)
+    except Exception:
+        message = delete_group_messages_error(group_name)
+        messages.error(request, message)
+        create_audit_log(user_requester, 'delete', 'group', group_name, message)
     return HttpResponseRedirect(reverse('group_list'))
 
 
@@ -227,15 +204,9 @@ def group_info(request, group_name):
         }
     )
     if created:
-        messages.info(request, f"Автоматическое создание 'Дата создания' и 'Дата изменения' группы '{group_name}'.")
-        Audit.objects.create(
-            username=user_requester,
-            action_type='create',
-            entity_type='user',
-            entity_name=group_name,
-            timestamp=now(),
-            details=f"Автоматическое создание 'Дата создания' и 'Дата изменения' группы '{group_name}'."
-        )
+        message = group_data(group_name)
+        messages.success(request, message)
+        create_audit_log(user_requester, 'create', 'group', group_name, message)
     with connection.cursor() as cursor:
         cursor.execute("""
             SELECT usename 

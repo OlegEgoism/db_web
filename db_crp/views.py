@@ -1,10 +1,7 @@
-from datetime import datetime
 from django.contrib.auth import login, logout
-from django.utils import timezone
-from django.utils.timezone import now
+from .audit_views import user_register, create_audit_log
 from .forms import CustomUserRegistrationForm
 from django.shortcuts import render, redirect
-from .models import Audit
 from django.contrib import messages
 
 
@@ -15,19 +12,15 @@ def home(request):
 
 def register(request):
     """Регистрация пользователя"""
+    user_requester = request.user.username if request.user.is_authenticated else "Аноним"
     if request.method == 'POST':
         form = CustomUserRegistrationForm(request.POST, request.FILES)
         if form.is_valid():
             user = form.save()
             login(request, user)
-            Audit.objects.create(
-                username=user.username,
-                action_type='register',
-                entity_type='user',
-                entity_name=user.username,
-                timestamp=now(),
-                details=f"Пользователь {user.username} зарегистрирован, почта {user.email}, телефон {user.phone_number}."
-            )
+            message = user_register(user.username, user.email, user.phone_number)
+            messages.success(request, message)
+            create_audit_log(user_requester, 'register', 'user', user.username, message)
             return redirect('home')
         else:
             for field, errors in form.errors.items():
