@@ -74,7 +74,6 @@ def group_create(request):
                 messages.success(request, message)
                 create_audit_log(user_requester, 'create', 'group', groupname, message)
                 return redirect('group_list')
-
             except Exception:
                 message = create_group_messages_error_info(groupname)
                 messages.error(request, message)
