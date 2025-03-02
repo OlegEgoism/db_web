@@ -29,7 +29,7 @@
                         <strong>{{ forloop.counter }}.</strong>
                     </div>
                     <div class="group-name">
-                        <a href="{% url 'tables_in_database' db.id %}" class="group-link-user">{{ db.name_db }}</a>
+                        <a href="{% url 'tables_list' db.id %}" class="group-link-user">{{ db.name_db }}</a>
                     </div>
                     <div class="group-dates">
                         <small>Создан: {% if db.created_at %}{{ db.created_at|date:"d.m.Y H:i" }}{% else %}—{% endif %}</small>
