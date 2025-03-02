@@ -6,7 +6,7 @@ from django.utils.timezone import now
 
 class DT(models.Model):
     created_at = models.DateTimeField(verbose_name="Дата создания", default=timezone.now)
-    updated_at = models.DateTimeField(verbose_name="Дата последнего изменения", auto_now=True)
+    updated_at = models.DateTimeField(verbose_name="Дата изменения", auto_now=True)
 
     class Meta:
         abstract = True
@@ -86,3 +86,19 @@ class Audit(models.Model):
     class Meta:
         verbose_name = "Журнал действий"
         verbose_name_plural = "Журнал действий"
+
+
+class ConnectingDB(DT):
+    """Подключение к базе данных"""
+    name_db = models.CharField(verbose_name="Название базы данных", max_length=150, unique=True)
+    user_db = models.CharField(verbose_name="Пользователь", max_length=150)
+    password_db = models.CharField(verbose_name="Пароль", max_length=150)
+    host_db = models.CharField(verbose_name="Хост", max_length=150)
+    port_db = models.CharField(verbose_name="Порт", max_length=150)
+
+    def __str__(self):
+        return self.name_db
+
+    class Meta:
+        verbose_name = "Подключение к базе данных"
+        verbose_name_plural = "Подключение к базе данных"

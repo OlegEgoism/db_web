@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.utils.safestring import mark_safe
 
-from db_crp.models import CustomUser, GroupLog, UserLog, Audit
+from db_crp.models import CustomUser, GroupLog, UserLog, Audit, ConnectingDB
 
 
 @admin.register(CustomUser)
@@ -73,4 +73,16 @@ class AuditAdmin(admin.ModelAdmin):
     search_help_text = 'Поиск по имени пользователя и информации из подробно'
     date_hierarchy = 'timestamp'
     list_filter = 'action_type', 'entity_type', 'username'
+    list_per_page = 20
+
+
+@admin.register(ConnectingDB)
+class ConnectingDBAdmin(admin.ModelAdmin):
+    """Подключение к базе данных"""
+    list_display = 'name_db', 'user_db', 'host_db', 'port_db', 'created_at', 'updated_at'
+    readonly_fields = 'created_at', 'updated_at'
+    search_fields = 'name_db',
+    search_help_text = 'Поиск по названию базы данных'
+    date_hierarchy = 'created_at'
+    list_filter = 'name_db', 'created_at',
     list_per_page = 20
