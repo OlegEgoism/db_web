@@ -1,15 +1,17 @@
 from datetime import datetime
+from urllib import request
+
 from django.contrib.auth.decorators import login_required
-from django.db import connection
-from django.http import HttpResponseRedirect
+from django.db import connection, connections
+from django.http import HttpResponseRedirect, JsonResponse
 from django.urls import reverse
 from django.utils import timezone
-from django.utils.timezone import now
 from .audit_views import group_data, create_audit_log, delete_group_messages_success, delete_group_messages_error, create_group_messages_error, create_group_messages_error_pg, edit_group_messages_group_success, create_group_messages_error_info
 from .forms import CreateGroupForm, GroupEditForm
 from django.shortcuts import render, redirect
-from .models import GroupLog, Audit
+from .models import GroupLog, Audit, ConnectingDB
 from django.contrib import messages
+
 
 created_at = datetime(2000, 1, 1, 0, 0)
 updated_at = timezone.now()
@@ -82,92 +84,92 @@ def group_create(request):
     return render(request, 'groups/group_create.html', {'form': form})
 
 
-@login_required
-def group_edit(request, group_name):
-    """Редактирование группы"""
-    user_requester = request.user.username if request.user.is_authenticated else "Аноним"
-    group_log, created = GroupLog.objects.get_or_create(
-        groupname=group_name,
-        defaults={
-            'created_at': created_at,
-            'updated_at': updated_at
-        }
-    )
-    if created:
-        message = group_data(group_name)
-        messages.success(request, message)
-        create_audit_log(user_requester, 'create', 'group', group_name, message)
-    if request.method == "POST":
-        form = GroupEditForm(request.POST)
-        if form.is_valid():
-            new_groupname = form.cleaned_data['groupname']
-            if new_groupname.startswith('pg_'):
-                messages.error(request, f"Неудачная попытка переименовать группу с '{group_name}' в '{new_groupname}', запрещенный префикс 'pg_'.")
-                Audit.objects.create(
-                    username=user_requester,
-                    action_type='update',
-                    entity_type='group',
-                    entity_name=group_name,
-                    timestamp=now(),
-                    details=f"Неудачная попытка переименовать группу с '{group_name}' в '{new_groupname}', запрещенный префикс 'pg_'"
-                )
-                return render(request, 'groups/group_edit.html', {
-                    'form': form,
-                    'group_name': group_name,
-                    'group_log': group_log
-                })
-            with connection.cursor() as cursor:
-                cursor.execute("SELECT 1 FROM pg_roles WHERE rolname = %s;", [new_groupname])
-                existing_group = cursor.fetchone()
-            if existing_group:
-                messages.error(request, f"Неудачная попытка переименовать группу с '{group_name}' в '{new_groupname}', группа уже существует.")
-                Audit.objects.create(
-                    username=user_requester,
-                    action_type='update',
-                    entity_type='group',
-                    entity_name=group_name,
-                    timestamp=now(),
-                    details=f"Неудачная попытка переименовать группу с '{group_name}' в '{new_groupname}', группа уже существует."
-                )
-                return render(request, 'groups/group_edit.html', {
-                    'form': form,
-                    'group_name': group_name,
-                    'group_log': group_log
-                })
-            try:
-                with connection.cursor() as cursor:
-                    cursor.execute(f"ALTER ROLE {group_name} RENAME TO {new_groupname};")
-                group_log.groupname = new_groupname
-                group_log.updated_at = timezone.now()
-                group_log.save()
-                messages.success(request, f"Группа '{group_name}' успешно переименована в '{new_groupname}'.")
-                Audit.objects.create(
-                    username=user_requester,
-                    action_type='update',
-                    entity_type='group',
-                    entity_name=new_groupname,
-                    timestamp=now(),
-                    details=f"Группа '{group_name}' успешно переименована в '{new_groupname}'."
-                )
-
-                return redirect('group_list')
-            except Exception as e:
-                messages.error(request, f"Ошибка при редактировании группы: {e}")
-                Audit.objects.create(
-                    username=user_requester,
-                    action_type='update',
-                    entity_type='group',
-                    entity_name=group_name,
-                    timestamp=now(),
-                    details=f"Ошибка при редактировании группы '{group_name}': {str(e)}"
-                )
-    else:
-        form = GroupEditForm(initial={'groupname': group_log.groupname})
-    return render(request, 'groups/group_edit.html', {
-        'form': form,
-        'group_name': group_name,
-        'group_log': group_log
-    })
+# @login_required
+# def group_edit(request, group_name):
+#     """Редактирование группы"""
+#     user_requester = request.user.username if request.user.is_authenticated else "Аноним"
+#     group_log, created = GroupLog.objects.get_or_create(
+#         groupname=group_name,
+#         defaults={
+#             'created_at': created_at,
+#             'updated_at': updated_at
+#         }
+#     )
+#     if created:
+#         message = group_data(group_name)
+#         messages.success(request, message)
+#         create_audit_log(user_requester, 'create', 'group', group_name, message)
+#     if request.method == "POST":
+#         form = GroupEditForm(request.POST)
+#         if form.is_valid():
+#             new_groupname = form.cleaned_data['groupname']
+#             if new_groupname.startswith('pg_'):
+#                 messages.error(request, f"Неудачная попытка переименовать группу с '{group_name}' в '{new_groupname}', запрещенный префикс 'pg_'.")
+#                 Audit.objects.create(
+#                     username=user_requester,
+#                     action_type='update',
+#                     entity_type='group',
+#                     entity_name=group_name,
+#                     timestamp=now(),
+#                     details=f"Неудачная попытка переименовать группу с '{group_name}' в '{new_groupname}', запрещенный префикс 'pg_'"
+#                 )
+#                 return render(request, 'groups/group_edit.html', {
+#                     'form': form,
+#                     'group_name': group_name,
+#                     'group_log': group_log
+#                 })
+#             with connection.cursor() as cursor:
+#                 cursor.execute("SELECT 1 FROM pg_roles WHERE rolname = %s;", [new_groupname])
+#                 existing_group = cursor.fetchone()
+#             if existing_group:
+#                 messages.error(request, f"Неудачная попытка переименовать группу с '{group_name}' в '{new_groupname}', группа уже существует.")
+#                 Audit.objects.create(
+#                     username=user_requester,
+#                     action_type='update',
+#                     entity_type='group',
+#                     entity_name=group_name,
+#                     timestamp=now(),
+#                     details=f"Неудачная попытка переименовать группу с '{group_name}' в '{new_groupname}', группа уже существует."
+#                 )
+#                 return render(request, 'groups/group_edit.html', {
+#                     'form': form,
+#                     'group_name': group_name,
+#                     'group_log': group_log
+#                 })
+#             try:
+#                 with connection.cursor() as cursor:
+#                     cursor.execute(f"ALTER ROLE {group_name} RENAME TO {new_groupname};")
+#                 group_log.groupname = new_groupname
+#                 group_log.updated_at = timezone.now()
+#                 group_log.save()
+#                 messages.success(request, f"Группа '{group_name}' успешно переименована в '{new_groupname}'.")
+#                 Audit.objects.create(
+#                     username=user_requester,
+#                     action_type='update',
+#                     entity_type='group',
+#                     entity_name=new_groupname,
+#                     timestamp=now(),
+#                     details=f"Группа '{group_name}' успешно переименована в '{new_groupname}'."
+#                 )
+#
+#                 return redirect('group_list')
+#             except Exception as e:
+#                 messages.error(request, f"Ошибка при редактировании группы: {e}")
+#                 Audit.objects.create(
+#                     username=user_requester,
+#                     action_type='update',
+#                     entity_type='group',
+#                     entity_name=group_name,
+#                     timestamp=now(),
+#                     details=f"Ошибка при редактировании группы '{group_name}': {str(e)}"
+#                 )
+#     else:
+#         form = GroupEditForm(initial={'groupname': group_log.groupname})
+#     return render(request, 'groups/group_edit.html', {
+#         'form': form,
+#         'group_name': group_name,
+#         'group_log': group_log
+#     })
 
 
 @login_required
@@ -220,3 +222,122 @@ def group_info(request, group_name):
         'user_count': len(user_names),
         'group_log': group_log
     })
+
+
+@login_required
+def group_edit(request, group_name):
+    """Редактирование группы + назначение привилегий на таблицы"""
+    user_requester = request.user.username
+    group_log, created = GroupLog.objects.get_or_create(
+        groupname=group_name
+    )
+
+    if request.method == "POST":
+        form = GroupEditForm(request.POST)
+        if form.is_valid():
+            new_groupname = form.cleaned_data['groupname']
+
+            # Проверяем имя роли
+            if new_groupname.startswith('pg_'):
+                messages.error(request, "Нельзя использовать префикс 'pg_' для группы!")
+                return redirect('group_edit', group_name=group_name)
+
+            # Проверяем существование группы
+            with connection.cursor() as cursor:
+                cursor.execute("SELECT 1 FROM pg_roles WHERE rolname = %s;", [new_groupname])
+                if cursor.fetchone():
+                    messages.error(request, f"Группа '{new_groupname}' уже существует!")
+                    return redirect('group_edit', group_name=group_name)
+
+            # Обновляем имя группы
+            try:
+                with connection.cursor() as cursor:
+                    cursor.execute(f"ALTER ROLE {group_name} RENAME TO {new_groupname};")
+                group_log.groupname = new_groupname
+                group_log.updated_at = timezone.now()
+                group_log.save()
+                messages.success(request, f"Группа '{group_name}' переименована в '{new_groupname}'")
+            except Exception as e:
+                messages.error(request, f"Ошибка: {e}")
+
+            # Назначение привилегий
+            database = request.POST.get('database')
+            table = request.POST.get('table')
+            permissions = request.POST.getlist('permissions')
+
+            if database and table and permissions:
+                grant_permissions(new_groupname, database, table, permissions, user_requester)
+
+            return redirect('group_list')
+
+    else:
+        form = GroupEditForm(initial={'groupname': group_log.groupname})
+
+    databases = ConnectingDB.objects.all()
+    return render(request, 'groups/group_edit.html', {
+        'form': form,
+        'group_name': group_name,
+        'group_log': group_log,
+        'databases': databases
+    })
+
+
+def grant_permissions(groupname, database, table, permissions, user_requester):
+    """Выдача привилегий на таблицу"""
+    permission_query = ", ".join(permissions)  # SELECT, INSERT и т. д.
+    try:
+        with connections['default'].cursor() as cursor:
+            cursor.execute(f"GRANT {permission_query} ON {database}.{table} TO {groupname};")
+        Audit.objects.create(
+            username=user_requester,
+            action_type='grant',
+            entity_type='table',
+            entity_name=f"{database}.{table}",
+            timestamp=timezone.now(),
+            details=f"Выданы права {permission_query} группе {groupname} на таблицу {database}.{table}"
+        )
+        messages.success(request, f"Выданы права {permission_query} группе {groupname} на {database}.{table}")
+    except Exception as e:
+        messages.error(request, f"Ошибка выдачи привилегий: {e}")
+
+
+def get_tables(request, db_name):
+    """Возвращает список таблиц из указанной базы данных"""
+    try:
+        with connections['default'].cursor() as cursor:
+            cursor.execute("SELECT tablename FROM pg_tables WHERE schemaname='public';")
+            tables = [row[0] for row in cursor.fetchall()]
+        return JsonResponse({"tables": tables})
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=500)
+
+
+
+
+
+
+@login_required
+def assign_permissions(request, group_name):
+    """Страница назначения привилегий для группы"""
+    if request.method == "POST":
+        database = request.POST.get('database')
+        table = request.POST.get('table')
+        permissions = request.POST.getlist('permissions')
+
+        if database and table and permissions:
+            permission_query = ", ".join(permissions)
+            try:
+                with connections['default'].cursor() as cursor:
+                    cursor.execute(f"GRANT {permission_query} ON {database}.{table} TO {group_name};")
+                messages.success(request, f"Выданы права {permission_query} группе {group_name} на таблицу {database}.{table}")
+            except Exception as e:
+                messages.error(request, f"Ошибка при назначении привилегий: {e}")
+
+            return redirect('group_edit', group_name=group_name)
+
+    databases = ConnectingDB.objects.all()
+    return render(request, 'groups/assign_permissions.html', {
+        'group_name': group_name,
+        'databases': databases
+    })
+

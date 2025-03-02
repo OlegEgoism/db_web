@@ -246,7 +246,6 @@ def user_edit(request, username):
                 'replication': result[5],
                 'bypass_rls': result[6]
             }
-            print("Роль пользователя:", role_permissions)  # Отладка
         else:
             role_permissions = {key: False for key in [
                 'can_create_db', 'is_superuser', 'inherit',

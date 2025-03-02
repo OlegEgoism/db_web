@@ -6,7 +6,7 @@
         <h2 class="welcome-title">Редактирование группы: {{ group_name }}</h2>
         <hr>
 
-        <!-- Вывод сообщений об ошибках -->
+        <!-- Вывод сообщений -->
         {% if messages %}
             <div class="messages">
                 {% for message in messages %}
@@ -23,13 +23,15 @@
         </div>
         <div class="info-item">
             <span class="info-label">Дата изменения:</span>
-            <span class="info-value">{% if group_log.updated_at %} {{ group_log.updated_at|date:"d.m.Y - H:i" }} {% else %}—{% endif %}</span>
+            <span class="info-value">{% if group_log.updated_at %}{{ group_log.updated_at|date:"d.m.Y - H:i" }}{% else %}—{% endif %}</span>
         </div>
+
         <form method="post">
             {% csrf_token %}
             {{ form.as_p }}
             <div class="all-btn">
                 <a href="{% url 'group_list' %}" class="btn btn-cancel">Назад</a>
+                <a href="{% url 'assign_permissions' group_name=group_name %}" class="btn btn-assign">Назначить привилегии</a>
                 <button type="submit" class="btn btn-save">Сохранить</button>
             </div>
         </form>

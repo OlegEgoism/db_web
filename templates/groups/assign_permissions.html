@@ -1,0 +1,89 @@
+{% extends 'base.html' %}
+<title>{% block title %}Назначение привилегий группе {{ group_name }}{% endblock %}</title>
+
+{% block content %}
+    <div class="welcome-edit">
+        <h2 class="welcome-title">Назначение привилегий для группы: {{ group_name }}</h2>
+        <hr>
+
+        <!-- Вывод сообщений -->
+        {% if messages %}
+            <div class="messages">
+                {% for message in messages %}
+                    <div class="alert {% if message.tags == 'success' %}alert-success{% else %}alert-error{% endif %}" role="alert">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        <form method="post">
+            {% csrf_token %}
+
+            <!-- Выбор базы данных -->
+            <div class="form-group">
+                <label for="databaseSelect">Выберите базу данных:</label>
+                <select id="databaseSelect" name="database" class="form-control" onchange="loadTables()">
+                    <option value="">Выберите...</option>
+                    {% for db in databases %}
+                        <option value="{{ db.name_db }}">{{ db.name_db }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- Выбор таблицы -->
+            <div class="form-group">
+                <label for="tableSelect">Выберите таблицу:</label>
+                <select id="tableSelect" name="table" class="form-control">
+                    <option value="">Сначала выберите базу</option>
+                </select>
+            </div>
+
+            <!-- Выбор привилегий -->
+            <div class="form-group">
+                <label>Выберите права доступа:</label>
+                <div class="checkbox-group">
+                    <label><input type="checkbox" name="permissions" value="SELECT"> SELECT (Чтение)</label>
+                    <label><input type="checkbox" name="permissions" value="INSERT"> INSERT (Добавление)</label>
+                    <label><input type="checkbox" name="permissions" value="UPDATE"> UPDATE (Обновление)</label>
+                    <label><input type="checkbox" name="permissions" value="DELETE"> DELETE (Удаление)</label>
+                </div>
+            </div>
+
+            <div class="all-btn">
+                <a href="{% url 'group_edit' group_name=group_name %}" class="btn btn-cancel">Назад</a>
+                <button type="submit" class="btn btn-save">Назначить привилегии</button>
+            </div>
+        </form>
+    </div>
+
+    <script>
+        function loadTables() {
+            let dbName = document.getElementById("databaseSelect").value;
+            let tableSelect = document.getElementById("tableSelect");
+
+            if (dbName === "") {
+                tableSelect.innerHTML = "<option value=''>Сначала выберите базу данных</option>";
+                return;
+            }
+
+            fetch(`/get_tables/${dbName}/`)
+                .then(response => response.json())
+                .then(data => {
+                    tableSelect.innerHTML = "";
+                    if (data.tables.length === 0) {
+                        tableSelect.innerHTML = "<option value=''>Нет доступных таблиц</option>";
+                    } else {
+                        data.tables.forEach(table => {
+                            let option = document.createElement("option");
+                            option.value = table;
+                            option.textContent = table;
+                            tableSelect.appendChild(option);
+                        });
+                    }
+                })
+                .catch(error => console.error("Ошибка загрузки таблиц:", error));
+        }
+    </script>
+
+{% endblock %}
