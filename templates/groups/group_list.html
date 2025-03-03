@@ -41,6 +41,7 @@
                     </div>
                     <div class="user-action">
                         <a href="{% url 'group_edit' group %}" class="btn btn-edit">Редактировать</a>
+                        <a href="{% url 'groups_edit_privileges' group %}" class="btn btn-edit">Доступ</a>
                         <a href="{% url 'group_delete' group %}" class="btn btn-delete" onclick="return confirm('Удалить группу {{ group }}?')">Удалить</a>
                     </div>
                 </div>

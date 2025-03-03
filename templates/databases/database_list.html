@@ -1,10 +1,10 @@
 {% extends 'base.html' %}
-<title>{% block title %}Список баз данных{% endblock %}</title>
+<title>{% block title %}Доступные базы данных в группе{% endblock %}</title>
 
 {% block content %}
     <div class="welcome-container">
         <div class="title-with-button" style="display: flex; align-items: center; justify-content: space-between;">
-            <h2 class="welcome-title">Список баз данных ({{ databases|length }} шт.)</h2>
+            <h2 class="welcome-title">Доступные базы данных в группе {{ group_name }} ({{ databases|length }} шт.)</h2>
         </div>
         <hr>
 
@@ -36,13 +36,22 @@
                         <small>Изменен: {% if db.updated_at %}{{ db.updated_at|date:"d.m.Y H:i" }}{% else %}—{% endif %}</small>
                     </div>
                     <div class="group-user-count">
-                        <small>Подключение: {{ db.host_db }}:{{ db.port_db }}</small>
+                        <small>Хост: {{ db.host_db }}</small>
+                    </div>
+                    <div class="group-user-count">
+                        <small>Порт :{{ db.port_db }}</small>
+                    </div>
+                    <div class="group-user-count">
+                        <small>Пользователь: {{ db.user_db }}</small>
                     </div>
                 </div>
 
             {% empty %}
                 <li>Нет доступных баз данных</li>
             {% endfor %}
+            <div class="all-btn">
+                <a href="{% url 'group_list' %}" class="btn btn-cancel">Назад</a>
+            </div>
         </div>
     </div>
 
@@ -51,7 +60,6 @@
             let input = document.getElementById("databaseSearch");
             let filter = input.value.toLowerCase();
             let items = document.querySelectorAll(".group-item");
-
             items.forEach(item => {
                 let dbName = item.querySelector(".group-name a").textContent.toLowerCase();
                 if (dbName.includes(filter)) {

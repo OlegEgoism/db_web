@@ -1,6 +1,5 @@
 {% extends 'base.html' %}
 <title>{% block title %}Редактирование группы{% endblock %}</title>
-{% load custom_filters %}
 
 {% block content %}
     <div class="welcome-edit">
@@ -27,61 +26,13 @@
             <span class="info-value">{% if group_log.updated_at %} {{ group_log.updated_at|date:"d.m.Y - H:i" }} {% else %}—{% endif %}</span>
         </div>
         <hr>
-
         <form method="post">
             {% csrf_token %}
             {{ form.as_p }}
-            <hr>
-
-            <!-- Таблицы и права доступа -->
-            <h3>Выберите права доступа для таблиц:</h3>
-            <table class="permissions-table">
-                <thead>
-                <tr>
-                    <th>Схема/Таблица</th>
-                    <th>SELECT</th>
-                    <th>INSERT</th>
-                    <th>UPDATE</th>
-                    <th>DELETE</th>
-                </tr>
-                </thead>
-                <tbody>
-                {% for table in tables %}
-                    <tr>
-                        <td><strong>{{ table }}</strong></td>  <!-- Отображение названия таблицы -->
-                        {% with granted_tables|get_item:table as permissions %}
-                            <td>
-                                <input type="checkbox" name="permissions_{{ table }}" value="SELECT"
-                                       {% if permissions and "SELECT" in permissions %}checked{% endif %}>
-                            </td>
-                            <td>
-                                <input type="checkbox" name="permissions_{{ table }}" value="INSERT"
-                                       {% if permissions and "INSERT" in permissions %}checked{% endif %}>
-                            </td>
-                            <td>
-                                <input type="checkbox" name="permissions_{{ table }}" value="UPDATE"
-                                       {% if permissions and "UPDATE" in permissions %}checked{% endif %}>
-                            </td>
-                            <td>
-                                <input type="checkbox" name="permissions_{{ table }}" value="DELETE"
-                                       {% if permissions and "DELETE" in permissions %}checked{% endif %}>
-                            </td>
-                        {% endwith %}
-                    </tr>
-                {% empty %}
-                    <tr>
-                        <td colspan="5">Нет доступных таблиц</td>
-                    </tr>
-                {% endfor %}
-                </tbody>
-            </table>
-
             <div class="all-btn">
                 <a href="{% url 'group_list' %}" class="btn btn-cancel">Назад</a>
-                <button type="button" class="btn btn-cancel" onclick="location.reload();">Обновить</button>
                 <button type="submit" class="btn btn-save">Сохранить</button>
             </div>
-
         </form>
     </div>
 {% endblock %}

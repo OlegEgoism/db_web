@@ -20,7 +20,7 @@ from django.contrib import admin
 from django.urls import path
 from django.contrib.auth import views as auth_views
 from db_crp.views import home, register, logout_view
-from db_crp.views_group import group_list, group_create, group_edit, group_delete, group_info
+from db_crp.views_group import group_list, group_create, group_edit, group_delete, group_info, groups_edit_privileges
 from db_crp.views_user import user_list, user_create, user_info, user_edit, user_delete
 from db_crp.views_table import database_list, tables_list
 
@@ -35,6 +35,10 @@ urlpatterns = [
     path('group_list/', group_list, name='group_list'),  # Список групп
     path('group_create/', group_create, name='group_create'),  # Создание группы
     path('groups_edit/<str:group_name>/', group_edit, name='group_edit'),  # Редактирование группы
+    path('groups_edit_privileges/<str:group_name>/', groups_edit_privileges, name='groups_edit_privileges'),  # Редактирование привилегий доступа
+
+
+
     path('group_delete/<str:group_name>/', group_delete, name='group_delete'),  # Удаление группы
     path('group_info/<str:group_name>/', group_info, name='group_info'),  # Пользователи в группе
 

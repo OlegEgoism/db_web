@@ -1,0 +1,164 @@
+{#{% extends 'base.html' %}#}
+{#<title>{% block title %}Список баз данных{% endblock %}</title>#}
+{##}
+{#{% block content %}#}
+{#    <div class="welcome-container">#}
+{#        <div class="title-with-button" style="display: flex; align-items: center; justify-content: space-between;">#}
+{#            <h2 class="welcome-title">Список баз данных ({{ databases|length }} шт.)</h2>#}
+{#        </div>#}
+{#        <hr>#}
+{##}
+{#        <!-- Вывод сообщений -->#}
+{#        {% if messages %}#}
+{#            <div class="messages">#}
+{#                {% for message in messages %}#}
+{#                    <div class="alert {% if message.tags == 'success' %}alert-success{% elif message.tags == 'warning' %}alert-warning{% else %}alert-error{% endif %}">#}
+{#                        {{ message }}#}
+{#                    </div>#}
+{#                {% endfor %}#}
+{#            </div>#}
+{#        {% endif %}#}
+{##}
+{#        <!-- Поле поиска -->#}
+{#        <input type="text" id="databaseSearch" class="group-search" onkeyup="filterDatabases()" placeholder="Поиск базы данных..."/>#}
+{##}
+{#        <div id="databaseList">#}
+{#            {% for db in databases %}#}
+{#                <div class="group-item">#}
+{#                    <div class="group-number">#}
+{#                        <strong>{{ forloop.counter }}.</strong>#}
+{#                    </div>#}
+{#                    <div class="group-name">#}
+{#                        <a href="{% url 'tables_list' db.id %}" class="group-link-user">{{ db.name_db }}</a>#}
+{#                    </div>#}
+{#                    <div class="group-dates">#}
+{#                        <small>Создан: {% if db.created_at %}{{ db.created_at|date:"d.m.Y H:i" }}{% else %}—{% endif %}</small>#}
+{#                        <small>Изменен: {% if db.updated_at %}{{ db.updated_at|date:"d.m.Y H:i" }}{% else %}—{% endif %}</small>#}
+{#                    </div>#}
+{#                    <div class="group-user-count">#}
+{#                        <small>Хост: {{ db.host_db }} </small>#}
+{#                    </div>#}
+{#                    <div class="group-user-count">#}
+{#                        <small>Порт :{{ db.port_db }} </small>#}
+{#                    </div>#}
+{#                </div>#}
+{##}
+{#            {% empty %}#}
+{#                <li>Нет доступных баз данных</li>#}
+{#            {% endfor %}#}
+{#        </div>#}
+{#    </div>#}
+{##}
+{#    <script>#}
+{#        function filterDatabases() {#}
+{#            let input = document.getElementById("databaseSearch");#}
+{#            let filter = input.value.toLowerCase();#}
+{#            let items = document.querySelectorAll(".group-item");#}
+{#            items.forEach(item => {#}
+{#                let dbName = item.querySelector(".group-name a").textContent.toLowerCase();#}
+{#                if (dbName.includes(filter)) {#}
+{#                    item.style.display = "";#}
+{#                } else {#}
+{#                    item.style.display = "none";#}
+{#                }#}
+{#            });#}
+{#        }#}
+{#    </script>#}
+{##}
+{#{% endblock %}#}
+{##}
+{##}
+{##}
+{##}
+{##}
+{##}
+{##}
+{##}
+{##}
+{#{% extends 'base.html' %}#}
+{#<title>{% block title %}Редактирование группы{% endblock %}</title>#}
+{#{% load custom_filters %}#}
+{##}
+{#{% block content %}#}
+{#    <div class="welcome-edit">#}
+{#        <h2 class="welcome-title">Редактирование группы: {{ group_name }}</h2>#}
+{#        <hr>#}
+{##}
+{#        <!-- Вывод сообщений об ошибках -->#}
+{#        {% if messages %}#}
+{#            <div class="messages">#}
+{#                {% for message in messages %}#}
+{#                    <div class="alert {% if message.tags == 'success' %}alert-success{% else %}alert-error{% endif %}" role="alert">#}
+{#                        {{ message }}#}
+{#                    </div>#}
+{#                {% endfor %}#}
+{#            </div>#}
+{#        {% endif %}#}
+{##}
+{#        <div class="info-item">#}
+{#            <span class="info-label">Дата создания:</span>#}
+{#            <span class="info-value">{% if group_log.created_at %}{{ group_log.created_at|date:"d.m.Y - H:i" }}{% else %}—{% endif %}</span>#}
+{#        </div>#}
+{#        <div class="info-item">#}
+{#            <span class="info-label">Дата изменения:</span>#}
+{#            <span class="info-value">{% if group_log.updated_at %} {{ group_log.updated_at|date:"d.m.Y - H:i" }} {% else %}—{% endif %}</span>#}
+{#        </div>#}
+{#        <hr>#}
+{##}
+{#        <form method="post">#}
+{#            {% csrf_token %}#}
+{#            {{ form.as_p }}#}
+{#            <hr>#}
+{##}
+{#            <!-- Таблицы и права доступа -->#}
+{#            <h3>Выберите права доступа для таблиц:</h3>#}
+{#            <table class="permissions-table">#}
+{#                <thead>#}
+{#                <tr>#}
+{#                    <th>Схема/Таблица</th>#}
+{#                    <th>SELECT</th>#}
+{#                    <th>INSERT</th>#}
+{#                    <th>UPDATE</th>#}
+{#                    <th>DELETE</th>#}
+{#                </tr>#}
+{#                </thead>#}
+{#                <tbody>#}
+{#                {% for table in tables %}#}
+{#                    <tr>#}
+{#                        <td><strong>{{ table }}</strong></td>  <!-- Отображение названия таблицы -->#}
+{#                        {% with granted_tables|get_item:table as permissions %}#}
+{#                            <td>#}
+{#                                <input type="checkbox" name="permissions_{{ table }}" value="SELECT"#}
+{#                                       {% if permissions and "SELECT" in permissions %}checked{% endif %}>#}
+{#                            </td>#}
+{#                            <td>#}
+{#                                <input type="checkbox" name="permissions_{{ table }}" value="INSERT"#}
+{#                                       {% if permissions and "INSERT" in permissions %}checked{% endif %}>#}
+{#                            </td>#}
+{#                            <td>#}
+{#                                <input type="checkbox" name="permissions_{{ table }}" value="UPDATE"#}
+{#                                       {% if permissions and "UPDATE" in permissions %}checked{% endif %}>#}
+{#                            </td>#}
+{#                            <td>#}
+{#                                <input type="checkbox" name="permissions_{{ table }}" value="DELETE"#}
+{#                                       {% if permissions and "DELETE" in permissions %}checked{% endif %}>#}
+{#                            </td>#}
+{#                        {% endwith %}#}
+{#                    </tr>#}
+{#                {% empty %}#}
+{#                    <tr>#}
+{#                        <td colspan="5">Нет доступных таблиц</td>#}
+{#                    </tr>#}
+{#                {% endfor %}#}
+{#                </tbody>#}
+{#            </table>#}
+{##}
+{#            <div class="all-btn">#}
+{#                <a href="{% url 'group_list' %}" class="btn btn-cancel">Назад</a>#}
+{#                <button type="button" class="btn btn-cancel" onclick="location.reload();">Обновить</button>#}
+{#                <button type="submit" class="btn btn-save">Сохранить</button>#}
+{#            </div>#}
+{##}
+{#        </form>#}
+{#    </div>#}
+{#{% endblock %}#}
