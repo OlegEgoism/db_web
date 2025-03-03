@@ -14,7 +14,7 @@ class CustomUserAdmin(admin.ModelAdmin):
             'classes': ('collapse',),
             'fields': ('is_active', 'is_staff', 'is_superuser', 'groups', 'user_permissions',)}),
     )
-    list_display = 'username', 'preview_photo', 'email', 'phone_number', 'last_login', 'is_active',
+    list_display = 'username', 'preview_photo', 'email', 'phone_number', 'last_login', 'is_active', 'is_staff',
     list_filter = 'is_staff', 'is_active', 'last_login', 'date_joined',
     list_editable = 'is_active',
     search_fields = 'username', 'email', 'phone_number',

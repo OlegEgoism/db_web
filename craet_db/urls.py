@@ -25,7 +25,6 @@ from db_crp.views_user import user_list, user_create, user_info, user_edit, user
 from db_crp.views_table import database_list, tables_list
 
 urlpatterns = [
-
     path('admin/', admin.site.urls),  # Админка
     path('', home, name='home'),  # Главная
     path('register/', register, name='register'),  # Регистрация пользователя
@@ -37,8 +36,6 @@ urlpatterns = [
     path('groups_edit/<str:group_name>/', group_edit, name='group_edit'),  # Редактирование группы
     path('groups_edit_privileges/<str:group_name>/', groups_edit_privileges, name='groups_edit_privileges'),  # Редактирование привилегий доступа
     path('groups_edit_privileges_tables/<str:group_name>/<int:db_id>/', groups_edit_privileges_tables, name='groups_edit_privileges_tables'),  # Редактирование привилегий доступа для каждой таблицы
-
-
     path('group_delete/<str:group_name>/', group_delete, name='group_delete'),  # Удаление группы
     path('group_info/<str:group_name>/', group_info, name='group_info'),  # Пользователи в группе
 
