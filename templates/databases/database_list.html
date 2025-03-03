@@ -1,10 +1,10 @@
 {% extends 'base.html' %}
-<title>{% block title %}Доступные базы данных в группе{% endblock %}</title>
+<title>{% block title %}Список баз данных{% endblock %}</title>
 
 {% block content %}
     <div class="welcome-container">
         <div class="title-with-button" style="display: flex; align-items: center; justify-content: space-between;">
-            <h2 class="welcome-title">Доступные базы данных в группе {{ group_name }} ({{ databases|length }} шт.)</h2>
+            <h2 class="welcome-title">Список баз данных ({{ databases|length }} шт.)</h2>
         </div>
         <hr>
 
@@ -49,9 +49,6 @@
             {% empty %}
                 <li>Нет доступных баз данных</li>
             {% endfor %}
-            <div class="all-btn">
-                <a href="{% url 'group_list' %}" class="btn btn-cancel">Назад</a>
-            </div>
         </div>
     </div>
 
