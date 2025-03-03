@@ -1,0 +1,59 @@
+{% extends 'base.html' %}
+<title>{% block title %}Права доступа в {{ db_name }}{% endblock %}</title>
+{% load custom_filters %}
+{% block content %}
+    <div class="welcome-container">
+        <h2 class="welcome-title">Права доступа в базе данных: {{ db_name }} для группы: {{ group_name }}</h2>
+        <hr>
+
+        <form method="post">
+            {% csrf_token %}
+            <table class="permissions-table">
+                <thead>
+                <tr>
+                    <th>Таблица</th>
+                    <th>SELECT</th>
+                    <th>INSERT</th>
+                    <th>UPDATE</th>
+                    <th>DELETE</th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for table in tables %}
+                    <tr>
+                        <td>{{ table }}</td>
+                        {% with granted_tables|get_item:table as permissions %}
+                            <td>
+                                <input type="checkbox" name="permissions_{{ table }}" value="SELECT"
+                                       {% if permissions and "SELECT" in permissions %}checked{% endif %}>
+                            </td>
+                            <td>
+                                <input type="checkbox" name="permissions_{{ table }}" value="INSERT"
+                                       {% if permissions and "INSERT" in permissions %}checked{% endif %}>
+                            </td>
+                            <td>
+                                <input type="checkbox" name="permissions_{{ table }}" value="UPDATE"
+                                       {% if permissions and "UPDATE" in permissions %}checked{% endif %}>
+                            </td>
+                            <td>
+                                <input type="checkbox" name="permissions_{{ table }}" value="DELETE"
+                                       {% if permissions and "DELETE" in permissions %}checked{% endif %}>
+                            </td>
+                        {% endwith %}
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="5">Нет доступных таблиц</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+
+            <div class="all-btn">
+                <a href="{% url 'groups_edit_privileges' group_name %}" class="btn btn-cancel">Назад</a>
+                <button type="submit" class="btn btn-save">Сохранить</button>
+            </div>
+        </form>
+    </div>
+{% endblock %}
+

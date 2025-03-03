@@ -29,16 +29,32 @@ def tables_list(request, db_id):
     }
     temp_connection = DatabaseWrapper(temp_db_settings, alias="temp_connection")
     temp_connection.connect()
+
+    tables_info = []
+    db_size = "Неизвестно"
+
     try:
         with temp_connection.cursor() as cursor:
+            # ✅ Получаем список таблиц и их размер
             cursor.execute("""
-                SELECT schemaname, tablename 
-                FROM pg_catalog.pg_tables 
-                WHERE schemaname NOT IN ('pg_catalog', 'information_schema');
-            """)
-            tables = [f"{schema}.{table}" for schema, table in cursor.fetchall()]
+                    SELECT schemaname, tablename, pg_size_pretty(pg_total_relation_size('"' || schemaname || '"."' || tablename || '"'))
+                    FROM pg_catalog.pg_tables
+                    WHERE schemaname NOT IN ('pg_catalog', 'information_schema');
+                """)
+            tables_info = [{"schema": row[0], "name": row[1], "size": row[2]} for row in cursor.fetchall()]
+
+            # ✅ Получаем размер всей базы данных
+            cursor.execute(f"SELECT pg_size_pretty(pg_database_size('{connection_info.name_db}'));")
+            db_size = cursor.fetchone()[0]  # Например: '24 MB'
+
     except Exception as e:
-        tables = [f"Ошибка: {str(e)}"]
+        tables_info = [{"name": f"Ошибка: {str(e)}", "size": "—"}]
+
     finally:
         temp_connection.close()
-    return render(request, "databases/tables_info.html", {"db_name": connection_info.name_db, "tables": tables})
+
+    return render(request, "databases/tables_info.html", {
+        "db_name": connection_info.name_db,
+        "db_size": db_size,  # ✅ Передаём размер всей базы
+        "tables_info": tables_info,  # ✅ Передаём список таблиц и их размер
+    })
