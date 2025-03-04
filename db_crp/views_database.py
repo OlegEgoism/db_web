@@ -1,8 +1,12 @@
+import os
+
 from django.contrib import messages
+from django.http import JsonResponse
 from django.shortcuts import render, get_object_or_404, redirect
 from django.db.backends.postgresql.base import DatabaseWrapper
 from django.conf import settings
 
+from .audit_views import connect_data_base_success, create_audit_log, delete_data_base_success
 from .forms import DatabaseConnectForm
 from .models import ConnectingDB
 
@@ -16,6 +20,7 @@ def database_list(request):
 def tables_list(request, db_id):
     """Список таблиц в выбранной базе данных"""
     connection_info = get_object_or_404(ConnectingDB, id=db_id)
+    db_settings = settings.DATABASES.get('default', {})
     temp_db_settings = {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': connection_info.name_db,
@@ -23,12 +28,12 @@ def tables_list(request, db_id):
         'PASSWORD': connection_info.password_db,
         'HOST': connection_info.host_db,
         'PORT': connection_info.port_db,
-        'ATOMIC_REQUESTS': False,
-        'OPTIONS': {},
-        'TIME_ZONE': settings.TIME_ZONE,
-        'CONN_HEALTH_CHECKS': False,
-        'CONN_MAX_AGE': 0,
-        'AUTOCOMMIT': True,
+        'ATOMIC_REQUESTS': db_settings.get('ATOMIC_REQUESTS'),
+        'CONN_HEALTH_CHECKS': db_settings.get('CONN_HEALTH_CHECKS'),
+        'CONN_MAX_AGE': db_settings.get('CONN_MAX_AGE'),
+        'AUTOCOMMIT': db_settings.get('AUTOCOMMIT'),
+        'OPTIONS': db_settings.get('OPTIONS'),
+        'TIME_ZONE': db_settings.get('TIME_ZONE'),
     }
     temp_connection = DatabaseWrapper(temp_db_settings, alias="temp_connection")
     temp_connection.connect()
@@ -57,11 +62,18 @@ def tables_list(request, db_id):
 
 def database_connect(request):
     """Подключение к базе данных"""
+    user_requester = request.user.username if request.user.is_authenticated else "Аноним"
     if request.method == "POST":
         form = DatabaseConnectForm(request.POST)
         if form.is_valid():
             form.save()
-            messages.success(request, "Подключение успешно сохранено!")
+            name_db = form.cleaned_data['name_db']
+            user_db = form.cleaned_data['user_db']
+            port_db = form.cleaned_data['port_db']
+            host_db = form.cleaned_data['host_db']
+            message = connect_data_base_success(name_db, user_db, port_db, host_db)
+            messages.success(request, message)
+            create_audit_log(user_requester, 'create', 'database', name_db, message)
             return redirect('database_list')
     else:
         form = DatabaseConnectForm()
@@ -80,3 +92,20 @@ def database_edit(request, db_id):
     else:
         form = DatabaseConnectForm(instance=database)
     return render(request, "databases/database_edit.html", {"form": form, "database": database})
+
+
+def database_delete(request, db_id):
+    """Удаление подключения к базе данных"""
+    user_requester = request.user.username if request.user.is_authenticated else "Аноним"
+    database = get_object_or_404(ConnectingDB, id=db_id)
+    database_name = database.name_db
+    if database_name:
+        database.delete()
+        name_db = database.name_db
+        user_db = database.user_db
+        port_db = database.port_db
+        host_db = database.host_db
+        message = delete_data_base_success(name_db, user_db, port_db, host_db)
+        messages.success(request, message)
+        create_audit_log(user_requester, 'delete', 'database', name_db, message)
+    return redirect('database_list')

@@ -63,16 +63,15 @@ class Audit(models.Model):
         ('create', 'Создание'),
         ('update', 'Обновление'),
         ('delete', 'Удаление'),
+        # ('connect', 'Подключение к базе данных'),
         ('register', 'Регистрация пользователя')
     ]
-
     ENTITY_TYPES = [
         ('user', 'Пользователь'),
         ('group', 'Группа'),
-        # ('add', 'Добавление'),
+        ('database', 'База данных'),
         ('other', 'Другое'),
     ]
-
     username = models.CharField(verbose_name="Имя пользователя", max_length=150)
     action_type = models.CharField(verbose_name="Тип действия", max_length=10, choices=ACTION_TYPES)
     entity_type = models.CharField(verbose_name="Тип объекта", max_length=10, choices=ENTITY_TYPES)

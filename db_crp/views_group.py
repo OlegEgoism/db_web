@@ -164,6 +164,7 @@ def groups_edit_privileges(request, group_name):
 def groups_edit_privileges_tables(request, group_name, db_id):
     """Редактирование прав группы на таблицы в базе данных"""
     connection_info = get_object_or_404(ConnectingDB, id=db_id)
+    db_settings = settings.DATABASES.get('default', {})
     temp_db_settings = {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': connection_info.name_db,
@@ -171,12 +172,12 @@ def groups_edit_privileges_tables(request, group_name, db_id):
         'PASSWORD': connection_info.password_db,
         'HOST': connection_info.host_db,
         'PORT': connection_info.port_db,
-        'ATOMIC_REQUESTS': False,
-        'OPTIONS': {},
-        'TIME_ZONE': settings.TIME_ZONE,
-        'CONN_HEALTH_CHECKS': False,
-        'CONN_MAX_AGE': 0,
-        'AUTOCOMMIT': True,
+        'ATOMIC_REQUESTS': db_settings.get('ATOMIC_REQUESTS'),
+        'CONN_HEALTH_CHECKS': db_settings.get('CONN_HEALTH_CHECKS'),
+        'CONN_MAX_AGE': db_settings.get('CONN_MAX_AGE'),
+        'AUTOCOMMIT': db_settings.get('AUTOCOMMIT'),
+        'OPTIONS': db_settings.get('OPTIONS'),
+        'TIME_ZONE': db_settings.get('TIME_ZONE'),
     }
     temp_connection = DatabaseWrapper(temp_db_settings, alias="temp_connection")
     temp_connection.connect()

@@ -140,3 +140,12 @@ def edit_group_messages_success_name(group_name, new_group_name):
 
 def edit_group_messages_error(group_name):
     return f"Ошибка при редактировании группы '{group_name}'."
+
+
+# ПОДКЛЮЧЕНИЕ К БАЗЕ ДАННЫХ
+def connect_data_base_success(name_db, user_db, port_db, host_db):
+    return f"Подключение к базе данных '{name_db}' успешно сохранено. Пользователь: '{user_db}'. Пароль: ****. Порт: '{port_db}'. Хост: '{host_db}'."
+
+
+def delete_data_base_success(name_db, user_db, port_db, host_db):
+    return f"Подключение к базе данных '{name_db}' успешно удалено. Пользователь: '{user_db}'. Пароль: ****. Порт: '{port_db}'. Хост: '{host_db}'."

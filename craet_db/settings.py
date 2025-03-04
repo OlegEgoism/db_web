@@ -83,17 +83,7 @@ WSGI_APPLICATION = 'craet_db.wsgi.application'
 # }
 
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': os.getenv('POSTGRES_DB'),
-        'USER': os.getenv('POSTGRES_USER'),
-        'PASSWORD': os.getenv('POSTGRES_PASSWORD'),
-        'HOST': os.getenv('DB_HOST'),
-        'PORT': os.getenv('DB_PORT'),
-        'ATOMIC_REQUESTS': False,
-    }
-}
+
 
 # Password validation
 # https://docs.djangoproject.com/en/5.1/ref/settings/#auth-password-validators
@@ -154,3 +144,21 @@ EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD')
 EMAIL_PORT = os.getenv('EMAIL_PORT')
 EMAIL_USE_TLS = os.getenv('EMAIL_USE_TLS')
 EMAIL_BACKEND = os.getenv('EMAIL_BACKEND')
+
+
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': os.getenv('POSTGRES_DB'),
+        'USER': os.getenv('POSTGRES_USER'),
+        'PASSWORD': os.getenv('POSTGRES_PASSWORD'),
+        'HOST': os.getenv('DB_HOST'),
+        'PORT': int(os.getenv('DB_PORT')),
+        'ATOMIC_REQUESTS': os.getenv('DB_ATOMIC_REQUESTS'),
+        'CONN_HEALTH_CHECKS': os.getenv('DB_CONN_HEALTH_CHECKS'),
+        'CONN_MAX_AGE': int(os.getenv('DB_CONN_MAX_AGE')),
+        'AUTOCOMMIT': os.getenv('DB_AUTOCOMMIT'),
+        'OPTIONS': {},
+        'TIME_ZONE': TIME_ZONE,
+    }
+}
