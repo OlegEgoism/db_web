@@ -6,7 +6,7 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.db.backends.postgresql.base import DatabaseWrapper
 from django.conf import settings
 
-from .audit_views import connect_data_base_success, create_audit_log, delete_data_base_success
+from .audit_views import connect_data_base_success, create_audit_log, delete_data_base_success, delete_data_base_error
 from .forms import DatabaseConnectForm
 from .models import ConnectingDB
 
@@ -98,14 +98,17 @@ def database_delete(request, db_id):
     """Удаление подключения к базе данных"""
     user_requester = request.user.username if request.user.is_authenticated else "Аноним"
     database = get_object_or_404(ConnectingDB, id=db_id)
-    database_name = database.name_db
-    if database_name:
+    name_db = database.name_db
+    user_db = database.user_db
+    port_db = database.port_db
+    host_db = database.host_db
+    try:
         database.delete()
-        name_db = database.name_db
-        user_db = database.user_db
-        port_db = database.port_db
-        host_db = database.host_db
         message = delete_data_base_success(name_db, user_db, port_db, host_db)
+        messages.success(request, message)
+        create_audit_log(user_requester, 'delete', 'database', name_db, message)
+    except Exception:
+        message = delete_data_base_error(name_db, user_db, port_db, host_db)
         messages.success(request, message)
         create_audit_log(user_requester, 'delete', 'database', name_db, message)
     return redirect('database_list')

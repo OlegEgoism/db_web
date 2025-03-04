@@ -149,3 +149,7 @@ def connect_data_base_success(name_db, user_db, port_db, host_db):
 
 def delete_data_base_success(name_db, user_db, port_db, host_db):
     return f"Подключение к базе данных '{name_db}' успешно удалено. Пользователь: '{user_db}'. Пароль: ****. Порт: '{port_db}'. Хост: '{host_db}'."
+
+
+def delete_data_base_error(name_db, user_db, port_db, host_db):
+    return f"Ошибка при удалении подключения к базе данных '{name_db}'. Пользователь: '{user_db}'. Пароль: ****. Порт: '{port_db}'. Хост: '{host_db}'."
