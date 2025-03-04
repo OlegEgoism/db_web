@@ -1,7 +1,6 @@
 from django import forms
 from django.contrib.auth.forms import UserCreationForm
-from django.db import connection
-from .models import CustomUser, UserLog
+from .models import CustomUser, ConnectingDB
 
 
 class CustomUserRegistrationForm(UserCreationForm):
@@ -56,3 +55,21 @@ class GroupEditForm(forms.Form):
 class CreateGroupForm(forms.Form):
     """Создание группы"""
     groupname = forms.CharField(label="Название", max_length=150)
+
+
+class DatabaseConnectForm(forms.ModelForm):
+    """Подключение к базе данных"""
+
+    class Meta:
+        model = ConnectingDB
+        fields = ['name_db', 'user_db', 'password_db', 'host_db', 'port_db']
+        labels = {
+            'name_db': "Название базы данных",
+            'user_db': "Пользователь",
+            'password_db': "Пароль",
+            'host_db': "Хост",
+            'port_db': "Порт",
+        }
+        widgets = {
+            'password_db': forms.PasswordInput(),
+        }

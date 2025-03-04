@@ -5,6 +5,7 @@
     <div class="welcome-container">
         <div class="title-with-button" style="display: flex; align-items: center; justify-content: space-between;">
             <h2 class="welcome-title">Список баз данных ({{ databases|length }} шт.)</h2>
+            <a href="{% url 'database_connect' %}" class="btn btn-save">Создать новое подключение</a>
         </div>
         <hr>
 
@@ -35,17 +36,17 @@
                         <small>Создан: {% if db.created_at %}{{ db.created_at|date:"d.m.Y H:i" }}{% else %}—{% endif %}</small>
                         <small>Изменен: {% if db.updated_at %}{{ db.updated_at|date:"d.m.Y H:i" }}{% else %}—{% endif %}</small>
                     </div>
-                    <div class="group-user-count">
+                    <div class="group-dates">
                         <small>Хост: {{ db.host_db }}</small>
-                    </div>
-                    <div class="group-user-count">
-                        <small>Порт :{{ db.port_db }}</small>
+                        <small>Порт: {{ db.port_db }}</small>
                     </div>
                     <div class="group-user-count">
                         <small>Пользователь: {{ db.user_db }}</small>
                     </div>
+                    <div class="user-action">
+                        <a href="{% url 'database_edit' db.id %}" class="btn btn-edit">Редактировать</a>
+                    </div>
                 </div>
-
             {% empty %}
                 <li>Нет доступных баз данных</li>
             {% endfor %}
@@ -67,5 +68,4 @@
             });
         }
     </script>
-
 {% endblock %}

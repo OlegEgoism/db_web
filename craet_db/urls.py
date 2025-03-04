@@ -22,7 +22,7 @@ from django.contrib.auth import views as auth_views
 from db_crp.views import home, register, logout_view
 from db_crp.views_group import group_list, group_create, group_edit, group_delete, group_info, groups_edit_privileges, groups_edit_privileges_tables
 from db_crp.views_user import user_list, user_create, user_info, user_edit, user_delete
-from db_crp.views_table import database_list, tables_list
+from db_crp.views_table import database_list, tables_list, database_connect, database_edit
 
 urlpatterns = [
     path('admin/', admin.site.urls),  # Админка
@@ -47,6 +47,8 @@ urlpatterns = [
 
     path('database_list/', database_list, name='database_list'),  # Список баз данных
     path('tables_list/<int:db_id>/', tables_list, name='tables_list'),  # Список таблиц в выбранной базе данных
+    path('database_connect/', database_connect, name='database_connect'),  # Подключение к базе данных
+    path('database_edit/<int:db_id>/', database_edit, name='database_edit')  # Редактирование подключения к базе данных
 
 ]
 

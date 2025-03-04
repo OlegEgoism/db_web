@@ -1,0 +1,30 @@
+{% extends 'base.html' %}
+<title>{% block title %}Редактирование подключения к базе данных{% endblock %}</title>
+
+{% block content %}
+    <div class="welcome-container">
+        <h2 class="welcome-title">Редактирование подключения к базе данных: {{ database.name_db }}</h2>
+        <hr>
+
+        <!-- Вывод сообщений -->
+        {% if messages %}
+            <div class="messages">
+                {% for message in messages %}
+                    <div class="alert {% if message.tags == 'success' %}alert-success{% elif message.tags == 'warning' %}alert-warning{% else %}alert-error{% endif %}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        <!-- Форма редактирования -->
+        <form method="post">
+            {% csrf_token %}
+            {{ form.as_p }}
+            <div class="all-btn">
+                <a href="{% url 'database_list' %}" class="btn btn-cancel">Назад</a>
+                <button type="submit" class="btn btn-save">Сохранить</button>
+            </div>
+        </form>
+    </div>
+{% endblock %}
