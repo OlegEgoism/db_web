@@ -344,8 +344,8 @@ main {
 
 .group-search {
     width: 80%;
-    padding: 8px 12px;
-    margin-bottom: 15px;
+    padding: 4px 4px;
+    margin-bottom: 5px;
     border: 1px solid #ccc;
     border-radius: 5px;
     font-size: 16px;
@@ -353,12 +353,41 @@ main {
 
 .user-search {
     width: 80%;
-    padding: 8px 12px;
-    margin-bottom: 15px;
+    padding: 4px 4px;
+    margin-bottom: 5px;
     border: 1px solid #ccc;
     border-radius: 5px;
     font-size: 16px;
 }
+
+.audit-search {
+    width: 60%;
+    padding: 4px 4px;
+    margin-bottom: 5px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    font-size: 16px;
+}
+
+.o-button {
+    width: 10%;
+    padding: 4px 4px;
+    margin-bottom: 5px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    font-size: 16px;
+}
+
+.d-button {
+    width: 13%;
+    padding: 4px 4px;
+    margin-bottom: 5px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    font-size: 16px;
+}
+
+
 
 .no-users {
     color: red;
@@ -438,4 +467,57 @@ main {
 
 .table-item:hover {
     background-color: #e9e9e9;
+}
+
+
+
+
+
+.audit-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+    font-size: 14px;
+}
+
+.audit-table th, .audit-table td {
+    border: 1px solid #ddd;
+    padding: 8px;
+    text-align: left;
+}
+
+.audit-table th {
+    background-color: #f2f2f2;
+    font-weight: bold;
+}
+
+.audit-table tr:nth-child(even) {
+    background-color: #f9f9f9;
+}
+
+.audit-table .no-data {
+    text-align: center;
+    color: #888;
+    font-style: italic;
+}
+
+
+
+
+.o-button {
+    width: 10%;
+    padding: 4px 4px;
+    margin-bottom: 5px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    font-size: 16px;
+}
+
+.d-button {
+    width: 13%;
+    padding: 4px 4px;
+    margin-bottom: 5px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    font-size: 16px;
 }

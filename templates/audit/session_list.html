@@ -1,0 +1,72 @@
+{% extends 'base.html' %}
+<title>{% block title %}Активные сессии{% endblock %}</title>
+
+{% block content %}
+    <div class="welcome-container">
+        <h2 class="welcome-title">Активные сессии пользователей</h2>
+        <hr>
+
+        <!-- Поле поиска -->
+        <input type="text" id="sessionSearch" class="audit-search" onkeyup="filterSessions()" placeholder="Поиск по пользователю..."/>
+
+        <!-- Таблица активных сессий -->
+        <table class="audit-table">
+            <thead>
+                <tr>
+                    <th>Пользователь</th>
+                    <th>Последний вход</th>
+                    <th>Дата истечения</th>
+                    <th>Действие</th>
+                </tr>
+            </thead>
+            <tbody id="sessionList">
+                {% for session in page_obj %}
+                    <tr class="session-item">
+                        <td class="session-username">{{ session.username }}</td>
+                        <td>{{ session.last_login|default:"—" }}</td>
+                        <td>{{ session.expire_date }}</td>
+                        <td>
+                            <a href="{% url 'logout_user' session.session_key %}" class="btn btn-delete">Выйти</a>
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="4" class="no-data">Нет активных сессий</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        
+        <p></p>
+        <!-- Пагинация -->
+        <div class="pagination">
+            {% if page_obj.has_previous %}
+                <a href="?page=1" class="btn btn-page">Первая</a>
+                <a href="?page={{ page_obj.previous_page_number }}" class="btn btn-page">Назад</a>
+            {% endif %}
+            <span class="current-page">Страница {{ page_obj.number }} из {{ page_obj.paginator.num_pages }}</span>
+            {% if page_obj.has_next %}
+                <a href="?page={{ page_obj.next_page_number }}" class="btn btn-page">Вперед</a>
+                <a href="?page={{ page_obj.paginator.num_pages }}" class="btn btn-page">Последняя</a>
+            {% endif %}
+        </div>
+    </div>
+
+    <script>
+        function filterSessions() {
+            let input = document.getElementById("sessionSearch");
+            let filter = input.value.toLowerCase();
+            let rows = document.querySelectorAll(".session-item");
+
+            rows.forEach(row => {
+                let username = row.querySelector(".session-username").textContent.toLowerCase();
+                if (username.includes(filter)) {
+                    row.style.display = "";
+                } else {
+                    row.style.display = "none";
+                }
+            });
+        }
+    </script>
+
+{% endblock %}

@@ -1,20 +1,29 @@
-import os
-
 from django.contrib import messages
-from django.http import JsonResponse
 from django.shortcuts import render, get_object_or_404, redirect
 from django.db.backends.postgresql.base import DatabaseWrapper
 from django.conf import settings
-
 from .audit_views import connect_data_base_success, create_audit_log, delete_data_base_success, delete_data_base_error
 from .forms import DatabaseConnectForm
 from .models import ConnectingDB
-
+from django.db import connection
 
 def database_list(request):
-    """Список баз данных"""
+    """Список баз данных с их размером"""
     databases = ConnectingDB.objects.all()
-    return render(request, "databases/database_list.html", {"databases": databases})
+    databases_info = []
+    for db in databases:
+        try:
+            with connection.cursor() as cursor:
+                cursor.execute(f"SELECT pg_size_pretty(pg_database_size('{db.name_db}'));")
+                db_size = cursor.fetchone()[0] if cursor.rowcount > 0 else "Неизвестно"
+        except Exception:
+            db_size = "Ошибка"
+        databases_info.append({
+            "db": db,
+            "size": db_size
+        })
+    return render(request, "databases/database_list.html", {"databases_info": databases_info})
+
 
 
 def tables_list(request, db_id):

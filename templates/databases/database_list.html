@@ -24,31 +24,35 @@
         <input type="text" id="databaseSearch" class="group-search" onkeyup="filterDatabases()" placeholder="Поиск базы данных..."/>
 
         <div id="databaseList">
-            {% for db in databases %}
-                <div class="group-item">
-                    <div class="group-number">
-                        <strong>{{ forloop.counter }}.</strong>
-                    </div>
-                    <div class="group-name">
-                        <a href="{% url 'tables_list' db.id %}" class="group-link-user">{{ db.name_db }}</a>
-                    </div>
-                    <div class="group-dates">
-                        <small>Создан: {% if db.created_at %}{{ db.created_at|date:"d.m.Y H:i" }}{% else %}—{% endif %}</small>
-                        <small>Изменен: {% if db.updated_at %}{{ db.updated_at|date:"d.m.Y H:i" }}{% else %}—{% endif %}</small>
-                    </div>
-                    <div class="group-dates">
-                        <small>Хост: {{ db.host_db }}</small>
-                        <small>Порт: {{ db.port_db }}</small>
-                    </div>
-                    <div class="user-action">
-                        <a href="{% url 'database_edit' db.id %}" class="btn btn-edit">Редактировать</a>
-                        <a href="{% url 'database_delete' db.id %}" class="btn btn-delete" onclick="return confirm('Удалить подключение {{ db.name_db }}?')">Удалить</a>
-                    </div>
-                </div>
-            {% empty %}
-                <li>Нет доступных баз данных</li>
-            {% endfor %}
+    {% for item in databases_info %}
+        <div class="group-item">
+            <div class="group-number">
+                <strong>{{ forloop.counter }}.</strong>
+            </div>
+            <div class="group-name">
+                <a href="{% url 'tables_list' item.db.id %}" class="group-link-user">{{ item.db.name_db }}</a>
+            </div>
+            <div class="group-dates">
+                <small>Создан: {% if item.db.created_at %}{{ item.db.created_at|date:"d.m.Y H:i" }}{% else %}—{% endif %}</small>
+                <small>Изменен: {% if item.db.updated_at %}{{ item.db.updated_at|date:"d.m.Y H:i" }}{% else %}—{% endif %}</small>
+            </div>
+            <div class="group-dates">
+                <small>Хост: {{ item.db.host_db }}</small>
+                <small>Порт: {{ item.db.port_db }}</small>
+            </div>
+            <div class="group-dates">
+                <small>Размер: {{ item.size }}</small>
+            </div>
+            <div class="user-action">
+                <a href="{% url 'database_edit' item.db.id %}" class="btn btn-edit">Редактировать</a>
+                <a href="{% url 'database_delete' item.db.id %}" class="btn btn-delete" onclick="return confirm('Удалить подключение {{ item.db.name_db }}?')">Удалить</a>
+            </div>
         </div>
+    {% empty %}
+        <li>Нет доступных баз данных</li>
+    {% endfor %}
+</div>
+
     </div>
 
     <script>

@@ -91,7 +91,7 @@ def group_edit(request, group_name):
     group_log, created = GroupLog.objects.get_or_create(
         groupname=group_name,
         defaults={
-            'created_at': timezone.now(),
+            'created_at': created_at,
             'updated_at': timezone.now()
         }
     )
@@ -154,6 +154,18 @@ def group_edit(request, group_name):
 def groups_edit_privileges(request, group_name):
     """Список баз данных в группе"""
     databases = ConnectingDB.objects.all()
+    user_requester = request.user.username if request.user.is_authenticated else "Аноним"
+    group_log, created = GroupLog.objects.get_or_create(
+        groupname=group_name,
+        defaults={
+            'created_at': created_at,
+            'updated_at': timezone.now()
+        }
+    )
+    if created:
+        message = group_data(group_name)
+        messages.success(request, message)
+        create_audit_log(user_requester, 'create', 'group', group_name, message)
     return render(request, "groups/groups_edit_privileges.html", {
         'group_name': group_name,
         'databases': databases
