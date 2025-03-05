@@ -174,7 +174,7 @@ def groups_edit_privileges(request, group_name):
 
 @login_required
 def groups_edit_privileges_tables(request, group_name, db_id):
-    """Редактирование прав группы на таблицы в базе данных"""
+    """Редактирование прав группы на таблицы в базе данных (дерево: База → Схема → Таблица)"""
     connection_info = get_object_or_404(ConnectingDB, id=db_id)
     db_settings = settings.DATABASES.get('default', {})
     temp_db_settings = {
@@ -191,56 +191,81 @@ def groups_edit_privileges_tables(request, group_name, db_id):
         'OPTIONS': db_settings.get('OPTIONS'),
         'TIME_ZONE': db_settings.get('TIME_ZONE'),
     }
+
     temp_connection = DatabaseWrapper(temp_db_settings, alias="temp_connection")
     temp_connection.connect()
+
+    tables_by_schema = {}  # Формат {'schema_name': {'table_name': ['SELECT', 'INSERT']}}
+
     try:
         with temp_connection.cursor() as cursor:
+            # Получение всех таблиц по схемам
             cursor.execute("""
-                SELECT schemaname || '.' || tablename
+                SELECT schemaname, tablename
                 FROM pg_catalog.pg_tables
                 WHERE schemaname NOT IN ('pg_catalog', 'information_schema');
             """)
-            tables = [table[0] for table in cursor.fetchall()]
-        granted_tables = {}
+            for schema, table in cursor.fetchall():
+                if schema not in tables_by_schema:
+                    tables_by_schema[schema] = {}
+                tables_by_schema[schema][table] = set()  # Права будем заполнять ниже
+
+        # Получение прав доступа для группы
         with temp_connection.cursor() as cursor:
             cursor.execute("""
-                SELECT table_schema || '.' || table_name, privilege_type
+                SELECT table_schema, table_name, privilege_type
                 FROM information_schema.role_table_grants
                 WHERE grantee = %s
             """, [group_name])
 
-            for table, privilege in cursor.fetchall():
-                if table not in granted_tables:
-                    granted_tables[table] = set()
-                granted_tables[table].add(privilege)
+            for schema, table, privilege in cursor.fetchall():
+                if schema in tables_by_schema and table in tables_by_schema[schema]:
+                    tables_by_schema[schema][table].add(privilege)
+
     except Exception as e:
         messages.error(request, f"Ошибка при загрузке таблиц: {e}")
         return redirect('groups_edit_privileges', group_name=group_name)
+
     finally:
         temp_connection.close()
+
     if request.method == "POST":
-        table_permissions = {table: request.POST.getlist(f'permissions_{table}') for table in tables}
+        # Получение прав из формы
+        table_permissions = {}
+        for schema, tables in tables_by_schema.items():
+            for table in tables:
+                table_permissions[f"{schema}.{table}"] = request.POST.getlist(f"permissions_{schema}.{table}")
+
         temp_connection = DatabaseWrapper(temp_db_settings, alias="temp_connection")
         temp_connection.connect()
+
         try:
             with temp_connection.cursor() as cursor:
-                for table in granted_tables:
-                    cursor.execute(f"REVOKE ALL ON {table} FROM {group_name};")
+                # Сначала удаляем все права
+                for schema, tables in tables_by_schema.items():
+                    for table in tables:
+                        cursor.execute(f"REVOKE ALL ON {schema}.{table} FROM {group_name};")
+
+                # Затем добавляем новые
                 for table, permissions in table_permissions.items():
                     if permissions:
                         permissions_str = ", ".join(permissions)
                         cursor.execute(f"GRANT {permissions_str} ON {table} TO {group_name};")
+
             messages.success(request, f"Права успешно обновлены для группы '{group_name}'.")
+
         except Exception as e:
             messages.error(request, f"Ошибка при выдаче прав: {e}")
+
         finally:
             temp_connection.close()
+
         return redirect('groups_edit_privileges', group_name=group_name)
+
     return render(request, 'groups/groups_edit_privileges_tables.html', {
         'group_name': group_name,
         'db_name': connection_info.name_db,
-        'tables': tables,
-        'granted_tables': granted_tables,
+        'tables_by_schema': tables_by_schema,
     })
 
 

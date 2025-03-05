@@ -24,5 +24,6 @@ def get_item(dictionary, key):
 
 # @register.filter
 # def get_item(dictionary, key):
-#     """Получает элемент словаря по ключу"""
+#     """Возвращает значение из словаря по ключу"""
 #     return dictionary.get(key, None)
+#

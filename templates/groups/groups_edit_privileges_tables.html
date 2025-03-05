@@ -1,6 +1,5 @@
 {% extends 'base.html' %}
 <title>{% block title %}Права доступа в {{ db_name }}{% endblock %}</title>
-{% load custom_filters %}
 {% block content %}
     <div class="welcome-container">
         <h2 class="welcome-title">Права доступа в базе данных: {{ db_name }} для группы: {{ group_name }}</h2>
@@ -8,46 +7,37 @@
 
         <form method="post">
             {% csrf_token %}
-            <table class="permissions-table">
-                <thead>
-                <tr>
-                    <th>Таблица</th>
-                    <th>SELECT</th>
-                    <th>INSERT</th>
-                    <th>UPDATE</th>
-                    <th>DELETE</th>
-                </tr>
-                </thead>
-                <tbody>
-                {% for table in tables %}
-                    <tr>
-                        <td>{{ table }}</td>
-                        {% with granted_tables|get_item:table as permissions %}
-                            <td>
-                                <input type="checkbox" name="permissions_{{ table }}" value="SELECT"
-                                       {% if permissions and "SELECT" in permissions %}checked{% endif %}>
-                            </td>
-                            <td>
-                                <input type="checkbox" name="permissions_{{ table }}" value="INSERT"
-                                       {% if permissions and "INSERT" in permissions %}checked{% endif %}>
-                            </td>
-                            <td>
-                                <input type="checkbox" name="permissions_{{ table }}" value="UPDATE"
-                                       {% if permissions and "UPDATE" in permissions %}checked{% endif %}>
-                            </td>
-                            <td>
-                                <input type="checkbox" name="permissions_{{ table }}" value="DELETE"
-                                       {% if permissions and "DELETE" in permissions %}checked{% endif %}>
-                            </td>
-                        {% endwith %}
-                    </tr>
+
+            <div class="select-all">
+                <label>
+                    <input type="checkbox" id="selectAll" onclick="toggleAllPermissions()"> Выбрать все права
+                </label>
+            </div>
+
+            <ul class="tree">
+                {% for schema, tables in tables_by_schema.items %}
+                    <li>
+                        <span class="tree-node" onclick="toggleTree('{{ schema }}')">📁 {{ schema }}</span>
+                        <ul id="tree-{{ schema }}" style="display: none;">
+                            {% for table, permissions in tables.items %}
+                                <li>
+                                    📄 {{ table }}
+                                    <label><input type="checkbox" class="permission-checkbox" name="permissions_{{ schema }}.{{ table }}" value="SELECT"
+                                                  {% if "SELECT" in permissions %}checked{% endif %}> SELECT</label>
+                                    <label><input type="checkbox" class="permission-checkbox" name="permissions_{{ schema }}.{{ table }}" value="INSERT"
+                                                  {% if "INSERT" in permissions %}checked{% endif %}> INSERT</label>
+                                    <label><input type="checkbox" class="permission-checkbox" name="permissions_{{ schema }}.{{ table }}" value="UPDATE"
+                                                  {% if "UPDATE" in permissions %}checked{% endif %}> UPDATE</label>
+                                    <label><input type="checkbox" class="permission-checkbox" name="permissions_{{ schema }}.{{ table }}" value="DELETE"
+                                                  {% if "DELETE" in permissions %}checked{% endif %}> DELETE</label>
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    </li>
                 {% empty %}
-                    <tr>
-                        <td colspan="5">Нет доступных таблиц</td>
-                    </tr>
+                    <li>Нет доступных таблиц</li>
                 {% endfor %}
-                </tbody>
-            </table>
+            </ul>
 
             <div class="all-btn">
                 <a href="{% url 'groups_edit_privileges' group_name %}" class="btn btn-cancel">Назад</a>
@@ -55,5 +45,24 @@
             </div>
         </form>
     </div>
-{% endblock %}
 
+    <script>
+        function toggleTree(schema) {
+            let element = document.getElementById("tree-" + schema);
+            element.style.display = (element.style.display === "none") ? "block" : "none";
+        }
+
+        function toggleAllPermissions() {
+            let checkboxes = document.querySelectorAll(".permission-checkbox");
+            let selectAll = document.getElementById("selectAll");
+            checkboxes.forEach(checkbox => checkbox.checked = selectAll.checked);
+        }
+    </script>
+
+    <style>
+        .tree { list-style-type: none; padding-left: 20px; }
+        .tree li { margin: 5px 0; cursor: pointer; }
+        .tree ul { padding-left: 20px; display: none; }
+        .tree-node { font-weight: bold; cursor: pointer; }
+    </style>
+{% endblock %}
