@@ -5,14 +5,17 @@ from django.core.paginator import Paginator
 from django.db.models import Q
 from django.utils.dateparse import parse_date
 from django.utils.timezone import now
-from .audit_views import user_register, create_audit_log
+from .audit_views import user_register, create_audit_log, logout_user_success
 from .forms import CustomUserRegistrationForm
 from django.shortcuts import render, redirect
 from django.contrib import messages
-from .models import Audit
 from django.contrib.auth import get_user_model
+import xlsxwriter
+from django.http import HttpResponse
+from .models import Audit
 
-User = get_user_model()  # ✅ Получаем кастомную модель пользователя
+User = get_user_model()
+
 
 def home(request):
     """Главная"""
@@ -94,8 +97,58 @@ def audit_log(request):
     })
 
 
+def export_audit_log(request):
+    """Экспорт данных журнала аудита в Excel"""
+    action_type = request.GET.get("action_type", "")
+    entity_type = request.GET.get("entity_type", "")
+    username = request.GET.get("username", "")
+    search_query = request.GET.get("search", "")
+    start_date = request.GET.get("start_date", "")
+    end_date = request.GET.get("end_date", "")
+    audit_entries = Audit.objects.all()
+    if action_type:
+        audit_entries = audit_entries.filter(action_type=action_type)
+    if entity_type:
+        audit_entries = audit_entries.filter(entity_type=entity_type)
+    if username:
+        audit_entries = audit_entries.filter(username=username)
+    if search_query:
+        audit_entries = audit_entries.filter(
+            Q(entity_name__icontains=search_query) |
+            Q(details__icontains=search_query)
+        )
+    if start_date:
+        start_date_parsed = parse_date(start_date)
+        if start_date_parsed:
+            audit_entries = audit_entries.filter(timestamp__date__gte=start_date_parsed)
+    if end_date:
+        end_date_parsed = parse_date(end_date)
+        if end_date_parsed:
+            audit_entries = audit_entries.filter(timestamp__date__lte=end_date_parsed)
+    response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+    response['Content-Disposition'] = 'attachment; filename=audit_log_filtered.xlsx'
+    workbook = xlsxwriter.Workbook(response, {'in_memory': True})
+    worksheet = workbook.add_worksheet('Audit Log')
+    headers = ["Дата", "Пользователь", "Действие", "Объект", "Название", "Информация"]
+    for col_num, header in enumerate(headers):
+        worksheet.write(0, col_num, header)
+    for row_num, entry in enumerate(audit_entries, start=1):
+        row_data = [
+            entry.timestamp.replace(tzinfo=None) if entry.timestamp else "",
+            entry.username,
+            entry.get_action_type_display(),
+            entry.get_entity_type_display(),
+            entry.entity_name or "",
+            entry.details or ""
+        ]
+        for col_num, cell_value in enumerate(row_data):
+            worksheet.write(row_num, col_num, str(cell_value) if cell_value else "")
+    workbook.close()
+    return response
+
+
 def session_list(request):
-    """Страница с активными сессиями пользователей"""
+    """Список сессий пользователей"""
     search_query = request.GET.get("search", "")
     page_number = request.GET.get("page", 1)
     active_sessions = Session.objects.filter(expire_date__gte=now())
@@ -108,7 +161,8 @@ def session_list(request):
             "session_key": session.session_key,
             "username": user.username if user else "Аноним",
             "last_login": user.last_login if user else "—",
-            "expire_date": session.expire_date
+            "expire_date": session.expire_date,
+            "is_superuser": user.is_superuser if user else False,
         })
     if search_query:
         session_data = [s for s in session_data if search_query.lower() in s["username"].lower()]
@@ -119,10 +173,19 @@ def session_list(request):
         "search_query": search_query
     })
 
+
 def logout_user(request, session_id):
-    """Выход пользователя из системы по ID сессии"""
+    """Деактивация сессии пользователя"""
+    user_requester = request.user.username if request.user.is_authenticated else "Аноним"
     session = Session.objects.filter(session_key=session_id).first()
     if session:
-        session.delete()
-        messages.success(request, "Пользователь успешно вышел из системы.")
+        session_data = session.get_decoded()
+        user_id = session_data.get('_auth_user_id')
+        user_logout = User.objects.filter(id=user_id).first()
+        if user_logout:
+            user_logout = user_logout.username
+            session.delete()
+            message = logout_user_success(user_logout, user_requester)
+            messages.success(request, message)
+            create_audit_log(user_requester, 'delete', 'session', user_requester, message)
     return redirect('session_list')

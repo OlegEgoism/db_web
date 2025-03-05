@@ -20,7 +20,7 @@
         <form method="post" id="user-edit-form">
             {% csrf_token %}
             <div class="info-item">
-                <label for="new_email" class="info-label">Почта:</label>
+                <label for="new_email" class="info-label ">Почта:</label>
                 <input type="email" id="new_email" name="new_email" value="{{ user_log.email|default:'' }}" placeholder="Введите электронную почту">
             </div>
             <div class="info-item">

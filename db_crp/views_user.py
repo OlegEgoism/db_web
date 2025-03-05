@@ -48,6 +48,7 @@ def user_list(request):
 @login_required
 def user_create(request):
     """Создание пользователя"""
+    user_requester = request.user.username if request.user.is_authenticated else "Аноним"
     if request.method == "POST":
         form = UserCreateForm(request.POST)
         if form.is_valid():
@@ -61,7 +62,6 @@ def user_create(request):
             login = form.cleaned_data.get('login', True)
             replication = form.cleaned_data['replication']
             bypass_rls = form.cleaned_data['bypass_rls']
-            user_requester = request.user.username if request.user.is_authenticated else "Аноним"
 
             # Проверка наличия пользователя в PostgreSQL
             with connection.cursor() as cursor:

@@ -153,3 +153,8 @@ def delete_data_base_success(name_db, user_db, port_db, host_db):
 
 def delete_data_base_error(name_db, user_db, port_db, host_db):
     return f"Ошибка при удалении подключения к базе данных '{name_db}'. Пользователь: '{user_db}'. Пароль: ****. Порт: '{port_db}'. Хост: '{host_db}'."
+
+
+# АУДИТ
+def logout_user_success(user_logout, user_requester):
+    return f"Пользователь '{user_logout}' был деактивирован из системы пользователем '{user_requester}'."

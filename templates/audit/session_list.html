@@ -12,31 +12,33 @@
         <!-- Таблица активных сессий -->
         <table class="audit-table">
             <thead>
-                <tr>
-                    <th>Пользователь</th>
-                    <th>Последний вход</th>
-                    <th>Дата истечения</th>
-                    <th>Действие</th>
-                </tr>
+            <tr>
+                <th>Пользователь</th>
+                <th>Последний вход</th>
+                <th>Дата истечения</th>
+                <th>Суперпользователь</th>
+                <th>Действие</th>
+            </tr>
             </thead>
             <tbody id="sessionList">
-                {% for session in page_obj %}
-                    <tr class="session-item">
-                        <td class="session-username">{{ session.username }}</td>
-                        <td>{{ session.last_login|default:"—" }}</td>
-                        <td>{{ session.expire_date }}</td>
-                        <td>
-                            <a href="{% url 'logout_user' session.session_key %}" class="btn btn-delete">Выйти</a>
-                        </td>
-                    </tr>
-                {% empty %}
-                    <tr>
-                        <td colspan="4" class="no-data">Нет активных сессий</td>
-                    </tr>
-                {% endfor %}
+            {% for session in page_obj %}
+                <tr class="session-item">
+                    <td class="session-username">{{ session.username }}</td>
+                    <td>{{ session.last_login|default:"—"|date:"d.m.Y H:i" }}</td>
+                    <td>{{ session.expire_date|date:"d.m.Y H:i" }}</td>
+                    <td>{% if session.is_superuser %}Да{% else %}Нет{% endif %}</td>
+                    <td>
+                        <a href="{% url 'logout_user' session.session_key %}" class="btn btn-delete">Выйти</a>
+                    </td>
+                </tr>
+            {% empty %}
+                <tr>
+                    <td colspan="5" class="no-data">Нет активных сессий</td>
+                </tr>
+            {% endfor %}
             </tbody>
         </table>
-        
+
         <p></p>
         <!-- Пагинация -->
         <div class="pagination">
