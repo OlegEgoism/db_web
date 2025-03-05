@@ -1,3 +1,5 @@
+import base64
+
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 from django.utils import timezone
@@ -64,7 +66,8 @@ class Audit(models.Model):
         ('update', 'Обновление'),
         ('delete', 'Удаление'),
         # ('connect', 'Подключение к базе данных'),
-        ('register', 'Регистрация')
+        ('register', 'Регистрация'),
+        ('download', 'Скачивание')
     ]
     ENTITY_TYPES = [
         ('user', 'Пользователь'),
@@ -72,6 +75,7 @@ class Audit(models.Model):
         ('database', 'База данных'),
         ('other', 'Другое'),
         ('session', 'Сессия'),
+        ('audit', 'Аудит'),
     ]
     username = models.CharField(verbose_name="Имя пользователя", max_length=150)
     action_type = models.CharField(verbose_name="Тип действия", max_length=10, choices=ACTION_TYPES)
@@ -99,6 +103,30 @@ class ConnectingDB(DT):
     def __str__(self):
         return self.name_db
 
+
+    def save(self, *args, **kwargs):
+        """При сохранении шифруем пароль"""
+        if self.password_db:
+            self.password_db = base64.b64encode(self.password_db.encode()).decode()
+        super().save(*args, **kwargs)
+
+    def get_decrypted_password(self):
+        """Расшифровка пароля"""
+        try:
+            return base64.b64decode(self.password_db).decode()
+        except Exception:
+            return self.password_db  # Если не удалось расшифровать, вернуть как есть
+
+    def __str__(self):
+        return self.name_db
+
     class Meta:
         verbose_name = "Подключение к базе данных"
         verbose_name_plural = "Подключение к базе данных"
+
+    class Meta:
+        verbose_name = "Подключение к базе данных"
+        verbose_name_plural = "Подключение к базе данных"
+
+
+

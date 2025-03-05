@@ -158,3 +158,6 @@ def delete_data_base_error(name_db, user_db, port_db, host_db):
 # АУДИТ
 def logout_user_success(user_logout, user_requester):
     return f"Пользователь '{user_logout}' был деактивирован из системы пользователем '{user_requester}'."
+
+def export_audit_log_success(user_requester):
+    return f"Пользователь '{user_requester}' скачал файл 'Audit Log'."

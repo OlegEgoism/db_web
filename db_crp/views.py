@@ -5,7 +5,7 @@ from django.core.paginator import Paginator
 from django.db.models import Q
 from django.utils.dateparse import parse_date
 from django.utils.timezone import now
-from .audit_views import user_register, create_audit_log, logout_user_success
+from .audit_views import user_register, create_audit_log, logout_user_success, export_audit_log_success
 from .forms import CustomUserRegistrationForm
 from django.shortcuts import render, redirect
 from django.contrib import messages
@@ -99,6 +99,7 @@ def audit_log(request):
 
 def export_audit_log(request):
     """Экспорт данных журнала аудита в Excel"""
+    user_requester = request.user.username if request.user.is_authenticated else "Аноним"
     action_type = request.GET.get("action_type", "")
     entity_type = request.GET.get("entity_type", "")
     username = request.GET.get("username", "")
@@ -129,6 +130,10 @@ def export_audit_log(request):
     response['Content-Disposition'] = 'attachment; filename=audit_log_filtered.xlsx'
     workbook = xlsxwriter.Workbook(response, {'in_memory': True})
     worksheet = workbook.add_worksheet('Audit Log')
+    if worksheet:
+        message = export_audit_log_success(user_requester)
+        messages.success(request, message)
+        create_audit_log(user_requester, 'download', 'audit', user_requester, message)
     headers = ["Дата", "Пользователь", "Действие", "Объект", "Название", "Информация"]
     for col_num, header in enumerate(headers):
         worksheet.write(0, col_num, header)

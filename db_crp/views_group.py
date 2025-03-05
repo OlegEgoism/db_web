@@ -181,7 +181,7 @@ def groups_edit_privileges_tables(request, group_name, db_id):
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': connection_info.name_db,
         'USER': connection_info.user_db,
-        'PASSWORD': connection_info.password_db,
+        'PASSWORD': connection_info.get_decrypted_password(),
         'HOST': connection_info.host_db,
         'PORT': connection_info.port_db,
         'ATOMIC_REQUESTS': db_settings.get('ATOMIC_REQUESTS'),

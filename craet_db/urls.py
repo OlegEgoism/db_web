@@ -24,6 +24,7 @@ from db_crp.views_group import group_list, group_create, group_edit, group_delet
 from db_crp.views_user import user_list, user_create, user_info, user_edit, user_delete
 from db_crp.views_database import database_list, tables_list, database_connect, database_edit, database_delete
 
+
 urlpatterns = [
     path('admin/', admin.site.urls),  # Админка
     path('', home, name='home'),  # Главная

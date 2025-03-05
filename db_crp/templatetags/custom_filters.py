@@ -18,3 +18,11 @@ def get_item(dictionary, key):
     if isinstance(dictionary, dict):
         return dictionary.get(key, None)
     return None
+
+
+
+
+# @register.filter
+# def get_item(dictionary, key):
+#     """Получает элемент словаря по ключу"""
+#     return dictionary.get(key, None)
