@@ -4,41 +4,67 @@
     <div class="welcome-container">
         <h2 class="welcome-title">Права доступа в базе данных: {{ db_name }} для группы: {{ group_name }}</h2>
         <hr>
-
         <form method="post">
             {% csrf_token %}
-
-            <div class="select-all">
-                <label>
-                    <input type="checkbox" id="selectAll" onclick="toggleAllPermissions()"> Выбрать все права
-                </label>
+            <div class="schema-layout">
+                <div class="schema-list">
+                    <h3>Схемы</h3>
+                    <ul>
+                        {% for schema in tables_by_schema.keys %}
+                            <li>
+                                <a href="javascript:void(0);" onclick="showSchemaTables('{{ schema }}')">
+                                    📂 {{ schema }}
+                                </a>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                <div class="schema-content">
+                    {% for schema, tables in tables_by_schema.items %}
+                        <div class="schema-container" id="schema-{{ schema }}" style="display: none;">
+                            <h3 class="schema-title">
+                                {{ schema }}
+                            </h3>
+                            <table class="permissions-table">
+                                <thead>
+                                <tr>
+                                    <th style="width: 240px">Таблица</th>
+                                    <th>
+                                        <button type="button" class="btn btn-small" onclick="toggleSchemaPermissions('{{ schema }}', 'SELECT')">Все SELECT</button>
+                                    </th>
+                                    <th>
+                                        <button type="button" class="btn btn-small" onclick="toggleSchemaPermissions('{{ schema }}', 'INSERT')">Все INSERT</button>
+                                    </th>
+                                    <th>
+                                        <button type="button" class="btn btn-small" onclick="toggleSchemaPermissions('{{ schema }}', 'UPDATE')">Все UPDATE</button>
+                                    </th>
+                                    <th>
+                                        <button type="button" class="btn btn-small" onclick="toggleSchemaPermissions('{{ schema }}', 'DELETE')">Все DELETE</button>
+                                    </th>
+                                </tr>
+                                </thead>
+                                <tbody>
+                                {% for table, permissions in tables.items %}
+                                    <tr>
+                                        <td>{{ table }}</td>
+                                        <td><input type="checkbox" class="permission-checkbox {{ schema }}-SELECT" name="permissions_{{ schema }}.{{ table }}" value="SELECT"
+                                                   {% if "SELECT" in permissions %}checked{% endif %}></td>
+                                        <td><input type="checkbox" class="permission-checkbox {{ schema }}-INSERT" name="permissions_{{ schema }}.{{ table }}" value="INSERT"
+                                                   {% if "INSERT" in permissions %}checked{% endif %}></td>
+                                        <td><input type="checkbox" class="permission-checkbox {{ schema }}-UPDATE" name="permissions_{{ schema }}.{{ table }}" value="UPDATE"
+                                                   {% if "UPDATE" in permissions %}checked{% endif %}></td>
+                                        <td><input type="checkbox" class="permission-checkbox {{ schema }}-DELETE" name="permissions_{{ schema }}.{{ table }}" value="DELETE"
+                                                   {% if "DELETE" in permissions %}checked{% endif %}></td>
+                                    </tr>
+                                {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% empty %}
+                        <p>Нет доступных схем и таблиц.</p>
+                    {% endfor %}
+                </div>
             </div>
-
-            <ul class="tree">
-                {% for schema, tables in tables_by_schema.items %}
-                    <li>
-                        <span class="tree-node" onclick="toggleTree('{{ schema }}')">📁 {{ schema }}</span>
-                        <ul id="tree-{{ schema }}" style="display: none;">
-                            {% for table, permissions in tables.items %}
-                                <li>
-                                    📄 {{ table }}
-                                    <label><input type="checkbox" class="permission-checkbox" name="permissions_{{ schema }}.{{ table }}" value="SELECT"
-                                                  {% if "SELECT" in permissions %}checked{% endif %}> SELECT</label>
-                                    <label><input type="checkbox" class="permission-checkbox" name="permissions_{{ schema }}.{{ table }}" value="INSERT"
-                                                  {% if "INSERT" in permissions %}checked{% endif %}> INSERT</label>
-                                    <label><input type="checkbox" class="permission-checkbox" name="permissions_{{ schema }}.{{ table }}" value="UPDATE"
-                                                  {% if "UPDATE" in permissions %}checked{% endif %}> UPDATE</label>
-                                    <label><input type="checkbox" class="permission-checkbox" name="permissions_{{ schema }}.{{ table }}" value="DELETE"
-                                                  {% if "DELETE" in permissions %}checked{% endif %}> DELETE</label>
-                                </li>
-                            {% endfor %}
-                        </ul>
-                    </li>
-                {% empty %}
-                    <li>Нет доступных таблиц</li>
-                {% endfor %}
-            </ul>
-
             <div class="all-btn">
                 <a href="{% url 'groups_edit_privileges' group_name %}" class="btn btn-cancel">Назад</a>
                 <button type="submit" class="btn btn-save">Сохранить</button>
@@ -47,22 +73,85 @@
     </div>
 
     <script>
-        function toggleTree(schema) {
-            let element = document.getElementById("tree-" + schema);
-            element.style.display = (element.style.display === "none") ? "block" : "none";
+        function showSchemaTables(schema) {
+            document.querySelectorAll(".schema-container").forEach(el => el.style.display = "none");
+            document.getElementById("schema-" + schema).style.display = "block";
         }
 
-        function toggleAllPermissions() {
-            let checkboxes = document.querySelectorAll(".permission-checkbox");
-            let selectAll = document.getElementById("selectAll");
-            checkboxes.forEach(checkbox => checkbox.checked = selectAll.checked);
+        function toggleSchemaPermissions(schema, permissionType) {
+            let checkboxes = document.querySelectorAll("." + schema + "-" + permissionType);
+            let allChecked = Array.from(checkboxes).every(checkbox => checkbox.checked);
+            checkboxes.forEach(checkbox => checkbox.checked = !allChecked);
         }
     </script>
 
     <style>
-        .tree { list-style-type: none; padding-left: 20px; }
-        .tree li { margin: 5px 0; cursor: pointer; }
-        .tree ul { padding-left: 20px; display: none; }
-        .tree-node { font-weight: bold; cursor: pointer; }
+        .schema-layout {
+            display: flex;
+        }
+
+        .schema-list {
+            width: 20%;
+            background: #f4f4f4;
+            padding: 15px;
+            border-right: 1px solid #ccc;
+        }
+
+        .schema-list ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .schema-list li {
+            padding: 5px 0;
+        }
+
+        .schema-list a {
+            text-decoration: none;
+            color: #007bff;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .schema-list a:hover {
+            text-decoration: underline;
+        }
+
+        /* ✅ Правая колонка */
+        .schema-content {
+            width: 80%;
+            padding: 15px;
+        }
+
+        .permissions-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 5px;
+        }
+
+        .permissions-table th, .permissions-table td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: center;
+        }
+
+        .permissions-table th {
+            background-color: #e0e0e0;
+        }
+
+        .permissions-table th button {
+            width: 100%;
+            font-size: 12px;
+            padding: 5px;
+            cursor: pointer;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 3px;
+        }
+
+        .permissions-table th button:hover {
+            background-color: #0056b3;
+        }
     </style>
 {% endblock %}

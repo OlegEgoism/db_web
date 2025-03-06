@@ -259,9 +259,8 @@ def groups_edit_privileges_tables(request, group_name, db_id):
 
         finally:
             temp_connection.close()
-
         return redirect('groups_edit_privileges', group_name=group_name)
-
+    tables_by_schema = dict(sorted(tables_by_schema.items()))
     return render(request, 'groups/groups_edit_privileges_tables.html', {
         'group_name': group_name,
         'db_name': connection_info.name_db,
