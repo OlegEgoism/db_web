@@ -19,8 +19,9 @@ from django.conf.urls.static import static
 from django.contrib import admin
 from django.urls import path
 from django.contrib.auth import views as auth_views
-from db_crp.views import home, register, logout_view, audit_log, session_list, logout_user, export_audit_log, settings_project, settings_info
+from db_crp.views import home, register, logout_view
 from db_crp.views_group import group_list, group_create, group_edit, group_delete, group_info, groups_edit_privileges, groups_edit_privileges_tables
+from db_crp.views_setting import settings_info, audit_log, export_audit_log, session_list, logout_user, settings_project
 from db_crp.views_user import user_list, user_create, user_info, user_edit, user_delete
 from db_crp.views_database import database_list, tables_list, database_connect, database_edit, database_delete
 

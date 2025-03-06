@@ -75,7 +75,7 @@ class Audit(models.Model):
         ('database', 'База данных'),
         ('other', 'Другое'),
         ('session', 'Сессия'),
-        ('settings', 'Аудит'),
+        ('settings', 'Настройки'),
     ]
     username = models.CharField(verbose_name="Имя пользователя", max_length=150)
     action_type = models.CharField(verbose_name="Тип действия", max_length=10, choices=ACTION_TYPES)

@@ -21,18 +21,21 @@
             {% csrf_token %}
             <table class="settings-table">
                 <tr>
-                    <td><label for="id_pagination_size">Размер пагинации:</label></td>
+                    <td><label for="id_pagination_size">Размер пагинации на страницах:</label></td>
                     <td>{{ form.pagination_size }}</td>
                 </tr>
                 <tr>
-                    <td><label for="id_send_email">Отправка email-уведомлений:</label></td>
+                    <td><label for="id_send_email">Отправка сообщений на почту:</label></td>
                     <td>{{ form.send_email }}</td>
                 </tr>
             </table>
 
             <div class="all-btn">
+                <a href="{% url 'settings_info' %}" class="btn btn-cancel">Назад</a>
                 <button type="submit" class="btn btn-save">Сохранить</button>
             </div>
+
+
         </form>
     </div>
 

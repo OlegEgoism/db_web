@@ -1,9 +1,9 @@
 {% extends 'base.html' %}
-<title>{% block title %}Настройки проекта{% endblock %}</title>
+<title>{% block title %}Настройки{% endblock %}</title>
 
 {% block content %}
     <div class="welcome-container">
-        <h2 class="welcome-title">Настройки проекта</h2>
+        <h2 class="welcome-title">Настройки</h2>
         <hr>
 
         <!-- Вывод сообщений -->
@@ -16,11 +16,10 @@
                 {% endfor %}
             </div>
         {% endif %}
-
-        <a href="{% url 'settings_project' %}">Настройки приложения</a>
-        <a href="{% url 'audit_log' %}">Аудит приложения</a>
-        <a href="{% url 'session_list' %}">Сессии пользователей</a>
+        <div class="all-btn">
+            <a href="{% url 'settings_project' %}" class="btn btn-save">Настройки приложения</a>
+            <a href="{% url 'audit_log' %}" class="btn btn-save">Аудит приложения</a>
+            <a href="{% url 'session_list' %}" class="btn btn-save">Сессии пользователей</a>
+        </div>
     </div>
-
-
 {% endblock %}

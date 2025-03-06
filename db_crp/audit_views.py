@@ -69,7 +69,7 @@ def edit_user_messages_delete_group_error(user_name, group_name):
 
 
 def edit_user_messages_add_group_success(user_name, group_name):
-    return f"Пользователь '{user_name}' добавлен из группы '{group_name}'."
+    return f"Пользователь '{user_name}' добавлен в группу '{group_name}'."
 
 
 def edit_user_messages_add_group_error(user_name, group_name):
@@ -169,7 +169,7 @@ def delete_data_base_error(name_db, user_db, port_db, host_db):
 
 
 # ---------------------------------------------------------------------------------------------------------------
-# АУДИТ
+# НАСТРОЙКИ
 def logout_user_success(user_logout, user_requester):
     return f"Пользователь '{user_logout}' был деактивирован из системы пользователем '{user_requester}'."
 
@@ -177,4 +177,7 @@ def logout_user_success(user_logout, user_requester):
 def export_audit_log_success(user_requester):
     return f"Пользователь '{user_requester}' скачал файл 'Audit Log'."
 
+
+def project_settings_success(user_requester, pagination_size, send_email):
+    return f"Настройки проекта успешно обновлены. Размер пагинации на странице '{pagination_size} записей. Отправка сообщений на почту '{send_email}'. "
 # ---------------------------------------------------------------------------------------------------------------

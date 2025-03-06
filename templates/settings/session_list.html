@@ -6,6 +6,17 @@
         <h2 class="welcome-title">Активные сессии пользователей</h2>
         <hr>
 
+        <!-- Вывод сообщений об ошибках -->
+        {% if messages %}
+            <div class="messages">
+                {% for message in messages %}
+                    <div class="alert {% if message.tags == 'success' %}alert-success{% else %}alert-error{% endif %}" role="alert">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+
         <!-- Поле поиска -->
         <input type="text" id="sessionSearch" class="audit-search" onkeyup="filterSessions()" placeholder="Поиск по пользователю..."/>
 
@@ -52,7 +63,12 @@
                 <a href="?page={{ page_obj.paginator.num_pages }}" class="btn btn-page">Последняя</a>
             {% endif %}
         </div>
+    
+    <div class="all-btn">
+        <a href="{% url 'settings_info' %}" class="btn btn-cancel">Назад</a>
     </div>
+    </div>
+
 
     <script>
         function filterSessions() {
