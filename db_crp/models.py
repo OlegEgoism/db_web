@@ -75,7 +75,7 @@ class Audit(models.Model):
         ('database', 'База данных'),
         ('other', 'Другое'),
         ('session', 'Сессия'),
-        ('audit', 'Аудит'),
+        ('settings', 'Аудит'),
     ]
     username = models.CharField(verbose_name="Имя пользователя", max_length=150)
     action_type = models.CharField(verbose_name="Тип действия", max_length=10, choices=ACTION_TYPES)
@@ -103,7 +103,6 @@ class ConnectingDB(DT):
     def __str__(self):
         return self.name_db
 
-
     def save(self, *args, **kwargs):
         """При сохранении шифруем пароль"""
         if self.password_db:
@@ -115,7 +114,7 @@ class ConnectingDB(DT):
         try:
             return base64.b64decode(self.password_db).decode()
         except Exception:
-            return self.password_db  # Если не удалось расшифровать, вернуть как есть
+            return self.password_db
 
     def __str__(self):
         return self.name_db
@@ -124,9 +123,15 @@ class ConnectingDB(DT):
         verbose_name = "Подключение к базе данных"
         verbose_name_plural = "Подключение к базе данных"
 
+
+class SettingsProject(DT):
+    """Настройка проекта"""
+    pagination_size = models.IntegerField(verbose_name="Размер пагинации на странице", default=20, max_length=200)
+    send_email = models.BooleanField(verbose_name="Отправка сообщений на почту", default=True)
+
+    def __str__(self):
+        return f'{self.pagination_size}'
+
     class Meta:
-        verbose_name = "Подключение к базе данных"
-        verbose_name_plural = "Подключение к базе данных"
-
-
-
+        verbose_name = "Настройка проекта"
+        verbose_name_plural = "Настройка проекта"

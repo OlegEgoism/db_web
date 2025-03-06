@@ -1,6 +1,6 @@
 from django import forms
 from django.contrib.auth.forms import UserCreationForm
-from .models import CustomUser, ConnectingDB
+from .models import CustomUser, ConnectingDB, SettingsProject
 
 
 class CustomUserRegistrationForm(UserCreationForm):
@@ -72,4 +72,16 @@ class DatabaseConnectForm(forms.ModelForm):
         }
         widgets = {
             'password_db': forms.PasswordInput(),
+        }
+
+
+class SettingsProjectForm(forms.ModelForm):
+    """Настройки проекта"""
+
+    class Meta:
+        model = SettingsProject
+        fields = ["pagination_size", "send_email"]
+        labels = {
+            "pagination_size": "Размер пагинации на странице",
+            "send_email": "Отправка сообщений на почту",
         }

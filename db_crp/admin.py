@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.utils.safestring import mark_safe
 
-from db_crp.models import CustomUser, GroupLog, UserLog, Audit, ConnectingDB
+from db_crp.models import CustomUser, GroupLog, UserLog, Audit, ConnectingDB, SettingsProject
 
 
 @admin.register(CustomUser)
@@ -86,3 +86,16 @@ class ConnectingDBAdmin(admin.ModelAdmin):
     date_hierarchy = 'created_at'
     list_filter = 'name_db', 'created_at',
     list_per_page = 20
+
+
+@admin.register(SettingsProject)
+class SettingsProjectAdmin(admin.ModelAdmin):
+    """Настройка проекта"""
+    list_display = 'pagination_size', 'send_email', 'created_at', 'updated_at',
+    readonly_fields = 'created_at', 'updated_at'
+    date_hierarchy = 'created_at'
+    list_per_page = 20
+
+    def has_add_permission(self, request):
+        """Запрещает создание более одной записи"""
+        return not SettingsProject.objects.exists()

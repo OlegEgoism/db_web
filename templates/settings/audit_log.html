@@ -5,6 +5,18 @@
     <div class="welcome-container">
         <h2 class="welcome-title">Журнал аудита</h2>
         <hr>
+
+        <!-- Вывод сообщений об ошибках -->
+        {% if messages %}
+            <div class="messages">
+                {% for message in messages %}
+                    <div class="alert {% if message.tags == 'success' %}alert-success{% else %}alert-error{% endif %}" role="alert">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+
         <!-- Фильтр -->
         <div class="audit-filters">
             <form method="get" class="filter-form">

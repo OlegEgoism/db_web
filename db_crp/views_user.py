@@ -8,7 +8,7 @@ from django.template.loader import render_to_string
 from django.utils import timezone
 from .forms import UserCreateForm
 from django.shortcuts import render, redirect
-from .models import UserLog
+from .models import UserLog, SettingsProject
 from django.contrib import messages
 from .audit_views import delete_user_messages_email, delete_user_messages_success, delete_user_messages_error, create_audit_log, create_user_messages_error, create_user_messages_error_email, create_user_messages_success, create_user_messages_email, \
     user_info_error, user_data, edit_user_messages_email_error, edit_user_messages_success, edit_user_messages_email_success, edit_user_messages_add_group_error, edit_user_messages_delete_group_success, edit_user_messages_delete_group_error, \
@@ -49,6 +49,7 @@ def user_list(request):
 def user_create(request):
     """Создание пользователя"""
     user_requester = request.user.username if request.user.is_authenticated else "Аноним"
+    send_email = SettingsProject.objects.first().send_email if SettingsProject.objects.exists() else False
     if request.method == "POST":
         form = UserCreateForm(request.POST)
         if form.is_valid():
@@ -109,7 +110,7 @@ def user_create(request):
                 messages.success(request, message)
                 create_audit_log(user_requester, 'create', 'user', username, message)
                 # Отправка уведомления на почту
-                if email:
+                if email and send_email == True:
                     subject = "Ваш аккаунт создан"
                     html_message = render_to_string('send_email/send_user_create.html', {
                         'username': username,
@@ -211,7 +212,7 @@ def user_info(request, username):
 def user_edit(request, username):
     """Редактирование пользователя"""
     user_requester = request.user.username if request.user.is_authenticated else "Аноним"
-
+    send_email = SettingsProject.objects.first().send_email if SettingsProject.objects.exists() else False
     # Проверка наличия пользователя в PostgreSQL
     with connection.cursor() as cursor:
         cursor.execute("SELECT 1 FROM pg_user WHERE usename = %s;", [username])
@@ -375,7 +376,7 @@ def user_edit(request, username):
                         message = edit_user_messages_add_group_error(username, groupname)
                         messages.success(request, message)
                         create_audit_log(user_requester, 'update', 'user', username, message)
-        if has_changes and user_log.email:
+        if has_changes and user_log.email and send_email == True:
             subject = "Изменение учетной записи"
             html_message = render_to_string('send_email/send_user_edit.html', {
                 'username': username,
@@ -404,6 +405,7 @@ def user_edit(request, username):
 def user_delete(request, username):
     """Удаление пользователя"""
     user_requester = request.user.username if request.user.is_authenticated else "Аноним"
+    send_email = SettingsProject.objects.first().send_email if SettingsProject.objects.exists() else False
     user_log = UserLog.objects.filter(username=username).first()
     user_email = user_log.email if user_log else None
     with connection.cursor() as cursor:
@@ -421,7 +423,7 @@ def user_delete(request, username):
         message = delete_user_messages_success(username)
         messages.success(request, message)
         create_audit_log(user_requester, 'delete', 'user', username, message)
-    if user_email:
+    if user_email and send_email == True:
         subject = "Ваш аккаунт был удален"
         html_message = render_to_string('send_email/send_user_delete.html', {'username': username})
         email_message = EmailMultiAlternatives(subject, "", settings.EMAIL_HOST_USER, [user_email])

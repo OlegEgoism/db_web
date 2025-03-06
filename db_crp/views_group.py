@@ -174,7 +174,7 @@ def groups_edit_privileges(request, group_name):
 
 @login_required
 def groups_edit_privileges_tables(request, group_name, db_id):
-    """Редактирование прав группы на таблицы в базе данных (дерево: База → Схема → Таблица)"""
+    """Редактирование прав группы на таблицы в базе данных"""
     user_requester = request.user.username if request.user.is_authenticated else "Аноним"
     connection_info = get_object_or_404(ConnectingDB, id=db_id)
     db_settings = settings.DATABASES.get('default', {})

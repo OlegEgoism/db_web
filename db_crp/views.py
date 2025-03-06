@@ -1,4 +1,5 @@
 from django.contrib.auth import login, logout
+from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.contrib.sessions.models import Session
 from django.core.paginator import Paginator
@@ -6,13 +7,13 @@ from django.db.models import Q
 from django.utils.dateparse import parse_date
 from django.utils.timezone import now
 from .audit_views import user_register, create_audit_log, logout_user_success, export_audit_log_success
-from .forms import CustomUserRegistrationForm
+from .forms import CustomUserRegistrationForm, SettingsProjectForm
 from django.shortcuts import render, redirect
 from django.contrib import messages
 from django.contrib.auth import get_user_model
 import xlsxwriter
 from django.http import HttpResponse
-from .models import Audit
+from .models import Audit, SettingsProject
 
 User = get_user_model()
 
@@ -43,14 +44,22 @@ def register(request):
     return render(request, 'registration/register.html', {'form': form})
 
 
+@login_required
 def logout_view(request):
     """Выход пользователя"""
     logout(request)
     return redirect('home')
 
 
+@login_required
+def settings_info(request):
+    """Настройки"""
+    return render(request, "settings/settings.html")
+
+@login_required
 def audit_log(request):
     """Аудит приложения"""
+    pagination_size = SettingsProject.objects.first().pagination_size if SettingsProject.objects.exists() else 20
     action_type = request.GET.get("action_type", "")
     entity_type = request.GET.get("entity_type", "")
     username = request.GET.get("username", "")
@@ -58,7 +67,7 @@ def audit_log(request):
     start_date = request.GET.get("start_date", "")
     end_date = request.GET.get("end_date", "")
     page_number = request.GET.get("page", 1)
-    audit_entries = Audit.objects.all()
+    audit_entries = Audit.objects.all().order_by('-timestamp')
     if action_type:
         audit_entries = audit_entries.filter(action_type=action_type)
     if entity_type:
@@ -78,12 +87,12 @@ def audit_log(request):
         end_date_parsed = parse_date(end_date)
         if end_date_parsed:
             audit_entries = audit_entries.filter(timestamp__date__lte=end_date_parsed)
-    paginator = Paginator(audit_entries, 5)
+    paginator = Paginator(audit_entries, pagination_size)
     page_obj = paginator.get_page(page_number)
     action_choices = Audit.ACTION_TYPES
     entity_choices = Audit.ENTITY_TYPES
     usernames = Audit.objects.values_list("username", flat=True).distinct()
-    return render(request, "audit/audit_log.html", {
+    return render(request, "settings/audit_log.html", {
         "page_obj": page_obj,
         "action_choices": action_choices,
         "entity_choices": entity_choices,
@@ -97,6 +106,7 @@ def audit_log(request):
     })
 
 
+@login_required
 def export_audit_log(request):
     """Экспорт данных журнала аудита в Excel"""
     user_requester = request.user.username if request.user.is_authenticated else "Аноним"
@@ -132,8 +142,8 @@ def export_audit_log(request):
     worksheet = workbook.add_worksheet('Audit Log')
     if worksheet:
         message = export_audit_log_success(user_requester)
-        messages.success(request, message)
-        create_audit_log(user_requester, 'download', 'audit', user_requester, message)
+        # messages.success(request, message)
+        create_audit_log(user_requester, 'download', 'settings', user_requester, message)
     headers = ["Дата", "Пользователь", "Действие", "Объект", "Название", "Информация"]
     for col_num, header in enumerate(headers):
         worksheet.write(0, col_num, header)
@@ -152,8 +162,10 @@ def export_audit_log(request):
     return response
 
 
+@login_required
 def session_list(request):
     """Список сессий пользователей"""
+    pagination_size = SettingsProject.objects.first().pagination_size if SettingsProject.objects.exists() else 20
     search_query = request.GET.get("search", "")
     page_number = request.GET.get("page", 1)
     active_sessions = Session.objects.filter(expire_date__gte=now())
@@ -171,14 +183,15 @@ def session_list(request):
         })
     if search_query:
         session_data = [s for s in session_data if search_query.lower() in s["username"].lower()]
-    paginator = Paginator(session_data, 5)
+    paginator = Paginator(session_data, pagination_size)
     page_obj = paginator.get_page(page_number)
-    return render(request, "audit/session_list.html", {
+    return render(request, "settings/session_list.html", {
         "page_obj": page_obj,
         "search_query": search_query
     })
 
 
+@login_required
 def logout_user(request, session_id):
     """Деактивация сессии пользователя"""
     user_requester = request.user.username if request.user.is_authenticated else "Аноним"
@@ -194,3 +207,22 @@ def logout_user(request, session_id):
             messages.success(request, message)
             create_audit_log(user_requester, 'delete', 'session', user_requester, message)
     return redirect('session_list')
+
+
+@login_required
+def settings_project(request):
+    """Настройки проекта"""
+    settings_instance = SettingsProject.objects.first()
+    if request.method == "POST":
+        form = SettingsProjectForm(request.POST, instance=settings_instance)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Настройки успешно обновлены!")
+            return redirect('settings_project')
+    else:
+        form = SettingsProjectForm(instance=settings_instance)
+
+    return render(request, "settings/settings_project.html", {"form": form})
+
+
+
