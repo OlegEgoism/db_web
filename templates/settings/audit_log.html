@@ -96,9 +96,8 @@
                 <a href="?page={{ page_obj.paginator.num_pages }}" class="btn btn-page">Последняя</a>
             {% endif %}
         </div>
-
-                <div class="all-btn">
-                <a href="{% url 'settings_info' %}" class="btn btn-cancel">Назад</a>
-            </div>
+        <div class="all-btn">
+            <a href="{% url 'settings_info' %}" class="btn btn-cancel">Назад</a>
+        </div>
     </div>
 {% endblock %}

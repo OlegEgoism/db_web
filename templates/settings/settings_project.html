@@ -29,33 +29,10 @@
                     <td>{{ form.send_email }}</td>
                 </tr>
             </table>
-
             <div class="all-btn">
                 <a href="{% url 'settings_info' %}" class="btn btn-cancel">Назад</a>
                 <button type="submit" class="btn btn-save">Сохранить</button>
             </div>
-
-
         </form>
     </div>
-
-    <style>
-        .settings-table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-
-        .settings-table td {
-            padding: 10px;
-            border-bottom: 1px solid #ddd;
-        }
-
-        .settings-table label {
-            font-weight: bold;
-        }
-
-        .all-btn {
-            margin-top: 20px;
-        }
-    </style>
 {% endblock %}
