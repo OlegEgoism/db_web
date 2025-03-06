@@ -388,7 +388,6 @@ main {
 }
 
 
-
 .no-users {
     color: red;
     margin: 5px;
@@ -450,15 +449,6 @@ main {
 }
 
 
-
-
-
-
-
-
-
-
-
 .table-list {
     width: 100%;
     border-collapse: collapse;
@@ -481,9 +471,6 @@ main {
 .table-item:hover {
     background-color: #e9e9e9;
 }
-
-
-
 
 
 .audit-table {
@@ -515,8 +502,6 @@ main {
 }
 
 
-
-
 .o-button {
     width: 10%;
     padding: 4px 4px;
@@ -533,4 +518,72 @@ main {
     border: 1px solid #ccc;
     border-radius: 5px;
     font-size: 16px;
+}
+
+
+.schema-layout {
+    display: flex;
+}
+
+.schema-list {
+    width: 20%;
+    background: #f4f4f4;
+    padding: 15px;
+    border-right: 1px solid #ccc;
+}
+
+.schema-list ul {
+    list-style: none;
+    padding: 0;
+}
+
+.schema-list li {
+    padding: 5px 0;
+}
+
+.schema-list a {
+    text-decoration: none;
+    color: #007bff;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.schema-list a:hover {
+    text-decoration: underline;
+}
+
+.schema-content {
+    width: 80%;
+    padding: 15px;
+}
+
+.permissions-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 5px;
+}
+
+.permissions-table th, .permissions-table td {
+    border: 1px solid #ddd;
+    padding: 8px;
+    text-align: center;
+}
+
+.permissions-table th {
+    background-color: #e0e0e0;
+}
+
+.permissions-table th button {
+    width: 100%;
+    font-size: 12px;
+    padding: 5px;
+    cursor: pointer;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 3px;
+}
+
+.permissions-table th button:hover {
+    background-color: #0056b3;
 }

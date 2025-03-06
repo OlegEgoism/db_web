@@ -6,7 +6,7 @@ from django.http import HttpResponseRedirect
 from django.urls import reverse
 from django.utils import timezone
 from .audit_views import group_data, create_audit_log, delete_group_messages_success, delete_group_messages_error, create_group_messages_error, create_group_messages_error_pg, edit_group_messages_group_success, create_group_messages_error_info, \
-    edit_group_messages_error_pg, edit_group_messages_error_name, edit_group_messages_success_name, edit_group_messages_error
+    edit_group_messages_error_pg, edit_group_messages_error_name, edit_group_messages_success_name, edit_group_messages_error, edit_groups_privileges_tables_success, edit_groups_privileges_tables_error, groups_tables_error
 from .forms import CreateGroupForm, GroupEditForm
 from django.shortcuts import render, redirect, get_object_or_404
 from .models import GroupLog, ConnectingDB
@@ -175,6 +175,7 @@ def groups_edit_privileges(request, group_name):
 @login_required
 def groups_edit_privileges_tables(request, group_name, db_id):
     """Редактирование прав группы на таблицы в базе данных (дерево: База → Схема → Таблица)"""
+    user_requester = request.user.username if request.user.is_authenticated else "Аноним"
     connection_info = get_object_or_404(ConnectingDB, id=db_id)
     db_settings = settings.DATABASES.get('default', {})
     temp_db_settings = {
@@ -191,15 +192,12 @@ def groups_edit_privileges_tables(request, group_name, db_id):
         'OPTIONS': db_settings.get('OPTIONS'),
         'TIME_ZONE': db_settings.get('TIME_ZONE'),
     }
-
     temp_connection = DatabaseWrapper(temp_db_settings, alias="temp_connection")
     temp_connection.connect()
-
-    tables_by_schema = {}  # Формат {'schema_name': {'table_name': ['SELECT', 'INSERT']}}
-
+    tables_by_schema = {}
+    granted_tables = {}
     try:
         with temp_connection.cursor() as cursor:
-            # Получение всех таблиц по схемам
             cursor.execute("""
                 SELECT schemaname, tablename
                 FROM pg_catalog.pg_tables
@@ -208,55 +206,62 @@ def groups_edit_privileges_tables(request, group_name, db_id):
             for schema, table in cursor.fetchall():
                 if schema not in tables_by_schema:
                     tables_by_schema[schema] = {}
-                tables_by_schema[schema][table] = set()  # Права будем заполнять ниже
-
-        # Получение прав доступа для группы
+                tables_by_schema[schema][table] = set()
         with temp_connection.cursor() as cursor:
             cursor.execute("""
                 SELECT table_schema, table_name, privilege_type
                 FROM information_schema.role_table_grants
                 WHERE grantee = %s
             """, [group_name])
-
             for schema, table, privilege in cursor.fetchall():
                 if schema in tables_by_schema and table in tables_by_schema[schema]:
                     tables_by_schema[schema][table].add(privilege)
-
-    except Exception as e:
-        messages.error(request, f"Ошибка при загрузке таблиц: {e}")
+                    if schema not in granted_tables:
+                        granted_tables[schema] = {}
+                    if table not in granted_tables[schema]:
+                        granted_tables[schema][table] = set()
+                    granted_tables[schema][table].add(privilege)
+    except Exception:
+        message = groups_tables_error(group_name, table)
+        messages.error(request, message)
+        create_audit_log(user_requester, 'update', 'group', group_name, message)
         return redirect('groups_edit_privileges', group_name=group_name)
-
     finally:
         temp_connection.close()
-
     if request.method == "POST":
-        # Получение прав из формы
         table_permissions = {}
         for schema, tables in tables_by_schema.items():
             for table in tables:
                 table_permissions[f"{schema}.{table}"] = request.POST.getlist(f"permissions_{schema}.{table}")
-
         temp_connection = DatabaseWrapper(temp_db_settings, alias="temp_connection")
         temp_connection.connect()
-
+        changes_log = []
         try:
             with temp_connection.cursor() as cursor:
-                # Сначала удаляем все права
                 for schema, tables in tables_by_schema.items():
                     for table in tables:
                         cursor.execute(f"REVOKE ALL ON {schema}.{table} FROM {group_name};")
-
-                # Затем добавляем новые
-                for table, permissions in table_permissions.items():
-                    if permissions:
-                        permissions_str = ", ".join(permissions)
+                for table, new_permissions in table_permissions.items():
+                    if new_permissions:
+                        permissions_str = ", ".join(new_permissions)
                         cursor.execute(f"GRANT {permissions_str} ON {table} TO {group_name};")
-
-            messages.success(request, f"Права успешно обновлены для группы '{group_name}'.")
-
-        except Exception as e:
-            messages.error(request, f"Ошибка при выдаче прав: {e}")
-
+                        schema, table_name = table.split(".")
+                        old_permissions = granted_tables.get(schema, {}).get(table_name, set())
+                        new_permissions = set(new_permissions)
+                        added_perms = new_permissions - old_permissions
+                        removed_perms = old_permissions - new_permissions
+                        if added_perms or removed_perms:
+                            changes_log.append(f"Изменены права на {schema}.{table_name}: "
+                                               f"Добавлены: {', '.join(added_perms) if added_perms else '—'} | "
+                                               f"Удалены: {', '.join(removed_perms) if removed_perms else '—'}")
+            if changes_log:
+                message = edit_groups_privileges_tables_success(group_name)
+                messages.success(request, message)
+                create_audit_log(user_requester, 'update', 'group', group_name, "\n".join(changes_log))
+        except Exception:
+            message = edit_groups_privileges_tables_error(group_name)
+            messages.error(request, message)
+            create_audit_log(user_requester, 'update', 'group', group_name, message)
         finally:
             temp_connection.close()
         return redirect('groups_edit_privileges', group_name=group_name)
@@ -266,6 +271,7 @@ def groups_edit_privileges_tables(request, group_name, db_id):
         'db_name': connection_info.name_db,
         'tables_by_schema': tables_by_schema,
     })
+
 
 
 @login_required

@@ -142,6 +142,19 @@ def edit_group_messages_error(group_name):
     return f"Ошибка при редактировании группы '{group_name}'."
 
 
+def edit_groups_privileges_tables_success(group_name):
+    return f"Права успешно обновлены для группы '{group_name}'."
+
+
+def edit_groups_privileges_tables_error(group_name):
+    return f"Ошибка при выдаче прав для группы '{group_name}'."
+
+
+def groups_tables_error(group_name, table):
+    return f"Ошибка при загрузке таблиц '{table}' в группе '{group_name}'."
+
+
+# ---------------------------------------------------------------------------------------------------------------
 # ПОДКЛЮЧЕНИЕ К БАЗЕ ДАННЫХ
 def connect_data_base_success(name_db, user_db, port_db, host_db):
     return f"Подключение к базе данных '{name_db}' успешно сохранено. Пользователь: '{user_db}'. Пароль: ****. Порт: '{port_db}'. Хост: '{host_db}'."
@@ -155,9 +168,13 @@ def delete_data_base_error(name_db, user_db, port_db, host_db):
     return f"Ошибка при удалении подключения к базе данных '{name_db}'. Пользователь: '{user_db}'. Пароль: ****. Порт: '{port_db}'. Хост: '{host_db}'."
 
 
+# ---------------------------------------------------------------------------------------------------------------
 # АУДИТ
 def logout_user_success(user_logout, user_requester):
     return f"Пользователь '{user_logout}' был деактивирован из системы пользователем '{user_requester}'."
 
+
 def export_audit_log_success(user_requester):
     return f"Пользователь '{user_requester}' скачал файл 'Audit Log'."
+
+# ---------------------------------------------------------------------------------------------------------------
