@@ -5,7 +5,7 @@
     <div class="welcome-container">
         <div class="title-with-button" style="display: flex; align-items: center; justify-content: space-between;">
             <h2 class="welcome-title">Список групп ({{ user_groups_data|length }} шт.)</h2>
-            <a href="{% url 'group_create' %}" class="btn btn-save">Создать группу</a>
+            <a href="{% url 'group_create' db_id=db_id %}" class="btn btn-save">Создать группу</a>
         </div>
         <hr>
 
@@ -21,34 +21,46 @@
         {% endif %}
 
         <!-- Поле поиска -->
-        <input type="text" id="groupSearch" class="group-search" onkeyup="filterGroups()" placeholder="Поиск группы..."/>
+        <input type="text" id="groupSearch" class="group-search" onkeyup="filterGroups()"
+               placeholder="Поиск группы..."/>
 
         <div id="groupList">
-            {% for group, count, created_at, updated_at in user_groups_data %}
+            {% for group in user_groups_data %}
                 <div class="group-item">
                     <div class="group-number">
                         <strong>{{ forloop.counter }}.</strong>
                     </div>
                     <div class="group-name">
-                        <a href="{% url 'group_info' group %}" class="group-link-user">{{ group }}</a>
+                        <a href="{% url 'group_info' db_id=db_id group_name=group.groupname %}" class="group-link-user">
+                            {{ group.groupname }}
+                        </a>
                     </div>
                     <div class="group-dates">
-                        <small>Создан: {% if created_at %}{{ created_at|date:"d.m.Y H:i" }}{% else %}—{% endif %}</small>
-                        <small>Изменен: {% if updated_at %}{{ updated_at|date:"d.m.Y H:i" }}{% else %}—{% endif %}</small>
+                        <small>Создан: {% if group.created_at %}{{ group.created_at|date:"d.m.Y H:i" }}{% else %}
+                            —{% endif %}</small>
+                        <small>Изменен: {% if group.updated_at %}{{ group.updated_at|date:"d.m.Y H:i" }}{% else %}
+                            —{% endif %}</small>
                     </div>
                     <div class="group-user-count">
-                        <small>Пользователей: {{ count }} шт.</small>
+                        <small>Пользователей: {{ group.user_count }} шт.</small>
                     </div>
                     <div class="user-action">
-                        <a href="{% url 'group_edit' group %}" class="btn btn-edit">Редактировать</a>
-                        <a href="{% url 'groups_edit_privileges' group %}" class="btn btn-edit">Доступ</a>
-                        <a href="{% url 'group_delete' group %}" class="btn btn-delete" onclick="return confirm('Удалить группу {{ group }}?')">Удалить</a>
+                        <a href="{% url 'group_edit' db_id=db_id group_name=group.groupname %}" class="btn btn-edit">Редактировать</a>
+                        <a href="{% url 'groups_edit_privileges_tables' db_id=db_id group_name=group.groupname %}"
+                           class="btn btn-edit">Доступ</a>
+                        <a href="{% url 'group_delete' db_id=db_id group_name=group.groupname %}"
+                           class="btn btn-delete"
+                           onclick="return confirm('Удалить группу {{ group.groupname }}?')">
+                            Удалить
+                        </a>
                     </div>
                 </div>
-
             {% empty %}
                 <li>Нет пользовательских групп</li>
             {% endfor %}
+        </div>
+        <div class="all-btn">
+            <a href="{% url 'database_list' %}" class="btn btn-cancel">Назад</a>
         </div>
     </div>
 

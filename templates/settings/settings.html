@@ -18,8 +18,9 @@
         {% endif %}
         <div class="all-btn">
             <a href="{% url 'settings_project' %}" class="btn btn-save">Настройки приложения</a>
-            <a href="{% url 'audit_log' %}" class="btn btn-save">Аудит приложения</a>
-            <a href="{% url 'session_list' %}" class="btn btn-save">Сессии пользователей</a>
+        </div>
+        <div class="all-btn">
+            <a href="{% url 'session_list' %}" class="btn btn-save">Активные сессии пользователей</a>
         </div>
     </div>
 {% endblock %}

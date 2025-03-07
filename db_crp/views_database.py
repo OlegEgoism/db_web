@@ -4,8 +4,10 @@ from django.db.backends.postgresql.base import DatabaseWrapper
 from django.conf import settings
 from .audit_views import connect_data_base_success, create_audit_log, delete_data_base_success, delete_data_base_error
 from .forms import DatabaseConnectForm
-from .models import ConnectingDB
+from .models import ConnectingDB, UserLog, GroupLog
 from django.db import connection
+from django.db import transaction
+
 
 def database_list(request):
     """Список баз данных с их размером"""
@@ -13,17 +15,17 @@ def database_list(request):
     databases_info = []
     for db in databases:
         try:
-            with connection.cursor() as cursor:
-                cursor.execute(f"SELECT pg_size_pretty(pg_database_size('{db.name_db}'));")
-                db_size = cursor.fetchone()[0] if cursor.rowcount > 0 else "Неизвестно"
-        except Exception:
-            db_size = "Ошибка"
+            with transaction.atomic():  # Используем atomic() для управления транзакцией
+                with connection.cursor() as cursor:
+                    cursor.execute(f"SELECT pg_size_pretty(pg_database_size(%s));", [db.name_db])
+                    db_size = cursor.fetchone()[0] if cursor.rowcount > 0 else "Неизвестно"
+        except Exception as e:
+            db_size = f"Ошибка: {str(e)}"
         databases_info.append({
             "db": db,
             "size": db_size
         })
     return render(request, "databases/database_list.html", {"databases_info": databases_info})
-
 
 
 def tables_list(request, db_id):
@@ -121,3 +123,79 @@ def database_delete(request, db_id):
         messages.success(request, message)
         create_audit_log(user_requester, 'delete', 'database', name_db, message)
     return redirect('database_list')
+
+
+from django.contrib import messages
+from django.shortcuts import render, redirect
+from django.db.backends.postgresql.base import DatabaseWrapper
+from django.conf import settings
+from .models import ConnectingDB, UserLog, GroupLog
+import psycopg2
+
+
+def sync_users_and_groups(request, db_id):
+    """Синхронизация пользователей и групп из базы данных"""
+    connection_info = ConnectingDB.objects.get(id=db_id)
+
+    # Настройки подключения
+    temp_db_settings = {
+        'dbname': connection_info.name_db,
+        'user': connection_info.user_db,
+        'password': connection_info.get_decrypted_password(),
+        'host': connection_info.host_db,
+        'port': connection_info.port_db,
+    }
+
+    try:
+        # Подключение к базе данных
+        conn = psycopg2.connect(**temp_db_settings)
+        cursor = conn.cursor()
+
+        # Получение списка пользователей и их привилегий
+        cursor.execute("""
+            SELECT
+                rolname,       -- Имя пользователя
+                rolcreatedb,   -- Может создавать БД
+                rolsuper,      -- Суперпользователь
+                rolinherit,    -- Наследование прав
+                rolcreaterole, -- Может создавать роли
+                rolcanlogin,   -- Может входить в систему
+                rolreplication,-- Репликация
+                rolbypassrls   -- Обход Row-Level Security
+            FROM pg_catalog.pg_roles;
+        """)
+        users = cursor.fetchall()
+
+        # Очистка таблицы перед записью новых данных
+        UserLog.objects.all().delete()
+        for user in users:
+            (
+                username, can_create_db, is_superuser,
+                inherit, create_role, login, replication, bypass_rls
+            ) = user
+            UserLog.objects.create(
+                username=username,
+                can_create_db=can_create_db,
+                is_superuser=is_superuser,
+                inherit=inherit,
+                create_role=create_role,
+                login=login,
+                replication=replication,
+                bypass_rls=bypass_rls,
+            )
+        cursor.execute("""
+            SELECT groname FROM pg_catalog.pg_group;
+        """)
+        groups = cursor.fetchall()
+        GroupLog.objects.all().delete()
+        for group in groups:
+            GroupLog.objects.create(groupname=group[0])
+        messages.success(request, "Синхронизация завершена успешно.")
+    except Exception as e:
+        messages.error(request, f"Ошибка синхронизации: {str(e)}")
+    finally:
+        if cursor:
+            cursor.close()
+        if conn:
+            conn.close()
+    return redirect("database_list")  # Или перенаправить на страницу с логами

@@ -126,7 +126,7 @@ class ConnectingDB(DT):
 
 class SettingsProject(DT):
     """Настройка проекта"""
-    pagination_size = models.IntegerField(verbose_name="Размер пагинации на странице", default=20, max_length=200)
+    pagination_size = models.IntegerField(verbose_name="Размер пагинации на странице", default=20)
     send_email = models.BooleanField(verbose_name="Отправка сообщений на почту", default=True)
 
     def __str__(self):

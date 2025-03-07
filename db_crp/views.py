@@ -40,3 +40,5 @@ def logout_view(request):
     """Выход пользователя"""
     logout(request)
     return redirect('home')
+
+

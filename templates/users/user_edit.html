@@ -10,7 +10,8 @@
         {% if messages %}
             <div class="messages">
                 {% for message in messages %}
-                    <div class="alert {% if message.tags == 'success' %}alert-success{% else %}alert-error{% endif %}" role="alert">
+                    <div class="alert {% if message.tags == 'success' %}alert-success{% else %}alert-error{% endif %}"
+                         role="alert">
                         {{ message }}
                     </div>
                 {% endfor %}
@@ -20,8 +21,9 @@
         <form method="post" id="user-edit-form">
             {% csrf_token %}
             <div class="info-item">
-                <label for="new_email" class="info-label ">Почта:</label>
-                <input type="email" id="new_email" name="new_email" value="{{ user_log.email|default:'' }}" placeholder="Введите электронную почту">
+            <label for="email">Email:</label>
+            <input type="email" name="email" id="email" value="{{ user_email }}" placeholder="Введите email">
+
             </div>
             <div class="info-item">
                 <label for="new_password" class="info-label">Пароль:</label>
@@ -69,7 +71,8 @@
                 <div>
                     <h4>Группы пользователя</h4>
                     <hr>
-                    <ul class="group-list" id="user-groups" ondrop="drop(event, 'user-groups')" ondragover="allowDrop(event)">
+                    <ul class="group-list" id="user-groups" ondrop="drop(event, 'user-groups')"
+                        ondragover="allowDrop(event)">
                         {% for group in user_groups %}
                             <li draggable="true" ondragstart="drag(event)" id="group_{{ group }}">{{ group }}</li>
                         {% endfor %}
@@ -78,7 +81,8 @@
                 <div>
                     <h4>Доступные группы</h4>
                     <hr>
-                    <ul class="group-list" id="available-groups" ondrop="drop(event, 'available-groups')" ondragover="allowDrop(event)">
+                    <ul class="group-list" id="available-groups" ondrop="drop(event, 'available-groups')"
+                        ondragover="allowDrop(event)">
                         {% for group in available_groups %}
                             <li draggable="true" ondragstart="drag(event)" id="group_{{ group }}">{{ group }}</li>
                         {% endfor %}
@@ -90,7 +94,7 @@
             <input type="hidden" name="selected_groups" id="selected-groups">
             <input type="hidden" name="deleted_groups" id="deleted-groups">
             <div class="all-btn">
-                <a href="{% url 'user_list' %}" class="btn btn-cancel">Назад</a>
+                <a href="{% url 'user_list' db_id=db_id %}" class="btn btn-cancel">Назад</a>
                 <button type="submit" class="btn btn-save">Сохранить</button>
             </div>
         </form>

@@ -1,7 +1,6 @@
 {% load static %}
 <!DOCTYPE html>
 <html lang="ru">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -15,9 +14,8 @@
         <a href="/">Главная</a>
         {% if user.is_authenticated %}
             {% if user.is_superuser is True %}
-                <a href="{% url 'group_list' %}">Список групп</a>
-                <a href="{% url 'user_list' %}">Список пользователей</a>
                 <a href="{% url 'database_list' %}">Список баз данных</a>
+                <a href="{% url 'audit_log' %}">Аудит</a>
                 <a href="{% url 'settings_info' %}">Настройки</a>
             {% endif %}
             <a href="{% url 'logout' %}">Выйти</a>
@@ -31,7 +29,6 @@
     {% block content %}{% endblock %}
 </main>
 </body>
-
 </html>
 
 

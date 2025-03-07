@@ -28,7 +28,7 @@ main {
 }
 
 .welcome-container {
-    max-width: 900px;
+    max-width: 1100px;
     margin: 50px auto;
     text-align: center;
     background-color: rgba(100, 130, 168, 0.1);
@@ -229,7 +229,7 @@ main {
     font-size: 14px;
     margin: 5px 0;
     border: 1px solid #4a6a8e;
-    padding: 4px 8px;
+    padding: 4px;
     border-radius: 5px;
     transition: background-color 0.3s;
     cursor: pointer;
@@ -603,3 +603,12 @@ main {
     font-weight: bold;
 }
 
+
+
+.user-container {
+    display: flex;
+    flex-wrap: wrap;  /* Разрешаем перенос на новую строку */
+    gap: 10px;  /* Отступ между элементами */
+    justify-content: flex-start; /* Выравнивание элементов */
+    /*max-width: 1000px; !* Ограничиваем ширину контейнера *!*/
+}

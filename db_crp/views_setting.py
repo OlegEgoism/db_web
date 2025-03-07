@@ -144,6 +144,7 @@ def session_list(request):
         session_data.append({
             "session_key": session.session_key,
             "username": user.username if user else "Аноним",
+            "email": user.email if user else "—",
             "last_login": user.last_login if user else "—",
             "expire_date": session.expire_date,
             "is_superuser": user.is_superuser if user else False,

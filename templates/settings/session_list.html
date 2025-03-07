@@ -10,7 +10,8 @@
         {% if messages %}
             <div class="messages">
                 {% for message in messages %}
-                    <div class="alert {% if message.tags == 'success' %}alert-success{% else %}alert-error{% endif %}" role="alert">
+                    <div class="alert {% if message.tags == 'success' %}alert-success{% else %}alert-error{% endif %}"
+                         role="alert">
                         {{ message }}
                     </div>
                 {% endfor %}
@@ -18,15 +19,17 @@
         {% endif %}
 
         <!-- Поле поиска -->
-        <input type="text" id="sessionSearch" class="audit-search" onkeyup="filterSessions()" placeholder="Поиск по пользователю..."/>
+        <input type="text" id="sessionSearch" class="audit-search" onkeyup="filterSessions()"
+               placeholder="Поиск по пользователю..."/>
 
         <!-- Таблица активных сессий -->
         <table class="audit-table">
             <thead>
             <tr>
                 <th>Пользователь</th>
+                <th>Почта</th>
                 <th>Последний вход</th>
-                <th>Дата истечения</th>
+                <th>Истечение сесси</th>
                 <th>Суперпользователь</th>
                 <th>Действие</th>
             </tr>
@@ -35,16 +38,17 @@
             {% for session in page_obj %}
                 <tr class="session-item">
                     <td class="session-username">{{ session.username }}</td>
+                    <td class="session-email">{{ session.email }}</td>
                     <td>{{ session.last_login|default:"—"|date:"d.m.Y H:i" }}</td>
                     <td>{{ session.expire_date|date:"d.m.Y H:i" }}</td>
                     <td>{% if session.is_superuser %}Да{% else %}Нет{% endif %}</td>
                     <td>
-                        <a href="{% url 'logout_user' session.session_key %}" class="btn btn-delete">Выйти</a>
+                        <a href="{% url 'logout_user' session.session_key %}" class="btn btn-delete">Выход</a>
                     </td>
                 </tr>
             {% empty %}
                 <tr>
-                    <td colspan="5" class="no-data">Нет активных сессий</td>
+                    <td colspan="6" class="no-data">Нет активных сессий</td>
                 </tr>
             {% endfor %}
             </tbody>
@@ -63,12 +67,11 @@
                 <a href="?page={{ page_obj.paginator.num_pages }}" class="btn btn-page">Последняя</a>
             {% endif %}
         </div>
-    
-    <div class="all-btn">
-        <a href="{% url 'settings_info' %}" class="btn btn-cancel">Назад</a>
-    </div>
-    </div>
 
+        <div class="all-btn">
+            <a href="{% url 'settings_info' %}" class="btn btn-cancel">Назад</a>
+        </div>
+    </div>
 
     <script>
         function filterSessions() {
@@ -78,7 +81,8 @@
 
             rows.forEach(row => {
                 let username = row.querySelector(".session-username").textContent.toLowerCase();
-                if (username.includes(filter)) {
+                let email = row.querySelector(".session-email").textContent.toLowerCase();
+                if (username.includes(filter) || email.includes(filter)) {
                     row.style.display = "";
                 } else {
                     row.style.display = "none";
@@ -86,5 +90,4 @@
             });
         }
     </script>
-
 {% endblock %}

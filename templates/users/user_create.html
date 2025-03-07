@@ -32,7 +32,7 @@
                 <li><strong>Bypass RLS:</strong> Игнорирование политик безопасности на уровне строк (Row-Level Security).</li>
             </ul>
             <div class="all-btn">
-                <a href="{% url 'user_list' %}" class="btn btn-cancel">Назад</a>
+                <a href="{% url 'user_list' db_id=db_id %}" class="btn btn-cancel">Назад</a>
                 <button type="submit" class="btn btn-save">Создать</button>
             </div>
         </form>

@@ -81,16 +81,19 @@
             <div class="info-item">
                 <span class="info-label">Группы пользователя:</span>
                 {% if user_data.groups %}
-                    {% for group in user_data.groups %}
-                        <a href="{% url 'group_info' group %}" class="group-link-user">{{ group }}</a>
-                    {% endfor %}
+{% for group in user_data.groups %}
+    {% if group %}
+        <a href="{% url 'group_info' db_id=db_id group_name=group %}" class="group-link-user">{{ group }}</a>
+    {% endif %}
+{% endfor %}
+
                 {% else %}
                     <span class="no-groups"> Пользователь не состоит в группах</span>
                 {% endif %}
             </div>
             <div class="all-btn">
-                <a href="{% url 'user_list' %}" class="btn btn-cancel">Назад</a>
-                <a href="{% url 'user_edit' username=user_data.username %}" class="btn btn-edit">Редактировать</a>
+                <a href="{% url 'user_list' db_id=db_id %}" class="btn btn-cancel">Назад</a>
+                <a href="{% url 'user_edit' db_id=db_id username=user_data.username %}" class="btn btn-edit">Редактировать</a>
             </div>
         {% else %}
             <h1 class="welcome-title">Пользователь не найден</h1>
