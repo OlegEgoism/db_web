@@ -109,7 +109,7 @@ def group_create(request, db_id):
                     })
                 cursor.execute(f"CREATE ROLE {group_name};")
                 conn.commit()
-                GroupLog.objects.create(groupname=group_name, created_at=timezone.now(), updated_at=timezone.now())  # Записываем в модель
+                GroupLog.objects.create(groupname=group_name, created_at=created_at, updated_at=timezone.now())  # Записываем в модель
                 message = create_group_messages_group_success(group_name)
                 messages.success(request, message)
                 create_audit_log(user_requester, 'create', 'group', user_requester, message)
@@ -146,7 +146,7 @@ def group_edit(request, db_id, group_name):
     }
     group_log, created = GroupLog.objects.get_or_create(
         groupname=group_name,
-        defaults={'created_at': timezone.now(), 'updated_at': timezone.now()}
+        defaults={'created_at': created_at, 'updated_at': timezone.now()}
     )
     if created:
         message = group_data(group_name)
@@ -212,69 +212,11 @@ def group_edit(request, db_id, group_name):
     })
 
 
-# @login_required
-# def groups_edit_privileges(request, db_id, group_name):
-#     """Вывод списка баз данных, к которым группа имеет доступ"""
-#
-#     # Получаем подключение к конкретной БД
-#     connection_info = get_object_or_404(ConnectingDB, id=db_id)
-#
-#     temp_db_settings = {
-#         'dbname': connection_info.name_db,
-#         'user': connection_info.user_db,
-#         'password': connection_info.get_decrypted_password(),
-#         'host': connection_info.host_db,
-#         'port': connection_info.port_db,
-#     }
-#
-#     databases = []
-#     try:
-#         conn = psycopg2.connect(**temp_db_settings)
-#         cursor = conn.cursor()
-#
-#         # Получение списка баз данных, к которым у группы есть доступ
-#         cursor.execute("""
-#             SELECT datname
-#             FROM pg_database
-#             WHERE has_database_privilege(%s, datname, 'CONNECT');
-#         """, [group_name])
-#
-#         databases = [row[0] for row in cursor.fetchall()]
-#
-#         cursor.close()
-#         conn.close()
-#
-#     except Exception as e:
-#         messages.error(request, f"Ошибка подключения: {str(e)}")
-#         databases = []
-#
-#     # Получаем или создаем запись в логах групп
-#     user_requester = request.user.username if request.user.is_authenticated else "Аноним"
-#     group_log, created = GroupLog.objects.get_or_create(
-#         groupname=group_name,
-#         defaults={'created_at': timezone.now(), 'updated_at': timezone.now()}
-#     )
-#
-#     if created:
-#         message = f"Создан лог для группы {group_name}"
-#         messages.success(request, message)
-#         create_audit_log(user_requester, 'create', 'group', group_name, message)
-#
-#     return render(request, "groups/groups_edit_privileges.html", {
-#         'db_id': db_id,
-#         'group_name': group_name,
-#         'databases': databases,
-#         'group_log': group_log,
-#     })
-
-
 @login_required
 def groups_edit_privileges_tables(request, db_id, group_name):
-    """Редактирование прав группы на схемы и таблицы в подключенной базе данных"""
-
+    """Редактирование прав группы на схемы и таблицы"""
     user_requester = request.user.username if request.user.is_authenticated else "Аноним"
     connection_info = get_object_or_404(ConnectingDB, id=db_id)
-
     temp_db_settings = {
         'dbname': connection_info.name_db,
         'user': connection_info.user_db,
@@ -282,7 +224,6 @@ def groups_edit_privileges_tables(request, db_id, group_name):
         'host': connection_info.host_db,
         'port': connection_info.port_db,
     }
-
     tables_by_schema = {}
     granted_tables = {}
     schemas = []  # Хранит список схем в БД
@@ -465,7 +406,7 @@ def group_info(request, db_id, group_name):
     # Получаем запись о группе из `GroupLog` (если есть)
     group_log, created = GroupLog.objects.get_or_create(
         groupname=group_name,
-        defaults={'created_at': timezone.now(), 'updated_at': timezone.now()}
+        defaults={'created_at': created_at, 'updated_at': timezone.now()}
     )
 
     return render(request, 'groups/group_info.html', {
