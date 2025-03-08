@@ -68,7 +68,8 @@ class Audit(models.Model):
         ('delete', 'Удаление'),
         # ('connect', 'Подключение к базе данных'),
         ('register', 'Регистрация'),
-        ('download', 'Скачивание')
+        ('download', 'Скачивание'),
+        ('info', 'Информация'),
     ]
     ENTITY_TYPES = [
         ('user', 'Пользователь'),

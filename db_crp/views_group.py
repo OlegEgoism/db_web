@@ -7,8 +7,10 @@ from django.db import connection
 from django.http import HttpResponseRedirect, HttpResponseServerError, HttpResponseNotFound
 from django.urls import reverse
 from django.utils import timezone
-from .audit_views import group_data, create_audit_log, delete_group_messages_success, delete_group_messages_error, create_group_messages_error, create_group_messages_error_pg, edit_group_messages_group_success, create_group_messages_error_info, \
-    edit_group_messages_error_pg, edit_group_messages_error_name, edit_group_messages_success_name, edit_group_messages_error, edit_groups_privileges_tables_success, edit_groups_privileges_tables_error, groups_tables_error
+from .audit_views import group_data, create_audit_log, delete_group_messages_success, delete_group_messages_error, create_group_messages_error, \
+    create_group_messages_error_pg, edit_group_messages_group_success, create_group_messages_error_info, \
+    edit_group_messages_error_pg, edit_group_messages_error_name, edit_group_messages_success_name, edit_group_messages_error, \
+    edit_groups_privileges_tables_success, edit_groups_privileges_tables_error, groups_tables_error, user_groups_data_error, create_group_messages_group_success
 from .forms import CreateGroupForm, GroupEditForm
 from django.shortcuts import render, redirect, get_object_or_404
 from .models import GroupLog, ConnectingDB
@@ -21,9 +23,9 @@ updated_at = timezone.now()
 
 @login_required
 def group_list(request, db_id):
-    """Список групп из подключенной базы данных"""
+    """Список групп"""
+    user_requester = request.user.username if request.user.is_authenticated else "Аноним"
     connection_info = get_object_or_404(ConnectingDB, id=db_id)
-
     temp_db_settings = {
         'dbname': connection_info.name_db,
         'user': connection_info.user_db,
@@ -31,22 +33,16 @@ def group_list(request, db_id):
         'host': connection_info.host_db,
         'port': connection_info.port_db,
     }
-
     user_groups_data = []
-
     try:
         conn = psycopg2.connect(**temp_db_settings)
         cursor = conn.cursor()
-
-        # Получение списка групп (исключаем системные группы)
         cursor.execute("""
             SELECT rolname 
             FROM pg_roles 
-            WHERE rolcanlogin = FALSE AND rolname NOT LIKE 'pg_%';
+            WHERE rolcanlogin = FALSE AND rolname NOT LIKE 'pg_%';  
         """)
         group_names = [group[0] for group in cursor.fetchall()]
-
-        # Получение количества пользователей в каждой группе
         group_user_counts = {}
         for group in group_names:
             cursor.execute("""
@@ -57,36 +53,30 @@ def group_list(request, db_id):
             """, [group])
             count = cursor.fetchone()[0]
             group_user_counts[group] = count
-
-        # Получаем существующие логи групп
         group_logs = {log.groupname: log for log in GroupLog.objects.filter(groupname__in=group_user_counts.keys())}
-
-        # Формируем данные для отображения
-        user_groups_data = [
-            {
-                "groupname": group,
-                "user_count": group_user_counts[group],
-                "created_at": group_logs[group].created_at if group in group_logs else None,
-                "updated_at": group_logs[group].updated_at if group in group_logs else None,
-            }
-            for group in group_user_counts.keys()
-        ]
-
+        user_groups_data = [{
+            "groupname": group,
+            "user_count": group_user_counts[group],
+            "created_at": group_logs[group].created_at if group in group_logs else None,
+            "updated_at": group_logs[group].updated_at if group in group_logs else None,
+        } for group in group_user_counts.keys()]
         cursor.close()
         conn.close()
-
-    except Exception as e:
-        user_groups_data = [{"groupname": f"Ошибка подключения: {str(e)}", "user_count": "-"}]
-
-    return render(request, 'groups/group_list.html', {'user_groups_data': user_groups_data, 'db_id': db_id})
+    except Exception:
+        message = user_groups_data_error(user_groups_data)
+        messages.error(request, message)
+        create_audit_log(user_requester, 'info', 'group', user_requester, message)
+    return render(request, 'groups/group_list.html', {
+        'user_groups_data': user_groups_data,
+        'db_id': db_id
+    })
 
 
 @login_required
 def group_create(request, db_id):
-    """Создание группы в конкретной подключенной базе данных"""
+    """Создание группы"""
+    user_requester = request.user.username if request.user.is_authenticated else "Аноним"
     connection_info = get_object_or_404(ConnectingDB, id=db_id)
-
-    # Подключаемся к указанной базе данных
     temp_db_settings = {
         'dbname': connection_info.name_db,
         'user': connection_info.user_db,
@@ -94,57 +84,54 @@ def group_create(request, db_id):
         'host': connection_info.host_db,
         'port': connection_info.port_db,
     }
-
-    user_requester = request.user.username if request.user.is_authenticated else "Аноним"
-
     if request.method == "POST":
         form = CreateGroupForm(request.POST)
         if form.is_valid():
-            groupname = form.cleaned_data['groupname']
-
+            group_name = form.cleaned_data['groupname']
             try:
-                # Подключаемся к базе
                 conn = psycopg2.connect(**temp_db_settings)
                 cursor = conn.cursor()
-
-                # Проверяем, существует ли уже группа
-                cursor.execute("SELECT 1 FROM pg_roles WHERE rolname = %s;", [groupname])
+                cursor.execute("SELECT 1 FROM pg_roles WHERE rolname = %s;", [group_name])
                 existing_group = cursor.fetchone()
-
                 if existing_group:
-                    message = f"Группа '{groupname}' уже существует в базе {connection_info.name_db}."
+                    message = create_group_messages_error(group_name)
                     messages.error(request, message)
+                    create_audit_log(user_requester, 'create', 'group', user_requester, message)
                     return render(request, 'groups/group_create.html', {'form': form, 'db_id': db_id})
-
-                # Запрещаем создание системных групп (pg_*)
-                if groupname.startswith('pg_'):
-                    message = f"Нельзя создавать группы, начинающиеся с 'pg_'."
+                if group_name.startswith('pg_'):
+                    message = create_group_messages_error_pg(group_name)
                     messages.error(request, message)
-                    return render(request, 'groups/group_create.html', {'form': form, 'db_id': db_id})
-
-                # Создаем группу в PostgreSQL
-                cursor.execute(f"CREATE ROLE {groupname};")
+                    create_audit_log(user_requester, 'create', 'group', user_requester, message)
+                    return render(request, 'groups/group_create.html', {
+                        'form': form,
+                        'db_id': db_id
+                    })
+                cursor.execute(f"CREATE ROLE {group_name};")
                 conn.commit()
-
-                # Логируем в Django
-                GroupLog.objects.create(groupname=groupname, created_at=timezone.now(), updated_at=timezone.now())
-
-                message = f"Группа '{groupname}' успешно создана в базе {connection_info.name_db}."
+                GroupLog.objects.create(groupname=group_name, created_at=timezone.now(), updated_at=timezone.now())  # Записываем в модель
+                message = create_group_messages_group_success(group_name)
                 messages.success(request, message)
-
+                create_audit_log(user_requester, 'create', 'group', user_requester, message)
                 cursor.close()
                 conn.close()
-
                 return redirect('group_list', db_id=db_id)
-
-            except Exception as e:
-                messages.error(request, f"Ошибка при создании группы: {str(e)}")
-                return render(request, 'groups/group_create.html', {'form': form, 'db_id': db_id})
-
+            except Exception:
+                message = create_group_messages_error_info(group_name)
+                messages.error(request, message)
+                create_audit_log(user_requester, 'create', 'group', user_requester, message)
+                return render(request, 'groups/group_create.html', {
+                    'form': form,
+                    'db_id': db_id
+                })
     else:
         form = CreateGroupForm()
+    return render(request, 'groups/group_create.html', {
+        'form': form,
+        'db_id': db_id
+    })
 
-    return render(request, 'groups/group_create.html', {'form': form, 'db_id': db_id})
+
+
 
 
 
@@ -410,9 +397,6 @@ def groups_edit_privileges_tables(request, db_id, group_name):
     })
 
 
-
-
-
 @login_required
 def group_delete(request, db_id, group_name):
     """Удаление группы из подключенной базы данных"""
@@ -444,7 +428,6 @@ def group_delete(request, db_id, group_name):
         cursor.close()
         conn.close()
     return HttpResponseRedirect(reverse('group_list', kwargs={'db_id': db_id}))
-
 
 
 @login_required
@@ -500,4 +483,3 @@ def group_info(request, db_id, group_name):
         'user_count': len(users),
         'group_log': group_log
     })
-

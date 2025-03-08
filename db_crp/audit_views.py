@@ -99,6 +99,10 @@ def group_data(group_name):
     return f"Автоматическое создание 'Дата создания' и 'Дата изменения' группы '{group_name}'."
 
 
+def user_groups_data_error(user_groups_data):
+    return f"Ошибка подключения '{user_groups_data}'."
+
+
 # УДАЛЕНИЕ ГРУППЫ
 def delete_group_messages_success(group_name):
     return f"Группа '{group_name}' была удалена из базы данных."
@@ -109,19 +113,19 @@ def delete_group_messages_error(group_name):
 
 
 # СОЗДАНИЕ ГРУППЫ
-def create_group_messages_error(group_name):
+def create_group_messages_error(group_name):  # +
     return f"Неудачная попытка создания группы '{group_name}', группа уже существует."
 
 
-def create_group_messages_error_pg(group_name):
+def create_group_messages_error_pg(group_name):  # +
     return f"Неудачная попытка создания группы '{group_name}', запрещенный префикс 'pg_'."
 
 
-def edit_group_messages_group_success(group_name):
+def create_group_messages_group_success(group_name):  # +
     return f"Группа '{group_name}' успешно создана."
 
 
-def create_group_messages_error_info(group_name):
+def create_group_messages_error_info(group_name):  # +
     return f"Неудачная попытка создания группы '{group_name}'."
 
 
