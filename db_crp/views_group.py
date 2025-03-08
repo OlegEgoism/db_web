@@ -10,7 +10,8 @@ from django.utils import timezone
 from .audit_views import group_data, create_audit_log, delete_group_messages_success, delete_group_messages_error, create_group_messages_error, \
     create_group_messages_error_pg, create_group_messages_error_info, \
     edit_group_messages_error_pg, edit_group_messages_error_name, edit_group_messages_success_name, edit_group_messages_error, \
-    edit_groups_privileges_tables_success, edit_groups_privileges_tables_error, groups_tables_error, user_groups_data_error, create_group_messages_group_success
+    edit_groups_privileges_tables_success, edit_groups_privileges_tables_error, groups_tables_error, user_groups_data_error, \
+    create_group_messages_group_success, edit_group_messages_error_info
 from .forms import CreateGroupForm, GroupEditForm
 from django.shortcuts import render, redirect, get_object_or_404
 from .models import GroupLog, ConnectingDB
@@ -131,16 +132,11 @@ def group_create(request, db_id):
     })
 
 
-
-
-
-
 @login_required
 def group_edit(request, db_id, group_name):
-    """Редактирование группы в конкретной подключенной базе данных"""
+    """Редактирование группы"""
+    user_requester = request.user.username if request.user.is_authenticated else "Аноним"
     connection_info = get_object_or_404(ConnectingDB, id=db_id)
-
-    # Подключаемся к указанной базе данных
     temp_db_settings = {
         'dbname': connection_info.name_db,
         'user': connection_info.user_db,
@@ -148,71 +144,66 @@ def group_edit(request, db_id, group_name):
         'host': connection_info.host_db,
         'port': connection_info.port_db,
     }
-
-    user_requester = request.user.username if request.user.is_authenticated else "Аноним"
     group_log, created = GroupLog.objects.get_or_create(
         groupname=group_name,
         defaults={'created_at': timezone.now(), 'updated_at': timezone.now()}
     )
-
     if created:
-        messages.success(request, f"Группа '{group_name}' добавлена в логи.")
-
+        message = group_data(group_name)
+        messages.success(request, message)
+        create_audit_log(user_requester, 'create', 'group', user_requester, message)
     try:
-        # Подключаемся к базе данных
         conn = psycopg2.connect(**temp_db_settings)
         cursor = conn.cursor()
-
-        # Проверяем, существует ли группа в PostgreSQL
         cursor.execute("SELECT 1 FROM pg_roles WHERE rolname = %s;", [group_name])
         existing_group = cursor.fetchone()
-
         if not existing_group:
-            messages.error(request, f"Группа '{group_name}' не найдена в базе данных {connection_info.name_db}.")
+            message = edit_group_messages_error_info(group_name)
+            messages.error(request, message)
+            create_audit_log(user_requester, 'update', 'group', user_requester, message)
             return redirect('group_list', db_id=db_id)
-
         if request.method == "POST":
             form = GroupEditForm(request.POST)
             if form.is_valid():
                 new_group_name = form.cleaned_data['groupname']
-
-                # Проверка на запрет изменения системных групп
                 if new_group_name.startswith('pg_'):
-                    messages.error(request, f"Запрещено переименовывать группы с префиксом 'pg_'.")
-                    return render(request, 'groups/group_edit.html',
-                                  {'form': form, 'db_id': db_id, 'group_name': group_name})
-
-                # Проверяем, нет ли уже группы с таким именем
+                    message = edit_group_messages_error_pg(group_name, new_group_name)
+                    messages.error(request, message)
+                    create_audit_log(user_requester, 'update', 'group', user_requester, message)
+                    return render(request, 'groups/group_edit.html', {
+                        'form': form,
+                        'db_id': db_id,
+                        'group_name': group_name
+                    })
                 cursor.execute("SELECT 1 FROM pg_roles WHERE rolname = %s;", [new_group_name])
                 existing_new_group = cursor.fetchone()
-
                 if existing_new_group:
-                    messages.error(request, f"Группа с именем '{new_group_name}' уже существует в базе данных.")
-                    return render(request, 'groups/group_edit.html',
-                                  {'form': form, 'db_id': db_id, 'group_name': group_name})
-
-                # Переименовываем группу в PostgreSQL
+                    message = edit_group_messages_error_name(group_name, new_group_name)
+                    messages.error(request, message)
+                    create_audit_log(user_requester, 'update', 'group', user_requester, message)
+                    return render(request, 'groups/group_edit.html', {
+                        'form': form,
+                        'db_id': db_id,
+                        'group_name': group_name
+                    })
                 cursor.execute(f"ALTER ROLE {group_name} RENAME TO {new_group_name};")
                 conn.commit()
-
-                # Обновляем лог в Django
                 group_log.groupname = new_group_name
                 group_log.updated_at = timezone.now()
                 group_log.save()
-
-                messages.success(request, f"Группа '{group_name}' успешно переименована в '{new_group_name}'.")
+                message = edit_group_messages_success_name(group_name, new_group_name)
+                messages.success(request, message)
+                create_audit_log(user_requester, 'update', 'group', user_requester, message)
                 return redirect('group_list', db_id=db_id)
-
         else:
             form = GroupEditForm(initial={'groupname': group_log.groupname})
-
         cursor.close()
         conn.close()
-
-    except Exception as e:
-        messages.error(request, f"Ошибка при редактировании группы: {str(e)}")
+    except Exception:
+        message = edit_group_messages_success_name(group_name)
+        messages.error(request, message)
+        create_audit_log(user_requester, 'update', 'group', user_requester, message)
         return redirect('group_list', db_id=db_id)
-
     return render(request, 'groups/group_edit.html', {
         'form': form,
         'db_id': db_id,

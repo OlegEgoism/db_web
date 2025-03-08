@@ -95,11 +95,12 @@ def delete_user_messages_email(user_name, user_email):
 
 # ---------------------------------------------------------------------------------------------------------------
 # ИНФОРМАЦИЯ ГРУППЫ
-def group_data(group_name):
+def group_data(group_name):  # +
     return f"Автоматическое создание 'Дата создания' и 'Дата изменения' группы '{group_name}'."
 
 
-def user_groups_data_error(user_groups_data):
+# СПИСОК ГРУППЫ
+def user_groups_data_error(user_groups_data):  # +
     return f"Ошибка подключения '{user_groups_data}'."
 
 
@@ -130,11 +131,15 @@ def create_group_messages_error_info(group_name):  # +
 
 
 # РЕДАКТИРОВАИЕ ГРУППЫ
-def edit_group_messages_error_pg(group_name, new_group_name):
+def edit_group_messages_error_info(group_name):  # +
+    return f"Группа '{group_name}' не найдена в базе данных.."
+
+
+def edit_group_messages_error_pg(group_name, new_group_name):  # +
     return f"Неудачная попытка переименовать группу с '{group_name}' в '{new_group_name}', запрещенный префикс 'pg_'."
 
 
-def edit_group_messages_error_name(group_name, new_group_name):
+def edit_group_messages_error_name(group_name, new_group_name):   # +
     return f"Неудачная попытка переименовать группу с '{group_name}' в '{new_group_name}', группа уже существует."
 
 
