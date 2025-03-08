@@ -1,5 +1,7 @@
 from django import forms
 from django.contrib.auth.forms import UserCreationForm
+from django.core.validators import MinValueValidator, MaxValueValidator
+from django.db import models
 from .models import CustomUser, ConnectingDB, SettingsProject
 
 
@@ -77,11 +79,18 @@ class DatabaseConnectForm(forms.ModelForm):
 
 class SettingsProjectForm(forms.ModelForm):
     """Настройки проекта"""
+    pagination_size = models.IntegerField(
+        verbose_name="Размер пагинации на странице",
+        default=20,
+        validators=[MinValueValidator(1), MaxValueValidator(200)]  # Ограничение от 1 до 200
+    )
+    send_email = models.BooleanField(verbose_name="Отправка сообщений на почту", default=True)
+
 
     class Meta:
         model = SettingsProject
         fields = ["pagination_size", "send_email"]
-        labels = {
-            "pagination_size": "Размер пагинации на странице",
-            "send_email": "Отправка сообщений на почту",
-        }
+        # labels = {
+        #     "pagination_size": "Размер пагинации на странице",
+        #     "send_email": "Отправка сообщений на почту",
+        # }

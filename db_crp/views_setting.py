@@ -18,12 +18,6 @@ User = get_user_model()
 
 
 @login_required
-def settings_info(request):
-    """Настройки"""
-    return render(request, "settings/settings.html")
-
-
-@login_required
 def audit_log(request):
     """Аудит приложения"""
     pagination_size = SettingsProject.objects.first().pagination_size if SettingsProject.objects.exists() else 20
@@ -42,10 +36,7 @@ def audit_log(request):
     if username:
         audit_entries = audit_entries.filter(username=username)
     if search_query:
-        audit_entries = audit_entries.filter(
-            Q(entity_name__icontains=search_query) |
-            Q(details__icontains=search_query)
-        )
+        audit_entries = audit_entries.filter(Q(entity_name__icontains=search_query) | Q(details__icontains=search_query))
     if start_date:
         start_date_parsed = parse_date(start_date)
         if start_date_parsed:
@@ -74,8 +65,8 @@ def audit_log(request):
 
 
 @login_required
-def export_audit_log(request):
-    """Экспорт данных журнала аудита в Excel"""
+def audit_log_export(request):
+    """Аудит приложения экспорт в Excel"""
     user_requester = request.user.username if request.user.is_authenticated else "Аноним"
     action_type = request.GET.get("action_type", "")
     entity_type = request.GET.get("entity_type", "")
@@ -91,10 +82,7 @@ def export_audit_log(request):
     if username:
         audit_entries = audit_entries.filter(username=username)
     if search_query:
-        audit_entries = audit_entries.filter(
-            Q(entity_name__icontains=search_query) |
-            Q(details__icontains=search_query)
-        )
+        audit_entries = audit_entries.filter(Q(entity_name__icontains=search_query) | Q(details__icontains=search_query))
     if start_date:
         start_date_parsed = parse_date(start_date)
         if start_date_parsed:
@@ -109,7 +97,6 @@ def export_audit_log(request):
     worksheet = workbook.add_worksheet('Audit Log')
     if worksheet:
         message = export_audit_log_success(user_requester)
-        # messages.success(request, message)
         create_audit_log(user_requester, 'download', 'settings', user_requester, message)
     headers = ["Дата", "Пользователь", "Действие", "Объект", "Название", "Информация"]
     for col_num, header in enumerate(headers):
@@ -127,6 +114,32 @@ def export_audit_log(request):
             worksheet.write(row_num, col_num, str(cell_value) if cell_value else "")
     workbook.close()
     return response
+
+
+@login_required
+def settings_info(request):
+    """Настройки"""
+    return render(request, "settings/settings.html")
+
+
+@login_required
+def settings_project(request):
+    """Настройки проекта"""
+    user_requester = request.user.username if request.user.is_authenticated else "Аноним"
+    settings_instance = SettingsProject.objects.first()
+    if request.method == "POST":
+        form = SettingsProjectForm(request.POST, instance=settings_instance)
+        if form.is_valid():
+            form.save()
+            pagination_size = form.cleaned_data["pagination_size"]
+            send_email = form.cleaned_data["send_email"]
+            message = project_settings_success(user_requester, pagination_size, send_email)
+            messages.success(request, message)
+            create_audit_log(user_requester, 'update', 'settings', user_requester, message)
+            return redirect('settings_info')
+    else:
+        form = SettingsProjectForm(instance=settings_instance)
+    return render(request, "settings/settings_project.html", {"form": form})
 
 
 @login_required
@@ -175,23 +188,3 @@ def logout_user(request, session_id):
             messages.success(request, message)
             create_audit_log(user_requester, 'delete', 'session', user_requester, message)
     return redirect('session_list')
-
-
-@login_required
-def settings_project(request):
-    """Настройки проекта"""
-    user_requester = request.user.username if request.user.is_authenticated else "Аноним"
-    settings_instance = SettingsProject.objects.first()
-    if request.method == "POST":
-        form = SettingsProjectForm(request.POST, instance=settings_instance)
-        if form.is_valid():
-            form.save()
-            pagination_size = form.cleaned_data["pagination_size"]
-            send_email = form.cleaned_data["send_email"]
-            message = project_settings_success(user_requester, pagination_size, send_email)
-            messages.success(request, message)
-            create_audit_log(user_requester, 'update', 'settings', user_requester, message)
-            return redirect('settings_info')
-    else:
-        form = SettingsProjectForm(instance=settings_instance)
-    return render(request, "settings/settings_project.html", {"form": form})

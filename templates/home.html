@@ -7,7 +7,8 @@
         {% if messages %}
             <div class="messages">
                 {% for message in messages %}
-                    <div class="alert {% if message.tags == 'success' %}alert-success{% else %}alert-error{% endif %}" role="alert">
+                    <div class="alert {% if message.tags == 'success' %}alert-success{% else %}alert-error{% endif %}"
+                         role="alert">
                         {{ message }}
                     </div>
                 {% endfor %}
@@ -26,5 +27,6 @@
                 <a href="{% url 'login' %}">войдите</a> или
                 <a href="{% url 'register' %}">зарегистрируйтесь</a></h3>
         {% endif %}
+
     </div>
 {% endblock %}

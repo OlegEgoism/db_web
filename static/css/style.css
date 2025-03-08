@@ -589,26 +589,24 @@ main {
 }
 
 
-.settings-table {
-    width: 100%;
-    border-collapse: collapse;
-}
-
-.settings-table td {
-    padding: 10px;
-    border-bottom: 1px solid #ddd;
-}
-
+/*Настройки проекта*/
 .settings-table label {
     font-weight: bold;
 }
 
+.settings-table td:first-child {
+    text-align: left;
+}
 
+#id_pagination_size {
+    width: 40px !important;
+}
+
+/**/
 
 .user-container {
     display: flex;
-    flex-wrap: wrap;  /* Разрешаем перенос на новую строку */
-    gap: 10px;  /* Отступ между элементами */
+    flex-wrap: wrap; /* Разрешаем перенос на новую строку */
+    gap: 10px; /* Отступ между элементами */
     justify-content: flex-start; /* Выравнивание элементов */
-    /*max-width: 1000px; !* Ограничиваем ширину контейнера *!*/
 }

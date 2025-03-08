@@ -1,6 +1,7 @@
 import base64
 
 from django.contrib.auth.models import AbstractUser
+from django.core.validators import MinValueValidator, MaxValueValidator
 from django.db import models
 from django.utils import timezone
 from django.utils.timezone import now
@@ -126,7 +127,7 @@ class ConnectingDB(DT):
 
 class SettingsProject(DT):
     """Настройка проекта"""
-    pagination_size = models.IntegerField(verbose_name="Размер пагинации на странице", default=20)
+    pagination_size = models.IntegerField(verbose_name="Размер пагинации на странице", default=20, validators=[MinValueValidator(1), MaxValueValidator(200)])
     send_email = models.BooleanField(verbose_name="Отправка сообщений на почту", default=True)
 
     def __str__(self):

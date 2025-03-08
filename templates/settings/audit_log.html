@@ -51,9 +51,10 @@
                 <input type="text" class="audit-search" name="search" value="{{ search_query }}" placeholder="Поиск по всему массиву данных">
                 <button type="submit" class="btn btn-save">Применить</button>
                 <a href="{% url 'audit_log' %}" class="btn btn-cancel">Сбросить</a>
-                <a href="{% url 'export_audit_log' %}?{{ request.GET.urlencode }}" class="btn btn-save">Экспорт в Excel</a>
+                <a href="{% url 'audit_log_export' %}?{{ request.GET.urlencode }}" class="btn btn-save">Экспорт в Excel</a>
             </form>
         </div>
+
         <!-- Таблица аудита -->
         <table class="audit-table">
             <thead>
@@ -84,6 +85,7 @@
             </tbody>
         </table>
         <p></p>
+
         <!-- Пагинация -->
         <div class="pagination">
             {% if page_obj.has_previous %}

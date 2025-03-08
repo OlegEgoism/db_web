@@ -169,7 +169,7 @@ def delete_data_base_error(name_db, user_db, port_db, host_db):
 
 
 # ---------------------------------------------------------------------------------------------------------------
-# НАСТРОЙКИ
+# АУДИТ
 def logout_user_success(user_logout, user_requester):
     return f"Пользователь '{user_logout}' был деактивирован из системы пользователем '{user_requester}'."
 
@@ -178,6 +178,8 @@ def export_audit_log_success(user_requester):
     return f"Пользователь '{user_requester}' скачал файл 'Audit Log'."
 
 
+# ---------------------------------------------------------------------------------------------------------------
+# НАСТРОЙКИ
 def project_settings_success(user_requester, pagination_size, send_email):
     return f"Настройки проекта успешно обновлены. Размер пагинации на странице '{pagination_size} записей. Отправка сообщений на почту '{send_email}'. "
 # ---------------------------------------------------------------------------------------------------------------

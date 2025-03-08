@@ -20,39 +20,33 @@ from django.contrib import admin
 from django.urls import path
 from django.contrib.auth import views as auth_views
 from db_crp.views import home, register, logout_view
+from db_crp.views_setting import settings_info, audit_log, audit_log_export, session_list, logout_user, settings_project
 from db_crp.views_group import group_list, group_create, group_edit, group_delete, group_info, groups_edit_privileges_tables
-from db_crp.views_setting import settings_info, audit_log, export_audit_log, session_list, logout_user, settings_project
 from db_crp.views_user import user_list, user_create, user_info, user_edit, user_delete
-from db_crp.views_database import database_list, tables_list, database_connect, database_edit, database_delete, \
-    sync_users_and_groups
+from db_crp.views_database import database_list, tables_list, database_connect, database_edit, database_delete, sync_users_and_groups
 
 urlpatterns = [
     path('admin/', admin.site.urls),  # Админка
+
     path('', home, name='home'),  # Главная
     path('register/', register, name='register'),  # Регистрация пользователя
     path('login/', auth_views.LoginView.as_view(), name='login'),  # Вход пользователя
     path('logout/', logout_view, name='logout'),  # Выход пользователя
 
+    path('audit_log/', audit_log, name='audit_log'),  # Аудит приложения
+    path('audit_log/export/', audit_log_export, name='audit_log_export'),  # Аудит приложения экспорт в Excel
+
     path("settings_info/", settings_info, name="settings_info"),  # Настройки
     path("settings_project/", settings_project, name="settings_project"),  # Настройки проекта
-    path('audit_log/', audit_log, name='audit_log'),  # Аудит приложения
-    path('audit_log/export/', export_audit_log, name='export_audit_log'),  # Экспорт данных журнала аудита в Excel
-    path("sessions/", session_list, name="session_list"),  # Список сессий пользователей
-    path("sessions/logout/<str:session_id>/", logout_user, name="logout_user"),  # Деактивация сессии пользователя
-
-
+    path("session_list/", session_list, name="session_list"),  # Список сессий пользователей
+    path("sessions/logout_user/<str:session_id>/", logout_user, name="logout_user"),  # Деактивация сессии пользователя
 
     path('group_list/<int:db_id>/', group_list, name='group_list'),  # Список групп
     path('group_create/<int:db_id>/', group_create, name='group_create'),  # Создание группы
     path('group_edit/<int:db_id>/<str:group_name>/', group_edit, name='group_edit'),  # Редактирование группы
-
-    # path('groups_edit_privileges/<int:db_id>/<str:group_name>/', groups_edit_privileges, name='groups_edit_privileges'),  # Редактирование привилегий доступа
     path('groups_edit_privileges_tables/<int:db_id>/<str:group_name>/', groups_edit_privileges_tables, name='groups_edit_privileges_tables'),  # Редактирование привилегий доступа для каждой таблицы
-
     path('group_delete/<int:db_id>/<str:group_name>/', group_delete, name='group_delete'),  # Удаление группы
     path('group_info/<int:db_id>/<str:group_name>/', group_info, name='group_info'),  # Пользователи в группе
-
-
 
     path('user_list/<int:db_id>/', user_list, name='user_list'),  # Список пользователей
     path('user_create/<int:db_id>/', user_create, name='user_create'),  # Создать пользователя
@@ -71,5 +65,3 @@ urlpatterns = [
 
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
-
-
