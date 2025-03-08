@@ -214,7 +214,7 @@ def group_edit(request, db_id, group_name):
 
 @login_required
 def groups_edit_privileges_tables(request, db_id, group_name):
-    """Редактирование прав группы на схемы и таблицы"""
+    """Редактирование прав группы на таблицы"""
     user_requester = request.user.username if request.user.is_authenticated else "Аноним"
     connection_info = get_object_or_404(ConnectingDB, id=db_id)
     temp_db_settings = {
@@ -226,33 +226,25 @@ def groups_edit_privileges_tables(request, db_id, group_name):
     }
     tables_by_schema = {}
     granted_tables = {}
-    schemas = []  # Хранит список схем в БД
-
+    schemas = []
     try:
         conn = psycopg2.connect(**temp_db_settings)
         cursor = conn.cursor()
-
-        # Получение списка схем (без системных)
         cursor.execute("""
             SELECT schema_name
             FROM information_schema.schemata
             WHERE schema_name NOT IN ('pg_catalog', 'information_schema', 'pg_toast', 'pg_temp_1', 'pg_toast_temp_1');
         """)
-        schemas = [row[0] for row in cursor.fetchall()]  # Список схем
-
-        # Получение списка таблиц для каждой схемы
+        schemas = [row[0] for row in cursor.fetchall()]
         cursor.execute("""
             SELECT schemaname, tablename
             FROM pg_catalog.pg_tables
             WHERE schemaname IN %s;
-        """, (tuple(schemas),))  # Передаем кортеж схем в SQL-запрос
-
+        """, (tuple(schemas),))
         for schema, table in cursor.fetchall():
             if schema not in tables_by_schema:
                 tables_by_schema[schema] = {}
             tables_by_schema[schema][table] = set()
-
-        # Получение прав группы на схемы и таблицы
         cursor.execute("""
             SELECT table_schema, table_name, privilege_type
             FROM information_schema.role_table_grants
@@ -266,31 +258,25 @@ def groups_edit_privileges_tables(request, db_id, group_name):
                 if table not in granted_tables[schema]:
                     granted_tables[schema][table] = set()
                 granted_tables[schema][table].add(privilege)
-
         cursor.close()
         conn.close()
-
-    except Exception as e:
-        messages.error(request, f"Ошибка подключения: {str(e)}")
-        return redirect('groups_edit_privileges', db_id=db_id, group_name=group_name)
-
+    except Exception:
+        message = edit_group_messages_error(group_name)
+        messages.error(request, message)
+        create_audit_log(user_requester, 'update', 'group', user_requester, message)
+        return redirect('groups_edit_privileges_tables', db_id=db_id, group_name=group_name)
     if request.method == "POST":
         table_permissions = {}
         for schema, tables in tables_by_schema.items():
             for table in tables:
                 table_permissions[f"{schema}.{table}"] = request.POST.getlist(f"permissions_{schema}.{table}")
-
         changes_log = []
         try:
             conn = psycopg2.connect(**temp_db_settings)
             cursor = conn.cursor()
-
-            # Удаляем все привилегии группы на таблицы
             for schema, tables in tables_by_schema.items():
                 for table in tables:
                     cursor.execute(f"REVOKE ALL ON {schema}.{table} FROM {group_name};")
-
-            # Назначаем новые привилегии
             for table, new_permissions in table_permissions.items():
                 if new_permissions:
                     permissions_str = ", ".join(new_permissions)
@@ -304,28 +290,25 @@ def groups_edit_privileges_tables(request, db_id, group_name):
                         changes_log.append(f"Изменены права на {schema}.{table_name}: "
                                            f"Добавлены: {', '.join(added_perms) if added_perms else '—'} | "
                                            f"Удалены: {', '.join(removed_perms) if removed_perms else '—'}")
-
             conn.commit()
             cursor.close()
             conn.close()
-
             if changes_log:
-                messages.success(request, f"Права на схемы и таблицы группы {group_name} обновлены!")
-                create_audit_log(user_requester, 'update', 'group', group_name, "\n".join(changes_log))
-
-        except Exception as e:
-            messages.error(request, f"Ошибка обновления прав: {str(e)}")
-            return redirect('groups_edit_privileges', db_id=db_id, group_name=group_name)
-
-        return redirect('groups_edit_privileges', db_id=db_id, group_name=group_name)
-
+                message = edit_groups_privileges_tables_success(group_name)
+                messages.success(request, message)
+                create_audit_log(user_requester, 'update', 'group', user_requester, message + "\n".join(changes_log))
+        except Exception:
+            message = edit_groups_privileges_tables_error(group_name)
+            messages.error(request, message)
+            create_audit_log(user_requester, 'update', 'group', user_requester, message)
+            return redirect('groups_edit_privileges_tables', db_id=db_id, group_name=group_name)
+        return redirect('group_list', db_id=db_id)
     tables_by_schema = dict(sorted(tables_by_schema.items()))
-
     return render(request, 'groups/groups_edit_privileges_tables.html', {
         'db_id': db_id,
         'group_name': group_name,
         'db_name': connection_info.name_db,
-        'schemas': schemas,  # Передаем список схем в шаблон
+        'schemas': schemas,
         'tables_by_schema': tables_by_schema,
     })
 

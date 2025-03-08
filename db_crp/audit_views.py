@@ -151,11 +151,11 @@ def edit_group_messages_error(group_name):  # +
     return f"Ошибка при редактировании группы '{group_name}'."
 
 
-def edit_groups_privileges_tables_success(group_name):
-    return f"Права успешно обновлены для группы '{group_name}'."
+def edit_groups_privileges_tables_success(group_name):  # +
+    return f"Права успешно обновлены для группы '{group_name}'. "
 
 
-def edit_groups_privileges_tables_error(group_name):
+def edit_groups_privileges_tables_error(group_name):  # +
     return f"Ошибка при выдаче прав для группы '{group_name}'."
 
 
