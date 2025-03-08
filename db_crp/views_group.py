@@ -8,7 +8,7 @@ from django.http import HttpResponseRedirect, HttpResponseServerError, HttpRespo
 from django.urls import reverse
 from django.utils import timezone
 from .audit_views import group_data, create_audit_log, delete_group_messages_success, delete_group_messages_error, create_group_messages_error, \
-    create_group_messages_error_pg, edit_group_messages_group_success, create_group_messages_error_info, \
+    create_group_messages_error_pg, create_group_messages_error_info, \
     edit_group_messages_error_pg, edit_group_messages_error_name, edit_group_messages_success_name, edit_group_messages_error, \
     edit_groups_privileges_tables_success, edit_groups_privileges_tables_error, groups_tables_error, user_groups_data_error, create_group_messages_group_success
 from .forms import CreateGroupForm, GroupEditForm
