@@ -19,21 +19,21 @@
 
         <div class="info-item">
             <span class="info-label">Дата создания:</span>
-            <span class="info-value">{% if group_log.created_at %}{{ group_log.created_at|date:"d.m.Y - H:i" }}{% else %}—{% endif %}</span>
+            <span class="info-value">{% if group_log.created_at %}{{ group_log.created_at|date:"d.m.Y H:i" }}{% else %}—{% endif %}</span>
         </div>
         <div class="info-item">
             <span class="info-label">Дата изменения:</span>
-            <span class="info-value">{% if group_log.updated_at %} {{ group_log.updated_at|date:"d.m.Y - H:i" }} {% else %}—{% endif %}</span>
+            <span class="info-value">{% if group_log.updated_at %} {{ group_log.updated_at|date:"d.m.Y H:i" }} {% else %}—{% endif %}</span>
         </div>
         <hr>
-<form method="post">
-    {% csrf_token %}
-    {{ form.as_p }}
-    <div class="all-btn">
-        <a href="{% url 'group_list' db_id=db_id %}" class="btn btn-cancel">Назад</a>
-        <button type="submit" class="btn btn-save">Сохранить изменения</button>
-    </div>
-</form>
 
+        <form method="post">
+            {% csrf_token %}
+            {{ form.as_p }}
+            <div class="all-btn">
+                <a href="{% url 'group_list' db_id=db_id %}" class="btn btn-cancel">Назад</a>
+                <button type="submit" class="btn btn-save">Сохранить</button>
+            </div>
+        </form>
     </div>
 {% endblock %}

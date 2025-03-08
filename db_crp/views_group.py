@@ -200,7 +200,7 @@ def group_edit(request, db_id, group_name):
         cursor.close()
         conn.close()
     except Exception:
-        message = edit_group_messages_success_name(group_name)
+        message = edit_group_messages_error(group_name)
         messages.error(request, message)
         create_audit_log(user_requester, 'update', 'group', user_requester, message)
         return redirect('group_list', db_id=db_id)
@@ -208,6 +208,7 @@ def group_edit(request, db_id, group_name):
         'form': form,
         'db_id': db_id,
         'group_name': group_name,
+        'group_log': group_log
     })
 
 

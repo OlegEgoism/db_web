@@ -143,11 +143,11 @@ def edit_group_messages_error_name(group_name, new_group_name):   # +
     return f"Неудачная попытка переименовать группу с '{group_name}' в '{new_group_name}', группа уже существует."
 
 
-def edit_group_messages_success_name(group_name, new_group_name):
+def edit_group_messages_success_name(group_name, new_group_name):  # +
     return f"Группа '{group_name}' успешно переименована в '{new_group_name}'."
 
 
-def edit_group_messages_error(group_name):
+def edit_group_messages_error(group_name):  # +
     return f"Ошибка при редактировании группы '{group_name}'."
 
 
