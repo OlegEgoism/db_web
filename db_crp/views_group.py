@@ -58,10 +58,10 @@ def group_list(request, db_id):
         } for group in group_user_counts.keys()]
         cursor.close()
         conn.close()
-    except Exception:
+    except Exception as e:
         message = user_groups_data_error(user_groups_data)
-        messages.error(request, message)
-        create_audit_log(user_requester, 'info', 'group', user_requester, message)
+        messages.error(request, f"{message}: {str(e)}")
+        create_audit_log(user_requester, 'info', 'group', user_requester, f"{message}: {str(e)}")
     return render(request, 'groups/group_list.html', {
         'user_groups_data': user_groups_data,
         'db_id': db_id
@@ -111,10 +111,10 @@ def group_create(request, db_id):
                 cursor.close()
                 conn.close()
                 return redirect('group_list', db_id=db_id)
-            except Exception:
+            except Exception as e:
                 message = create_group_messages_error_info(group_name)
-                messages.error(request, message)
-                create_audit_log(user_requester, 'create', 'group', user_requester, message)
+                messages.error(request, f"{message}: {str(e)}")
+                create_audit_log(user_requester, 'create', 'group', user_requester, f"{message}: {str(e)}")
                 return render(request, 'groups/group_create.html', {
                     'form': form,
                     'db_id': db_id
@@ -194,10 +194,10 @@ def group_edit(request, db_id, group_name):
             form = GroupEditForm(initial={'groupname': group_log.groupname})
         cursor.close()
         conn.close()
-    except Exception:
+    except Exception as e:
         message = edit_group_messages_error(group_name)
-        messages.error(request, message)
-        create_audit_log(user_requester, 'update', 'group', user_requester, message)
+        messages.error(request, f"{message}: {str(e)}")
+        create_audit_log(user_requester, 'update', 'group', user_requester, f"{message}: {str(e)}")
         return redirect('group_list', db_id=db_id)
     return render(request, 'groups/group_edit.html', {
         'form': form,
@@ -255,10 +255,10 @@ def groups_edit_privileges_tables(request, db_id, group_name):
                 granted_tables[schema][table].add(privilege)
         cursor.close()
         conn.close()
-    except Exception:
+    except Exception as e:
         message = edit_group_messages_error(group_name)
-        messages.error(request, message)
-        create_audit_log(user_requester, 'update', 'group', user_requester, message)
+        messages.error(request, f"{message}: {str(e)}")
+        create_audit_log(user_requester, 'update', 'group', user_requester, f"{message}: {str(e)}")
         return redirect('groups_edit_privileges_tables', db_id=db_id, group_name=group_name)
     if request.method == "POST":
         table_permissions = {}
@@ -292,10 +292,10 @@ def groups_edit_privileges_tables(request, db_id, group_name):
                 message = edit_groups_privileges_tables_success(group_name)
                 messages.success(request, message)
                 create_audit_log(user_requester, 'update', 'group', user_requester, message + "\n".join(changes_log))
-        except Exception:
+        except Exception as e:
             message = edit_groups_privileges_tables_error(group_name)
-            messages.error(request, message)
-            create_audit_log(user_requester, 'update', 'group', user_requester, message)
+            messages.error(request, f"{message}: {str(e)}")
+            create_audit_log(user_requester, 'update', 'group', user_requester, f"{message}: {str(e)}")
             return redirect('groups_edit_privileges_tables', db_id=db_id, group_name=group_name)
         return redirect('group_list', db_id=db_id)
     tables_by_schema = dict(sorted(tables_by_schema.items()))
@@ -331,10 +331,10 @@ def group_delete(request, db_id, group_name):
             message = delete_group_messages_success(group_name)
             messages.success(request, message)
             create_audit_log(user_requester, 'delete', 'group', user_requester, message)
-    except Exception:
+    except Exception as e:
         message = delete_group_messages_error(group_name)
-        messages.error(request, message)
-        create_audit_log(user_requester, 'delete', 'group', user_requester, message)
+        messages.error(request, f"{message}: {str(e)}")
+        create_audit_log(user_requester, 'delete', 'group', user_requester, f"{message}: {str(e)}")
     finally:
         cursor.close()
         conn.close()
@@ -372,10 +372,10 @@ def group_info(request, db_id, group_name):
         users = [row[0] for row in cursor.fetchall()]
         cursor.close()
         conn.close()
-    except Exception:
+    except Exception as e:
         message = edit_group_messages_error_info(group_name)
-        messages.error(request, message)
-        create_audit_log(user_requester, 'info', 'group', user_requester, message)
+        messages.error(request, f"{message}: {str(e)}")
+        create_audit_log(user_requester, 'info', 'group', user_requester, f"{message}: {str(e)}")
     group_log, created = GroupLog.objects.get_or_create(
         groupname=group_name,
         defaults={'created_at': created_at, 'updated_at': timezone.now()}

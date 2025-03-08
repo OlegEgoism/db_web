@@ -43,10 +43,10 @@ urlpatterns = [
 
     path('group_list/<int:db_id>/', group_list, name='group_list'),  # Список групп
     path('group_create/<int:db_id>/', group_create, name='group_create'),  # Создание группы
-    path('group_edit/<int:db_id>/<str:group_name>/', group_edit, name='group_edit'),  # Редактирование группы
-    path('groups_edit_privileges_tables/<int:db_id>/<str:group_name>/', groups_edit_privileges_tables, name='groups_edit_privileges_tables'),  # Редактирование привилегий доступа для каждой таблицы
-    path('group_delete/<int:db_id>/<str:group_name>/', group_delete, name='group_delete'),  # Удаление группы
     path('group_info/<int:db_id>/<str:group_name>/', group_info, name='group_info'),  # Пользователи в группе
+    path('group_edit/<int:db_id>/<str:group_name>/', group_edit, name='group_edit'),  # Редактирование группы
+    path('group_delete/<int:db_id>/<str:group_name>/', group_delete, name='group_delete'),  # Удаление группы
+    path('groups_edit_privileges_tables/<int:db_id>/<str:group_name>/', groups_edit_privileges_tables, name='groups_edit_privileges_tables'),  # Редактирование привилегий доступа для каждой таблицы
 
     path('user_list/<int:db_id>/', user_list, name='user_list'),  # Список пользователей
     path('user_create/<int:db_id>/', user_create, name='user_create'),  # Создать пользователя
@@ -59,7 +59,8 @@ urlpatterns = [
     path('database_connect/', database_connect, name='database_connect'),  # Подключение к базе данных
     path('database_edit/<int:db_id>/', database_edit, name='database_edit'),  # Редактирование подключения к базе данных
     path('database_delete/<int:db_id>/', database_delete, name='database_delete'),  # Удалить подключения к базе данных
-    path("sync_users_groups/<int:db_id>/", sync_users_and_groups, name="sync_users_groups"),
+
+    path("sync_users_groups/<int:db_id>/", sync_users_and_groups, name="sync_users_groups"),  # Синхронизация пользователей и групп из базы данных
 
 ]
 
