@@ -6,18 +6,16 @@
         <h2 class="welcome-title">Список пользователей ({% if user_count %}{{ user_count }}{% else %}0{% endif %} шт.) в группе: {{ group_name }}</h2>
         <hr>
 
-        <!-- Вывод сообщений об ошибках -->
+        <!-- Вывод сообщений -->
         {% if messages %}
             <div class="messages">
                 {% for message in messages %}
-                    <div class="alert {% if message.tags == 'success' %}alert-success{% else %}alert-error{% endif %}"
-                         role="alert">
+                    <div class="alert {% if message.tags == 'success' %}alert-success{% elif message.tags == 'warning' %}alert-warning{% else %}alert-error{% endif %}">
                         {{ message }}
                     </div>
                 {% endfor %}
             </div>
         {% endif %}
-
 
         <div class="info-item">
             <span class="info-label">Дата создания:</span>
@@ -55,7 +53,6 @@
             let input = document.getElementById("userSearch");
             let filter = input.value.toLowerCase();
             let items = document.querySelectorAll(".group-link-user");
-
             items.forEach(item => {
                 let userName = item.textContent.toLowerCase();
                 if (userName.includes(filter)) {

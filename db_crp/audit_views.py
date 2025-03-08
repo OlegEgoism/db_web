@@ -105,12 +105,12 @@ def user_groups_data_error(user_groups_data):  # +
 
 
 # УДАЛЕНИЕ ГРУППЫ
-def delete_group_messages_success(group_name):
+def delete_group_messages_success(group_name):  # +
     return f"Группа '{group_name}' была удалена из базы данных."
 
 
-def delete_group_messages_error(group_name):
-    return f"Неудачная попытка при удалении группы '{group_name}' из базы данных, группа не может быть удален, так как существуют зависимые объекты в базе данных."
+def delete_group_messages_error(group_name):  # +
+    return f"Неудачная попытка при удалении группы '{group_name}' из базы данных. Существуют зависимые объекты в базе данных."
 
 
 # СОЗДАНИЕ ГРУППЫ

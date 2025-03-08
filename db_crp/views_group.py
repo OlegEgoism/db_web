@@ -315,9 +315,9 @@ def groups_edit_privileges_tables(request, db_id, group_name):
 
 @login_required
 def group_delete(request, db_id, group_name):
-    """Удаление группы из подключенной базы данных"""
-    connection_info = get_object_or_404(ConnectingDB, id=db_id)
+    """Удаление группы"""
     user_requester = request.user.username if request.user.is_authenticated else "Аноним"
+    connection_info = get_object_or_404(ConnectingDB, id=db_id)
     temp_db_settings = {
         'dbname': connection_info.name_db,
         'user': connection_info.user_db,
@@ -333,13 +333,13 @@ def group_delete(request, db_id, group_name):
         group_log = GroupLog.objects.filter(groupname=group_name).first()
         if group_log:
             group_log.delete()
-        message = f"Группа '{group_name}' успешно удалена из базы '{connection_info.name_db}'."
-        messages.success(request, message)
-        create_audit_log(user_requester, 'delete', 'group', group_name, message)
-    except Exception as e:
-        message = f"Ошибка удаления группы '{group_name}' из базы '{connection_info.name_db}': {str(e)}"
+            message = delete_group_messages_success(group_name)
+            messages.success(request, message)
+            create_audit_log(user_requester, 'delete', 'group', user_requester, message)
+    except Exception:
+        message = delete_group_messages_error(group_name)
         messages.error(request, message)
-        create_audit_log(user_requester, 'delete', 'group', group_name, message)
+        create_audit_log(user_requester, 'delete', 'group', user_requester, message)
     finally:
         cursor.close()
         conn.close()
@@ -348,11 +348,9 @@ def group_delete(request, db_id, group_name):
 
 @login_required
 def group_info(request, db_id, group_name):
-    """Вывод списка пользователей, входящих в группу, из подключенной базы данных"""
-    connection_info = get_object_or_404(ConnectingDB, id=db_id)
+    """Вывод списка пользователей, входящих в группу"""
     user_requester = request.user.username if request.user.is_authenticated else "Аноним"
-
-    # Подключение к конкретной базе данных
+    connection_info = get_object_or_404(ConnectingDB, id=db_id)
     temp_db_settings = {
         'dbname': connection_info.name_db,
         'user': connection_info.user_db,
@@ -360,18 +358,15 @@ def group_info(request, db_id, group_name):
         'host': connection_info.host_db,
         'port': connection_info.port_db,
     }
-
     try:
         conn = psycopg2.connect(**temp_db_settings)
         cursor = conn.cursor()
-
-        # Проверяем, существует ли группа в данной базе данных
         cursor.execute("SELECT 1 FROM pg_roles WHERE rolname = %s;", [group_name])
         group_exists = cursor.fetchone()
         if not group_exists:
-            return HttpResponseNotFound(f"Группа '{group_name}' не найдена в базе данных {connection_info.name_db}.")
-
-        # Получение списка пользователей, входящих в группу
+            message = edit_group_messages_error_info(group_name)
+            messages.error(request, message)
+            create_audit_log(user_requester, 'info', 'group', user_requester, message)
         cursor.execute("""
             SELECT u.usename 
             FROM pg_user u
@@ -380,18 +375,20 @@ def group_info(request, db_id, group_name):
             WHERE g.rolname = %s;
         """, [group_name])
         users = [row[0] for row in cursor.fetchall()]
-
         cursor.close()
         conn.close()
-    except Exception as e:
-        return HttpResponseServerError(f"Ошибка при получении данных о группе: {str(e)}")
-
-    # Получаем запись о группе из `GroupLog` (если есть)
+    except Exception:
+        message = edit_group_messages_error_info(group_name)
+        messages.error(request, message)
+        create_audit_log(user_requester, 'info', 'group', user_requester, message)
     group_log, created = GroupLog.objects.get_or_create(
         groupname=group_name,
         defaults={'created_at': created_at, 'updated_at': timezone.now()}
     )
-
+    if created:
+        message = group_data(group_name)
+        messages.success(request, message)
+        create_audit_log(user_requester, 'create', 'group', user_requester, message)
     return render(request, 'groups/group_info.html', {
         'db_id': db_id,
         'group_name': group_name,
