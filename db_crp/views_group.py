@@ -1,22 +1,17 @@
 from datetime import datetime
-
 import psycopg2
-from django.conf import settings
 from django.contrib.auth.decorators import login_required
-from django.db import connection
-from django.http import HttpResponseRedirect, HttpResponseServerError, HttpResponseNotFound
+from django.http import HttpResponseRedirect
 from django.urls import reverse
 from django.utils import timezone
 from .audit_views import group_data, create_audit_log, delete_group_messages_success, delete_group_messages_error, create_group_messages_error, \
-    create_group_messages_error_pg, create_group_messages_error_info, \
-    edit_group_messages_error_pg, edit_group_messages_error_name, edit_group_messages_success_name, edit_group_messages_error, \
-    edit_groups_privileges_tables_success, edit_groups_privileges_tables_error, groups_tables_error, user_groups_data_error, \
-    create_group_messages_group_success, edit_group_messages_error_info
+    create_group_messages_error_pg, create_group_messages_error_info, edit_group_messages_error_pg, edit_group_messages_error_name, \
+    edit_group_messages_success_name, edit_group_messages_error, edit_groups_privileges_tables_success, edit_groups_privileges_tables_error, \
+    user_groups_data_error, create_group_messages_group_success, edit_group_messages_error_info
 from .forms import CreateGroupForm, GroupEditForm
 from django.shortcuts import render, redirect, get_object_or_404
 from .models import GroupLog, ConnectingDB
 from django.contrib import messages
-from django.db.backends.postgresql.base import DatabaseWrapper
 
 created_at = datetime(2000, 1, 1, 0, 0)
 updated_at = timezone.now()

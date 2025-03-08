@@ -159,9 +159,6 @@ def edit_groups_privileges_tables_error(group_name):  # +
     return f"Ошибка при выдаче прав для группы '{group_name}'."
 
 
-def groups_tables_error(group_name, table):
-    return f"Ошибка при загрузке таблиц '{table}' в группе '{group_name}'."
-
 
 # ---------------------------------------------------------------------------------------------------------------
 # ПОДКЛЮЧЕНИЕ К БАЗЕ ДАННЫХ
