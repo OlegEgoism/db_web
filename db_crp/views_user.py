@@ -1,5 +1,4 @@
 from datetime import datetime
-
 import psycopg2
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
@@ -12,9 +11,12 @@ from .forms import UserCreateForm
 from django.shortcuts import render, redirect, get_object_or_404
 from .models import UserLog, SettingsProject, ConnectingDB
 from django.contrib import messages
-from .audit_views import delete_user_messages_email, delete_user_messages_success, delete_user_messages_error, create_audit_log, create_user_messages_error, create_user_messages_error_email, create_user_messages_success, create_user_messages_email, \
-    user_info_error, user_data, edit_user_messages_email_error, edit_user_messages_success, edit_user_messages_email_success, edit_user_messages_add_group_error, edit_user_messages_delete_group_success, edit_user_messages_delete_group_error, \
-    edit_user_messages_add_group_success, edit_user_messages_role_permissions
+from .audit_views import delete_user_messages_email, delete_user_messages_success, delete_user_messages_error, create_audit_log, create_user_messages_error, \
+    create_user_messages_error_email, create_user_messages_success, create_user_messages_email, \
+    user_info_error, user_data, edit_user_messages_email_error, edit_user_messages_success, edit_user_messages_email_success, \
+    edit_user_messages_add_group_error, edit_user_messages_delete_group_success, edit_user_messages_delete_group_error, \
+    edit_user_messages_add_group_success, edit_user_messages_role_permissions, user_error, create_user_error, create_user_messages_email_error, \
+    user_info_all_error, edit_user_messages_db_error
 
 created_at = datetime(2000, 1, 1, 0, 0)
 updated_at = timezone.now()
@@ -22,9 +24,9 @@ updated_at = timezone.now()
 
 @login_required
 def user_list(request, db_id):
-    """Список пользователей из подключенной базы данных"""
+    """Список пользователей"""
+    user_requester = request.user.username if request.user.is_authenticated else "Аноним"
     connection_info = get_object_or_404(ConnectingDB, id=db_id)
-
     temp_db_settings = {
         'dbname': connection_info.name_db,
         'user': connection_info.user_db,
@@ -32,20 +34,13 @@ def user_list(request, db_id):
         'host': connection_info.host_db,
         'port': connection_info.port_db,
     }
-
     users_data = []
     try:
         conn = psycopg2.connect(**temp_db_settings)
         cursor = conn.cursor()
-
-        # Получение списка пользователей
         cursor.execute("SELECT usename FROM pg_catalog.pg_user;")
         users = sorted([user[0] for user in cursor.fetchall()])
-
-        # Получаем лог пользователей из Django
         user_logs = {log.username: log for log in UserLog.objects.filter(username__in=users)}
-
-        # Получение количества групп для каждого пользователя
         for user in users:
             cursor.execute("""
                 SELECT COUNT(*)
@@ -55,28 +50,29 @@ def user_list(request, db_id):
                 WHERE u.usename = %s;
             """, [user])
             group_count = cursor.fetchone()[0]
-
             users_data.append({
                 "username": user,
                 "created_at": user_logs[user].created_at if user in user_logs else None,
                 "updated_at": user_logs[user].updated_at if user in user_logs else None,
                 "group_count": group_count
             })
-
         cursor.close()
         conn.close()
     except Exception as e:
-        users_data = [{"username": f"Ошибка подключения: {str(e)}", "group_count": "-"}]
-
-    return render(request, 'users/user_list.html', {'users_data': users_data, 'db_id': db_id})
+        message = user_error()
+        messages.error(request, f"{message}: {str(e)}")
+        create_audit_log(user_requester, 'info', 'create', user_requester, f"{message}: {str(e)}")
+    return render(request, 'users/user_list.html', {
+        'users_data': users_data,
+        'db_id': db_id
+    })
 
 
 @login_required
 def user_create(request, db_id):
-    """Создание пользователя в конкретной подключенной базе данных"""
+    """Создание пользователя"""
+    user_requester = request.user.username if request.user.is_authenticated else "Аноним"
     connection_info = get_object_or_404(ConnectingDB, id=db_id)
-
-    # Подключение к БД
     temp_db_settings = {
         'dbname': connection_info.name_db,
         'user': connection_info.user_db,
@@ -84,10 +80,7 @@ def user_create(request, db_id):
         'host': connection_info.host_db,
         'port': connection_info.port_db,
     }
-
     send_email = SettingsProject.objects.first().send_email if SettingsProject.objects.exists() else False
-    user_requester = request.user.username if request.user.is_authenticated else "Аноним"
-
     if request.method == "POST":
         form = UserCreateForm(request.POST)
         if form.is_valid():
@@ -101,28 +94,20 @@ def user_create(request, db_id):
             login = form.cleaned_data.get('login', True)
             replication = form.cleaned_data['replication']
             bypass_rls = form.cleaned_data['bypass_rls']
-
             try:
-                # Подключение к нужной базе данных
                 conn = psycopg2.connect(**temp_db_settings)
                 cursor = conn.cursor()
-
-                # Проверка, существует ли пользователь в PostgreSQL
                 cursor.execute("SELECT 1 FROM pg_roles WHERE rolname = %s;", [username])
-                user_exists_in_pg = cursor.fetchone()
-                if user_exists_in_pg:
+                if cursor.fetchone():
                     message = create_user_messages_error(username)
                     messages.error(request, message)
-                    create_audit_log(user_requester, 'create', 'user', username, message)
+                    create_audit_log(user_requester, 'create', 'user', user_requester, message)
                     return render(request, 'users/user_create.html', {'form': form})
-
-                # Проверка наличия email в UserLog
-                email_exists = UserLog.objects.filter(email=email).exists() if email else False
-                if email_exists:
-                    messages.error(request, f"Пользователь с почтой {email} уже существует.")
+                if email and UserLog.objects.filter(email=email).exists():
+                    message = create_user_messages_error_email(username, email)
+                    messages.error(request, message)
+                    create_audit_log(user_requester, 'create', 'user', user_requester, message)
                     return render(request, 'users/user_create.html', {'form': form})
-
-                # Формируем строку привилегий
                 privileges = ' '.join([
                     'CREATEDB' if can_create_db else 'NOCREATEDB',
                     'SUPERUSER' if is_superuser else 'NOSUPERUSER',
@@ -132,12 +117,8 @@ def user_create(request, db_id):
                     'REPLICATION' if replication else 'NOREPLICATION',
                     'BYPASSRLS' if bypass_rls else 'NOBYPASSRLS'
                 ])
-
-                # Создаем пользователя в подключенной базе
                 cursor.execute(f"CREATE USER {username} WITH PASSWORD %s {privileges};", [password])
                 conn.commit()
-
-                # Записываем в лог Django
                 UserLog.objects.create(
                     username=username,
                     email=email,
@@ -149,48 +130,54 @@ def user_create(request, db_id):
                     replication=replication,
                     bypass_rls=bypass_rls
                 )
-
-                # Аудит
                 message = create_user_messages_success(username)
                 messages.success(request, message)
-                create_audit_log(user_requester, 'create', 'user', username, message)
-
-                # Отправка уведомления на email
+                create_audit_log(user_requester, 'create', 'user', user_requester, message)
                 if email and send_email:
-                    subject = "Ваш аккаунт создан"
-                    html_message = render_to_string('send_email/send_user_create.html', {
-                        'username': username,
-                        'password': password,
-                        'can_create_db': can_create_db,
-                        'is_superuser': is_superuser,
-                        'inherit': inherit,
-                        'create_role': create_role,
-                        'login': login,
-                        'replication': replication,
-                        'bypass_rls': bypass_rls
-                    })
-                    email_message = EmailMultiAlternatives(subject, "", settings.EMAIL_HOST_USER, [email])
-                    email_message.attach_alternative(html_message, "text/html")
-                    email_message.send()
+                    try:
+                        subject = "Ваш аккаунт создан"
+                        html_message = render_to_string('send_email/send_user_create.html', {
+                            'username': username,
+                            'password': password,
+                            'can_create_db': can_create_db,
+                            'is_superuser': is_superuser,
+                            'inherit': inherit,
+                            'create_role': create_role,
+                            'login': login,
+                            'replication': replication,
+                            'bypass_rls': bypass_rls
+                        })
+                        email_message = EmailMultiAlternatives(subject, "", settings.EMAIL_HOST_USER, [email])
+                        email_message.attach_alternative(html_message, "text/html")
+                        email_message.send()
+                        message = create_user_messages_email(username, email, can_create_db, is_superuser, inherit, create_role, login, replication, bypass_rls)
+                        messages.success(request, message)
+                        create_audit_log(user_requester, 'create', 'user', user_requester, message)
+                    except Exception as email_error:
+                        message = create_user_messages_email_error(username)
+                        messages.error(request, f"{message}: {str(email_error)}")
+                        create_audit_log(user_requester, 'create', 'user', user_requester, f"{message}: {str(email_error)}")
                 cursor.close()
                 conn.close()
                 return redirect('user_list', db_id=db_id)
             except Exception as e:
-                messages.error(request, f"Ошибка при создании пользователя '{username}': {str(e)}.")
+                message = create_user_error(username)
+                messages.error(request, f"{message}: {str(e)}")
+                create_audit_log(user_requester, 'error', 'user', user_requester, f"{message}: {str(e)}")
                 return render(request, 'users/user_create.html', {'form': form})
     else:
         form = UserCreateForm()
-    return render(request, 'users/user_create.html', {'form': form, 'db_id': db_id})
+    return render(request, 'users/user_create.html', {
+        'form': form,
+        'db_id': db_id
+    })
 
 
 @login_required
 def user_info(request, db_id, username):
-    """Информация о пользователе из подключенной базы данных"""
+    """Информация о пользователе"""
     user_requester = request.user.username if request.user.is_authenticated else "Аноним"
-
-    # Получаем информацию о подключенной базе
     connection_info = get_object_or_404(ConnectingDB, id=db_id)
-
     temp_db_settings = {
         'dbname': connection_info.name_db,
         'user': connection_info.user_db,
@@ -198,25 +185,23 @@ def user_info(request, db_id, username):
         'host': connection_info.host_db,
         'port': connection_info.port_db,
     }
-
     try:
         conn = psycopg2.connect(**temp_db_settings)
         cursor = conn.cursor()
     except Exception as e:
-        messages.error(request, f"Ошибка подключения к базе данных: {str(e)}")
+        message = user_info_all_error()
+        messages.error(request, f"{message}: {str(e)}")
+        create_audit_log(user_requester, 'info', 'user', user_requester, f"{message}: {str(e)}")
         return redirect('user_list', db_id=db_id)
-
-    # Проверяем, существует ли пользователь
     cursor.execute("SELECT 1 FROM pg_roles WHERE rolname = %s;", [username])
     user_exists = cursor.fetchone()
-
     if not user_exists:
         cursor.close()
         conn.close()
-        messages.error(request, f"Пользователь '{username}' не найден в базе {connection_info.name_db}.")
+        message = user_info_error(username)
+        messages.success(request, message)
+        create_audit_log(user_requester, 'info', 'user', user_requester, message)
         return redirect('user_list', db_id=db_id)
-
-    # Получение информации о пользователе
     cursor.execute("""
         SELECT 
             r.rolname,         -- Имя роли
@@ -233,8 +218,6 @@ def user_info(request, db_id, username):
         WHERE r.rolname = %s;
     """, [username])
     user_info = cursor.fetchone()
-
-    # Получение групп пользователя
     cursor.execute("""
         SELECT r.rolname 
         FROM pg_roles r
@@ -243,9 +226,7 @@ def user_info(request, db_id, username):
         WHERE u.rolname = %s;
     """, [username])
     groups = cursor.fetchall()
-
     user_log = UserLog.objects.filter(username=username).first()
-
     if user_info:
         group_list = [group[0] for group in groups]
         user_data = {
@@ -267,19 +248,22 @@ def user_info(request, db_id, username):
         }
     else:
         user_data = None
-        messages.error(request, f"Не удалось получить информацию о пользователе '{username}'.")
-
+        message = user_info_error(username)
+        messages.success(request, message)
+        create_audit_log(user_requester, 'info', 'user', user_requester, message)
     cursor.close()
     conn.close()
-
-    return render(request, 'users/user_info.html', {'user_data': user_data, 'db_id': db_id})
+    return render(request, 'users/user_info.html', {
+        'user_data': user_data,
+        'db_id': db_id
+    })
 
 
 @login_required
 def user_edit(request, db_id, username):
-    """Редактирование пользователя в подключенной базе данных"""
+    """Редактирование пользователя"""
+    user_requester = request.user.username if request.user.is_authenticated else "Аноним"
     connection_info = get_object_or_404(ConnectingDB, id=db_id)
-
     temp_db_settings = {
         'dbname': connection_info.name_db,
         'user': connection_info.user_db,
@@ -287,24 +271,22 @@ def user_edit(request, db_id, username):
         'host': connection_info.host_db,
         'port': connection_info.port_db,
     }
-
     try:
         conn = psycopg2.connect(**temp_db_settings)
         cursor = conn.cursor()
     except Exception as e:
-        return HttpResponseNotFound(f"Ошибка подключения к базе данных: {str(e)}")
-
-    # Проверяем, существует ли пользователь в PostgreSQL
+        message = user_info_all_error()
+        messages.error(request, f"{message}: {str(e)}")
+        create_audit_log(user_requester, 'update', 'user', user_requester, f"{message}: {str(e)}")
+        return redirect('user_list', db_id=db_id)
     cursor.execute("SELECT 1 FROM pg_roles WHERE rolname = %s;", [username])
     user_exists = cursor.fetchone()
     if not user_exists:
-        return HttpResponseNotFound(f"Пользователь '{username}' не найден в базе данных {connection_info.name_db}.")
-
-    # Получаем email из модели UserLog
+        message = edit_user_messages_db_error(username)
+        messages.success(request, message)
+        create_audit_log(user_requester, 'update', 'user', user_requester, message)
     user_log = UserLog.objects.filter(username=username).first()
     user_email = user_log.email if user_log else ""
-
-    # Получение прав доступа пользователя
     cursor.execute("""
         SELECT rolcreatedb, rolsuper, rolinherit, rolcreaterole, 
                rolcanlogin, rolreplication, rolbypassrls
@@ -312,7 +294,6 @@ def user_edit(request, db_id, username):
         WHERE rolname = %s;
     """, [username])
     result = cursor.fetchone()
-
     role_permissions = {
         'can_create_db': result[0],
         'is_superuser': result[1],
@@ -325,8 +306,6 @@ def user_edit(request, db_id, username):
         'can_create_db', 'is_superuser', 'inherit',
         'create_role', 'login', 'replication', 'bypass_rls'
     ]}
-
-    # Получение списка групп
     cursor.execute("""
         SELECT r.rolname
         FROM pg_user u
@@ -335,7 +314,6 @@ def user_edit(request, db_id, username):
         WHERE u.usename = %s;
     """, [username])
     current_groups = {group[0] for group in cursor.fetchall()}
-
     cursor.execute("""
         SELECT rolname
         FROM pg_roles
@@ -343,17 +321,11 @@ def user_edit(request, db_id, username):
     """)
     all_groups = {group[0] for group in cursor.fetchall()}
     available_groups = all_groups - current_groups
-
     if request.method == "POST":
-        # Получаем обновленный email из формы
         new_email = request.POST.get('email', '')
-
-        # Обновляем email в UserLog
         if user_log:
             user_log.email = new_email
             user_log.save()
-
-        # Обновляем права в PostgreSQL
         role_permissions = {
             'can_create_db': 'can_create_db' in request.POST,
             'is_superuser': 'is_superuser' in request.POST,
@@ -363,7 +335,6 @@ def user_edit(request, db_id, username):
             'replication': 'replication' in request.POST,
             'bypass_rls': 'bypass_rls' in request.POST
         }
-
         cursor.execute(f"""
             ALTER ROLE {username}
             {'CREATEDB' if role_permissions['can_create_db'] else 'NOCREATEDB'}
@@ -375,44 +346,43 @@ def user_edit(request, db_id, username):
             {'BYPASSRLS' if role_permissions['bypass_rls'] else 'NOBYPASSRLS'};
         """)
         conn.commit()
-
-        # Обновление групп пользователя
         selected_groups = set(request.POST.getlist('selected_groups'))
         deleted_groups = current_groups - selected_groups
         new_groups = selected_groups - current_groups
-
         for groupname in deleted_groups:
             cursor.execute(f"REVOKE {groupname} FROM {username};")
-
+            message = edit_user_messages_delete_group_success(username, groupname)
+            messages.success(request, message)
+            create_audit_log(user_requester, 'delete', 'user', user_requester, message)
         for groupname in new_groups:
             cursor.execute(f"GRANT {groupname} TO {username};")
-
+            message = edit_user_messages_add_group_success(username, groupname)
+            messages.success(request, message)
+            create_audit_log(user_requester, 'create', 'user', user_requester, message)
         conn.commit()
         cursor.close()
         conn.close()
-
-        messages.success(request, f"Пользователь {username} обновлен в базе {connection_info.name_db}.")
+        message = edit_user_messages_success(username)
+        messages.success(request, message)
+        create_audit_log(user_requester, 'update', 'user', user_requester, message)
         return redirect('user_list', db_id=db_id)
-
     cursor.close()
     conn.close()
-
     return render(request, 'users/user_edit.html', {
         'db_id': db_id,
         'username': username,
         'role_permissions': role_permissions,
         'user_groups': sorted(current_groups),
         'available_groups': sorted(available_groups),
-        'user_email': user_email  # ✅ Передаём email в шаблон
+        'user_email': user_email
     })
 
 
 @login_required
 def user_delete(request, db_id, username):
-    """Удаление пользователя из подключенной базы данных"""
+    """Удаление пользователя"""
     user_requester = request.user.username if request.user.is_authenticated else "Аноним"
     connection_info = get_object_or_404(ConnectingDB, id=db_id)
-
     temp_db_settings = {
         'dbname': connection_info.name_db,
         'user': connection_info.user_db,
@@ -420,43 +390,35 @@ def user_delete(request, db_id, username):
         'host': connection_info.host_db,
         'port': connection_info.port_db,
     }
-
     try:
         conn = psycopg2.connect(**temp_db_settings)
         cursor = conn.cursor()
     except Exception as e:
-        messages.error(request, f"Ошибка подключения к базе данных: {str(e)}")
+        message = user_info_all_error()
+        messages.error(request, f"{message}: {str(e)}")
+        create_audit_log(user_requester, 'delete', 'user', user_requester, f"{message}: {str(e)}")
         return redirect('user_list', db_id=db_id)
-
-    # Проверяем, существует ли пользователь в базе
     cursor.execute("SELECT 1 FROM pg_roles WHERE rolname = %s;", [username])
     user_exists = cursor.fetchone()
-
     if not user_exists:
-        messages.error(request, f"Пользователь '{username}' не найден в базе {connection_info.name_db}.")
         cursor.close()
         conn.close()
+        message = user_info_error(username)
+        messages.error(request, message)
+        create_audit_log(user_requester, 'delete', 'user', user_requester, message)
         return redirect('user_list', db_id=db_id)
-
     user_log = UserLog.objects.filter(username=username).first()
     user_email = user_log.email if user_log else None
-
     try:
-        # Перед удалением передаем права и удаляем объекты пользователя
         cursor.execute(f"REASSIGN OWNED BY {username} TO {connection_info.user_db};")
         cursor.execute(f"DROP OWNED BY {username};")
         cursor.execute(f"DROP USER IF EXISTS {username};")
         conn.commit()
-
-        # Удаляем пользователя из логов, если он есть
         if user_log:
             user_log.delete()
-
-        message = f"Пользователь {username} удален из базы {connection_info.name_db}."
-        messages.success(request, message)
-        create_audit_log(user_requester, 'delete', 'user', username, message)
-
-        # Отправка уведомления на почту
+            message = delete_user_messages_success(username)
+            messages.success(request, message)
+            create_audit_log(user_requester, 'delete', 'user', user_requester, message)
         send_email = SettingsProject.objects.first().send_email if SettingsProject.objects.exists() else False
         if user_email and send_email:
             subject = "Ваш аккаунт был удален"
@@ -464,15 +426,15 @@ def user_delete(request, db_id, username):
             email_message = EmailMultiAlternatives(subject, "", settings.EMAIL_HOST_USER, [user_email])
             email_message.attach_alternative(html_message, "text/html")
             email_message.send()
-            messages.success(request, f"Пользователю {username} отправлено уведомление о удалении.")
-
+            message = delete_user_messages_email(username, send_email)
+            messages.success(request, message)
+            create_audit_log(user_requester, 'delete', 'user', user_requester, message)
     except Exception as e:
         conn.rollback()
-        messages.error(request, f"Ошибка при удалении пользователя '{username}': {str(e)}.")
-        create_audit_log(user_requester, 'delete', 'user', username, f"Ошибка удаления: {str(e)}")
-
+        message = delete_user_messages_error(username)
+        messages.success(request, message)
+        create_audit_log(user_requester, 'delete', 'user', user_requester, f"{message}: {str(e)}")
     finally:
         cursor.close()
         conn.close()
-
     return redirect('user_list', db_id=db_id)

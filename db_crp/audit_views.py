@@ -28,28 +28,48 @@ def user_info_error(user_name):
     return f"Не удалось получить информацию о пользователе '{user_name}'."
 
 
+def user_info_all_error():  # +
+    return f"Ошибка подключения при получении информацию о пользователе."
+
+
+def user_error():  # +
+    return f"Ошибка подключения при получении списка пользователей"
+
+
 # СОЗДАНИЕ ПОЬЗОВАТЕЛЯ
-def create_user_messages_error(user_name):
+def create_user_messages_error(user_name):  # +
     return f"Неудачная попытка создания пользователя '{user_name}', пользователь уже существует."
 
 
-def create_user_messages_error_email(user_name, email):
+def create_user_messages_error_email(user_name, email):  # +
     return f"Неудачная попытка привязки почты '{email}' к пользователю '{user_name}'. Почта уже используется."
 
 
-def create_user_messages_success(user_name):
+def create_user_messages_email_error(user_name):  # +
+    return f"Неудачная попытка отправить сообщение на почту пользователю '{user_name}'."
+
+
+def create_user_messages_success(user_name):  # +
     return f"Пользователь '{user_name}' успешно создан."
 
 
-def create_user_messages_email(user_name, email, can_create_db, is_superuser, inherit, create_role, login, replication, bypass_rls):
+def create_user_messages_email(user_name, email, can_create_db, is_superuser, inherit, create_role, login, replication, bypass_rls):  # +
     return (f"Уведомление об успешном создании пользователя '{user_name}' в системе отправлено на почту '{email}'. "
             f"Права: Может создавать БД={can_create_db}. Суперпользователь={is_superuser}. Наследование={inherit}. "
             f"Создание роли={create_role}. Входа={login}. Репликация={replication}. Bypass RLS={bypass_rls}.")
 
 
+def create_user_error(user_name):  # +
+    return f"Неудачная попытка создания пользователя '{user_name}'."
+
+
 # РЕДАКТИРОВАИЕ ПОЬЗОВАТЕЛЯ
 def edit_user_messages_email_error(user_name, new_email):
     return f"Неудачная попытка изменить почту '{new_email}' у пользователя '{user_name}', почта уже используется."
+
+
+def edit_user_messages_db_error(user_name):  # +
+    return f"Пользователь '{user_name}' не найден в базе данных."
 
 
 def edit_user_messages_success(user_name, new_email):
@@ -60,16 +80,20 @@ def edit_user_messages_email_success(user_name, email):
     return f"Уведомление об изменении учетной записи отправлено пользователю '{user_name}' на почту '{email}'."
 
 
-def edit_user_messages_delete_group_success(user_name, group_name):
+def edit_user_messages_delete_group_success(user_name, group_name):  # +
     return f"Пользователь '{user_name}' удален из группы '{group_name}'."
+
+
+def edit_user_messages_add_group_success(user_name, group_name):  # +
+    return f"Пользователь '{user_name}' добавлен в группу '{group_name}'."
+
+
+def edit_user_messages_success(user_name):  # +
+    return f"Данные пользователь '{user_name}' обновлен."
 
 
 def edit_user_messages_delete_group_error(user_name, group_name):
     return f"Ошибка при удалении группы '{group_name}' пользователю '{user_name}'"
-
-
-def edit_user_messages_add_group_success(user_name, group_name):
-    return f"Пользователь '{user_name}' добавлен в группу '{group_name}'."
 
 
 def edit_user_messages_add_group_error(user_name, group_name):
@@ -86,7 +110,7 @@ def delete_user_messages_error(user_name):
 
 
 def delete_user_messages_success(user_name):
-    return f"Пользователь '{user_name}' был удален из базы данных."
+    return f"Пользователь '{user_name}' удален из базы данных."
 
 
 def delete_user_messages_email(user_name, user_email):
@@ -139,7 +163,7 @@ def edit_group_messages_error_pg(group_name, new_group_name):  # +
     return f"Неудачная попытка переименовать группу с '{group_name}' в '{new_group_name}', запрещенный префикс 'pg_'."
 
 
-def edit_group_messages_error_name(group_name, new_group_name):   # +
+def edit_group_messages_error_name(group_name, new_group_name):  # +
     return f"Неудачная попытка переименовать группу с '{group_name}' в '{new_group_name}', группа уже существует."
 
 
@@ -157,7 +181,6 @@ def edit_groups_privileges_tables_success(group_name):  # +
 
 def edit_groups_privileges_tables_error(group_name):  # +
     return f"Ошибка при выдаче прав для группы '{group_name}'."
-
 
 
 # ---------------------------------------------------------------------------------------------------------------
@@ -190,6 +213,7 @@ def sync_data_base_success(name_db):  # +
 
 def sync_data_base_error(name_db):  # +
     return f"Неудачная попытка при синхронизации с базой данных '{name_db}'."
+
 
 # ---------------------------------------------------------------------------------------------------------------
 # АУДИТ
