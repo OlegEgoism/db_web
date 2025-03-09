@@ -22,6 +22,7 @@ def database_list(request):
     return render(request, "databases/database_list.html", {"databases_info": databases_info})
 
 
+@login_required
 def tables_list(request, db_id):
     """Список таблиц в выбранной базе данных"""
     connection_info = get_object_or_404(ConnectingDB, id=db_id)
@@ -85,6 +86,7 @@ def database_connect(request):
     return render(request, "databases/database_connect.html", {"form": form})
 
 
+@login_required
 def database_edit(request, db_id):
     """Редактирование подключения к базе данных"""
     user_requester = request.user.username if request.user.is_authenticated else "Аноним"
@@ -109,6 +111,7 @@ def database_edit(request, db_id):
     })
 
 
+@login_required
 def database_delete(request, db_id):
     """Удаление подключения к базе данных"""
     user_requester = request.user.username if request.user.is_authenticated else "Аноним"
@@ -146,6 +149,8 @@ def sync_users_and_groups(request, db_id):
     try:
         conn = psycopg2.connect(**temp_db_settings)
         cursor = conn.cursor()
+        existing_users = set(UserLog.objects.values_list('username', flat=True))
+        existing_groups = set(GroupLog.objects.values_list('groupname', flat=True))
         cursor.execute("""
             SELECT
                 rolname, rolcreatedb, rolsuper, rolinherit,
@@ -153,27 +158,34 @@ def sync_users_and_groups(request, db_id):
             FROM pg_catalog.pg_roles;
         """)
         users = cursor.fetchall()
-        UserLog.objects.all().delete()
+        new_users = []
         for user in users:
             (
                 username, can_create_db, is_superuser,
                 inherit, create_role, login, replication, bypass_rls
             ) = user
-            UserLog.objects.create(
-                username=username,
-                can_create_db=can_create_db,
-                is_superuser=is_superuser,
-                inherit=inherit,
-                create_role=create_role,
-                login=login,
-                replication=replication,
-                bypass_rls=bypass_rls,
-            )
+            if username not in existing_users:
+                new_users.append(UserLog(
+                    username=username,
+                    can_create_db=can_create_db,
+                    is_superuser=is_superuser,
+                    inherit=inherit,
+                    create_role=create_role,
+                    login=login,
+                    replication=replication,
+                    bypass_rls=bypass_rls,
+                ))
+        if new_users:
+            UserLog.objects.bulk_create(new_users)
         cursor.execute("SELECT groname FROM pg_catalog.pg_group;")
         groups = cursor.fetchall()
-        GroupLog.objects.all().delete()
+        new_groups = []
         for group in groups:
-            GroupLog.objects.create(groupname=group[0])
+            groupname = group[0]
+            if groupname not in existing_groups:
+                new_groups.append(GroupLog(groupname=groupname))
+        if new_groups:
+            GroupLog.objects.bulk_create(new_groups)
         message = sync_data_base_success(temp_db_settings['dbname'])
         messages.success(request, message)
         create_audit_log(user_requester, 'info', 'database', user_requester, message)
@@ -187,3 +199,4 @@ def sync_users_and_groups(request, db_id):
         if conn is not None:
             conn.close()
     return redirect("database_list")
+
