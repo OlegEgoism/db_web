@@ -23,7 +23,7 @@
                     <h3>Схемы</h3>
                     <ul>
                         {% for schema in tables_by_schema.keys %}
-                            <li>
+                            <li class="schema-item">
                                 <a href="javascript:void(0);" onclick="showSchemaTables('{{ schema }}')">
                                     📂 {{ schema }}
                                 </a>
@@ -34,7 +34,7 @@
                 <div class="schema-content">
                     {% for schema, tables in tables_by_schema.items %}
                         <div class="schema-container" id="schema-{{ schema }}" style="display: none;">
-                            <h3 class="schema-title">
+                            <h3 style="text-align: left">
                                 {{ schema }}
                             </h3>
                             <table class="permissions-table">

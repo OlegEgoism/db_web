@@ -22,7 +22,10 @@
             <table class="settings-table">
                 <tr>
                     <td><label for="id_pagination_size">Размер пагинации на странице:</label></td>
-                    <td>{{ form.pagination_size }} (Минимальное значение 1)</td>
+                    <td>
+                        <input type="number" name="pagination_size" id="id_pagination_size"
+                               value="{{ form.pagination_size.value|default:1 }}" min="1" required>
+                    </td>
                 </tr>
                 <tr>
                     <td><label for="id_send_email">Отправка сообщений на почту:</label></td>

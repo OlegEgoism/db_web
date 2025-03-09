@@ -610,3 +610,19 @@ main {
     gap: 10px; /* Отступ между элементами */
     justify-content: flex-start; /* Выравнивание элементов */
 }
+
+
+.schema-item a {
+    display: block; /* Делаем ссылку блочной */
+    text-align: left; /* Текст влево */
+    text-decoration: none;
+    color: #020202;
+    font-weight: bold;
+    padding: 6px 10px;
+    border-radius: 5px;
+    transition: background 0.3s;
+}
+
+.schema-item a:hover {
+    background: #e9ecef;
+}
