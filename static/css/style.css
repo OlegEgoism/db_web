@@ -49,7 +49,7 @@ main {
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
 }
 .welcome-group {
-    max-width: 600px;
+    max-width: 800px;
     margin: 50px auto;
     text-align: center;
     background-color: rgba(100, 130, 168, 0.1);
@@ -178,6 +178,7 @@ main {
     cursor: pointer;
     text-align: center;
     font-weight: bold;
+    width: 240px;
 }
 .group-link-user:hover {
     background-color: #cce1f7;
