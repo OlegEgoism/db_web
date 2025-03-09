@@ -3,8 +3,6 @@ import psycopg2
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.core.mail import EmailMultiAlternatives
-from django.db import connection
-from django.http import HttpResponseNotFound
 from django.template.loader import render_to_string
 from django.utils import timezone
 from .forms import UserCreateForm
@@ -12,10 +10,8 @@ from django.shortcuts import render, redirect, get_object_or_404
 from .models import UserLog, SettingsProject, ConnectingDB
 from django.contrib import messages
 from .audit_views import delete_user_messages_email, delete_user_messages_success, delete_user_messages_error, create_audit_log, create_user_messages_error, \
-    create_user_messages_error_email, create_user_messages_success, create_user_messages_email, \
-    user_info_error, user_data, edit_user_messages_email_error, edit_user_messages_success, edit_user_messages_email_success, \
-    edit_user_messages_add_group_error, edit_user_messages_delete_group_success, edit_user_messages_delete_group_error, \
-    edit_user_messages_add_group_success, edit_user_messages_role_permissions, user_error, create_user_error, create_user_messages_email_error, \
+    create_user_messages_error_email, create_user_messages_success, create_user_messages_email, user_info_error, edit_user_messages_success, \
+    edit_user_messages_delete_group_success, edit_user_messages_add_group_success, user_error, create_user_error, create_user_messages_email_error, \
     user_info_all_error, edit_user_messages_db_error
 
 created_at = datetime(2000, 1, 1, 0, 0)
@@ -54,7 +50,8 @@ def user_list(request, db_id):
                 "username": user,
                 "created_at": user_logs[user].created_at if user in user_logs else None,
                 "updated_at": user_logs[user].updated_at if user in user_logs else None,
-                "group_count": group_count
+                "group_count": group_count,
+                "email": user_logs[user].email if user in user_logs else None,
             })
         cursor.close()
         conn.close()

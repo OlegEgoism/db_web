@@ -36,12 +36,15 @@
                             {{ user.username }}
                         </a>
                     </div>
-
                     <div class="group-dates">
                         <small>Создан:
                             {% if user.created_at %}{{ user.created_at|date:"d.m.Y H:i" }}{% else %}—{% endif %}</small>
                         <small>Изменен:
                             {% if user.updated_at %}{{ user.updated_at|date:"d.m.Y H:i" }}{% else %}—{% endif %}</small>
+                    </div>
+                    <div class="group-name">
+                        <small>Почта:
+                            {% if user.email %}{{ user.email }}{% else %}<span class="no-email">Не указан</span>{% endif %}</small>
                     </div>
                     <div class="group-user-count">
                         <small>Групп: {{ user.group_count }} шт.</small>
