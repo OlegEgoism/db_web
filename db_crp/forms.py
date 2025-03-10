@@ -82,7 +82,7 @@ class SettingsProjectForm(forms.ModelForm):
     pagination_size = models.IntegerField(
         verbose_name="Размер пагинации на странице",
         default=20,
-        validators=[MinValueValidator(1), MaxValueValidator(200)]  # Ограничение от 1 до 200
+        validators=[MinValueValidator(1), MaxValueValidator(200)]
     )
     send_email = models.BooleanField(verbose_name="Отправка сообщений на почту", default=True)
 

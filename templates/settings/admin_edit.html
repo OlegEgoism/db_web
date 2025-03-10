@@ -2,7 +2,7 @@
 <title>{% block title %}Редактирование администратора{% endblock %}</title>
 
 {% block content %}
-    <div class="welcome-edit">
+    <div class="welcome-container">
         <h2 class="welcome-title">Редактирование администратора: {{ admin_user.username }}</h2>
         <hr>
 
@@ -16,10 +16,9 @@
             </div>
         {% endif %}
 
-        <form method="post" enctype="multipart/form-data">
+        <form method="post" enctype="multipart/form-data" style="text-align: left">
             {% csrf_token %}
             {{ form.as_p }}
-
             <div class="all-btn">
                 <a href="{% url 'admin_info' %}" class="btn btn-cancel">Назад</a>
                 <button type="submit" class="btn btn-save">Сохранить</button>

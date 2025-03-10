@@ -443,13 +443,13 @@ main {
 }
 .user-container {
     display: flex;
-    flex-wrap: wrap; /* Разрешаем перенос на новую строку */
-    gap: 10px; /* Отступ между элементами */
-    justify-content: flex-start; /* Выравнивание элементов */
+    flex-wrap: wrap;
+    gap: 10px;
+    justify-content: flex-start;
 }
 .schema-item a {
-    display: block; /* Делаем ссылку блочной */
-    text-align: left; /* Текст влево */
+    display: block;
+    text-align: left;
     text-decoration: none;
     color: #020202;
     font-weight: bold;
