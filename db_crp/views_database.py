@@ -22,9 +22,13 @@ def database_list(request):
     return render(request, "databases/database_list.html", {"databases_info": databases_info})
 
 
+from django.contrib import messages
+from django.db.utils import OperationalError
+
 @login_required
 def tables_list(request, db_id):
     """Список таблиц в выбранной базе данных"""
+    user_requester = request.user.username if request.user.is_authenticated else "Аноним"
     connection_info = get_object_or_404(ConnectingDB, id=db_id)
     db_settings = settings.DATABASES.get('default', {})
     temp_db_settings = {
@@ -41,29 +45,49 @@ def tables_list(request, db_id):
         'OPTIONS': db_settings.get('OPTIONS'),
         'TIME_ZONE': db_settings.get('TIME_ZONE'),
     }
-    temp_connection = DatabaseWrapper(temp_db_settings, alias="temp_connection")
-    temp_connection.connect()
     tables_info = []
     db_size = "Неизвестно"
     try:
+        # missing_params = [key for key, value in temp_db_settings.items() if value in [None, "", {}]]
+        # if missing_params and temp_db_settings['PASSWORD'] == None:
+        #     raise ValueError(f"Ошибка! Отсутствуют параметры подключения: {', '.join(missing_params)}")
+        temp_connection = DatabaseWrapper(temp_db_settings, alias="temp_connection")
+        temp_connection.connect()
         with temp_connection.cursor() as cursor:
             cursor.execute("""
-                    SELECT schemaname, tablename, pg_size_pretty(pg_total_relation_size('"' || schemaname || '"."' || tablename || '"'))
-                    FROM pg_catalog.pg_tables
-                    WHERE schemaname NOT IN ('pg_catalog', 'information_schema');
-                """)
+                SELECT schemaname, tablename, 
+                pg_size_pretty(pg_total_relation_size('"' || schemaname || '"."' || tablename || '"'))
+                FROM pg_catalog.pg_tables
+                WHERE schemaname NOT IN ('pg_catalog', 'information_schema');
+            """)
             tables_info = [{"schema": row[0], "name": row[1], "size": row[2]} for row in cursor.fetchall()]
             cursor.execute(f"SELECT pg_size_pretty(pg_database_size('{connection_info.name_db}'));")
             db_size = cursor.fetchone()[0]
+    except OperationalError as e:
+        message = f"Ошибка подключения к БД: {str(e)}"
+        messages.error(request, message)
+        create_audit_log(user_requester, 'info', 'database', user_requester, f"{message}: {str(e)}")
+        tables_info = []
+        db_size = "Ошибка"
+
+    except ValueError as e:
+        messages.error(request, str(e))
+        tables_info = []
+        db_size = "Ошибка"
+
     except Exception as e:
-        tables_info = [{"name": f"Ошибка: {str(e)}", "size": "—"}]
+        message = f"Ошибка при загрузке таблиц: {str(e)}"
+        messages.error(request, message)
+        tables_info = []
     finally:
-        temp_connection.close()
+        if 'temp_connection' in locals():
+            temp_connection.close()
     return render(request, "databases/tables_info.html", {
         "db_name": connection_info.name_db,
         "db_size": db_size,
         "tables_info": tables_info,
     })
+
 
 
 def database_connect(request):

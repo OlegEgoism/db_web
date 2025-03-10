@@ -92,17 +92,17 @@ def edit_user_messages_success(user_name):  # +
     return f"Данные пользователь '{user_name}' обновлен."
 
 
-def edit_user_messages_delete_group_error(user_name, group_name):
-    return f"Ошибка при удалении группы '{group_name}' пользователю '{user_name}'"
-
-
-def edit_user_messages_add_group_error(user_name, group_name):
-    return f"Ошибка при добавлении группы '{group_name}' пользователю '{user_name}'"
-
-
-def edit_user_messages_role_permissions(user_name, role_permissions):
-    return f"Изменение прав доступа пользователя '{user_name}'. Обновленные права: '{role_permissions}'."
-
+# def edit_user_messages_delete_group_error(user_name, group_name):
+#     return f"Ошибка при удалении группы '{group_name}' пользователю '{user_name}'"
+#
+#
+# def edit_user_messages_add_group_error(user_name, group_name):
+#     return f"Ошибка при добавлении группы '{group_name}' пользователю '{user_name}'"
+#
+#
+# def edit_user_messages_role_permissions(user_name, role_permissions):
+#     return f"Изменение прав доступа пользователя '{user_name}'. Обновленные права: '{role_permissions}'."
+#
 
 # УДАЛЕНИЕ ПОЬЗОВАТЕЛЯ
 def delete_user_messages_error(user_name):
@@ -124,8 +124,8 @@ def group_data(group_name):  # +
 
 
 # СПИСОК ГРУППЫ
-def user_groups_data_error(user_groups_data):  # +
-    return f"Ошибка подключения '{user_groups_data}'."
+def user_groups_data_error():  # +
+    return f"Ошибка подключения к группе."
 
 
 # УДАЛЕНИЕ ГРУППЫ

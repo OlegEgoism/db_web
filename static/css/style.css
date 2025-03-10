@@ -328,6 +328,7 @@ main {
 .table-list {
     width: 100%;
     border-collapse: collapse;
+    text-align: left;
 }
 .table-list th, .table-list td {
     padding: 10px;

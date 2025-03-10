@@ -59,8 +59,8 @@ def group_list(request, db_id):
         cursor.close()
         conn.close()
     except Exception as e:
-        message = user_groups_data_error(user_groups_data)
-        messages.error(request, f"{message}: {str(e)}")
+        message = f"Ошибка подключения к группам: {str(e)}"
+        messages.error(request, message)
         create_audit_log(user_requester, 'info', 'group', user_requester, f"{message}: {str(e)}")
     return render(request, 'groups/group_list.html', {
         'user_groups_data': user_groups_data,
