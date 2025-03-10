@@ -20,12 +20,12 @@
         <div class="info-item">
             <span class="info-label">Дата создания:</span>
             <span class="info-value">{% if group_log.created_at %}
-                {{ group_log.created_at|date:"d.m.Y - H:i" }}{% else %}—{% endif %}</span>
+                {{ group_log.created_at|date:"d.m.Y H:i" }}{% else %}—{% endif %}</span>
         </div>
         <div class="info-item">
             <span class="info-label">Дата изменения:</span>
             <span class="info-value">{% if group_log.updated_at %}
-                {{ group_log.updated_at|date:"d.m.Y - H:i" }}{% else %}—{% endif %}</span>
+                {{ group_log.updated_at|date:"d.m.Y H:i" }}{% else %}—{% endif %}</span>
         </div>
         <hr>
 

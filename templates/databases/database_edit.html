@@ -19,11 +19,11 @@
 
         <div class="info-item">
             <span class="info-label">Дата создания:</span>
-            <span class="info-value">{% if database.created_at %}{{ database.created_at|date:"d.m.Y - H:i" }}{% else %}—{% endif %}</span>
+            <span class="info-value">{% if database.created_at %}{{ database.created_at|date:"d.m.Y H:i" }}{% else %}—{% endif %}</span>
         </div>
         <div class="info-item">
             <span class="info-label">Дата изменения:</span>
-            <span class="info-value">{% if database.updated_at %} {{ database.updated_at|date:"d.m.Y - H:i" }} {% else %}—{% endif %}</span>
+            <span class="info-value">{% if database.updated_at %} {{ database.updated_at|date:"d.m.Y H:i" }} {% else %}—{% endif %}</span>
         </div>
         <hr>
     
