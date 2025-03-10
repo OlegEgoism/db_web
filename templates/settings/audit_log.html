@@ -1,0 +1,105 @@
+{% extends 'base.html' %}
+<title>{% block title %}Аудит приложения{% endblock %}</title>
+
+{% block content %}
+    <div class="welcome-container">
+        <h2 class="welcome-title">Журнал аудита</h2>
+        <hr>
+
+        <!-- Вывод сообщений об ошибках -->
+        {% if messages %}
+            <div class="messages">
+                {% for message in messages %}
+                    <div class="alert {% if message.tags == 'success' %}alert-success{% else %}alert-error{% endif %}" role="alert">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        <!-- Фильтр -->
+        <div class="audit-filters">
+            <form method="get" class="filter-form">
+                <label for="action_type">Действие:</label>
+                <select name="action_type" class="o-button">
+                    <option value="">Все</option>
+                    {% for value, label in action_choices %}
+                        <option value="{{ value }}" {% if value == selected_action %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+                <label for="entity_type">Объект:</label>
+                <select name="entity_type" class="o-button">
+                    <option value="">Все</option>
+                    {% for value, label in entity_choices %}
+                        <option value="{{ value }}" {% if value == selected_entity %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+                <label for="username">Пользователь:</label>
+                <select name="username" class="o-button">
+                    <option value="">Все</option>
+                    {% for user in usernames %}
+                        <option value="{{ user }}" {% if user == selected_user %}selected{% endif %}>{{ user }}</option>
+                    {% endfor %}
+                </select>
+                <label for="start_date">Даты с:</label>
+                <input type="date" name="start_date" class="d-button" value="{{ start_date }}">
+                <label for="end_date">по:</label>
+                <input type="date" name="end_date" class="d-button" value="{{ end_date }}">
+                <br>
+                <p></p>
+                <label for="search">Поиск:</label>
+                <input type="text" class="audit-search" name="search" value="{{ search_query }}" placeholder="Поиск по всему массиву данных">
+                <button type="submit" class="btn btn-save">Применить</button>
+                <a href="{% url 'audit_log' %}" class="btn btn-cancel">Сбросить</a>
+                <a href="{% url 'audit_log_export' %}?{{ request.GET.urlencode }}" class="btn btn-save">Экспорт в Excel</a>
+            </form>
+        </div>
+
+        <!-- Таблица аудита -->
+        <table class="audit-table">
+            <thead>
+            <tr>
+                <th>Дата</th>
+                <th>Пользователь</th>
+                <th>Действие</th>
+                <th>Объект</th>
+                <th>Название</th>
+                <th>Иннформация</th>
+            </tr>
+            </thead>
+            <tbody>
+            {% for entry in page_obj %}
+                <tr>
+                    <td>{{ entry.timestamp|date:"d.m.Y H:i" }}</td>
+                    <td>{{ entry.username }}</td>
+                    <td>{{ entry.get_action_type_display }}</td>
+                    <td>{{ entry.get_entity_type_display }}</td>
+                    <td>{{ entry.entity_name }}</td>
+                    <td>{{ entry.details }}</td>
+                </tr>
+            {% empty %}
+                <tr>
+                    <td colspan="6" class="no-data">Нет данных</td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+        <p></p>
+
+        <!-- Пагинация -->
+        <div class="pagination">
+            {% if page_obj.has_previous %}
+                <a href="?page=1" class="btn btn-page">Первая</a>
+                <a href="?page={{ page_obj.previous_page_number }}" class="btn btn-page">Назад</a>
+            {% endif %}
+            <span class="current-page">Страница {{ page_obj.number }} из {{ page_obj.paginator.num_pages }}</span>
+            {% if page_obj.has_next %}
+                <a href="?page={{ page_obj.next_page_number }}" class="btn btn-page">Вперед</a>
+                <a href="?page={{ page_obj.paginator.num_pages }}" class="btn btn-page">Последняя</a>
+            {% endif %}
+        </div>
+        <div class="all-btn">
+            <a href="{% url 'settings_info' %}" class="btn btn-cancel">Назад</a>
+        </div>
+    </div>
+{% endblock %}

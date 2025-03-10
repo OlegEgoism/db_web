@@ -1,0 +1,31 @@
+{% extends 'base.html' %}
+<title>{% block title %}Создать группу{% endblock %}</title>
+
+{% block content %}
+    <div class="welcome-create">
+        <h2 class="welcome-title">Создать группу</h2>
+        <hr>
+
+        <!-- Вывод сообщений об ошибках -->
+        {% if messages %}
+            <div class="messages">
+                {% for message in messages %}
+                    <div class="alert {% if message.tags == 'success' %}alert-success{% else %}alert-error{% endif %}"
+                         role="alert">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        <form method="post">
+            {% csrf_token %}
+            {{ form.as_p }}
+            <div class="all-btn">
+                <a href="{% url 'group_list' db_id=db_id %}" class="btn btn-cancel">Назад</a>
+                <button type="submit" class="btn btn-save">Создать группу</button>
+            </div>
+        </form>
+
+    </div>
+{% endblock %}

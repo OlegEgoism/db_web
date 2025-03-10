@@ -1,21 +1,41 @@
 {% extends 'base.html' %}
+<title>{% block title %}Создать пользователя{% endblock %}</title>
 
 {% block content %}
-    <div class="welcome-container">
-        <h1 class="welcome-title">Создать нового пользователя в базе данных</h1>
-        <form method="post" class="registration-form">
+    <div class="welcome-create">
+        <h1 class="welcome-title">Создать пользователя</h1>
+        <hr>
+
+        <!-- Вывод сообщений об ошибках -->
+        {% if messages %}
+            <div class="messages">
+                {% for message in messages %}
+                    <div class="alert {% if message.tags == 'success' %}alert-success{% else %}alert-error{% endif %}" role="alert">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        <form method="post">
             {% csrf_token %}
-            <div class="form-group">
-                <label for="username" class="form-label">Имя пользователя:</label>
-                {{ form.username }}
+            {{ form.as_p }}
+            <hr>
+            <strong>Описание прав доступа</strong>
+            <ul style="text-align: left; margin-top: 20px; font-size: 12px">
+                <li><strong>Может создавать БД:</strong> Разрешение на создание баз данных.</li>
+                <li><strong>Суперпользователь:</strong> Полный доступ ко всем объектам базы данных.</li>
+                <li><strong>Наследование:</strong> Наследование привилегий от групп, в которые входит пользователь.</li>
+                <li><strong>Право создания роли:</strong> Разрешение на создание, изменение и удаление ролей.</li>
+                <li><strong>Право входа:</strong> Разрешение на вход в базу данных.</li>
+                <li><strong>Право репликации:</strong> Разрешение на выполнение логической и физической репликации данных.</li>
+                <li><strong>Bypass RLS:</strong> Игнорирование политик безопасности на уровне строк (Row-Level Security).</li>
+            </ul>
+            <div class="all-btn">
+                <a href="{% url 'user_list' db_id=db_id %}" class="btn btn-cancel">Назад</a>
+                <button type="submit" class="btn btn-save">Создать</button>
             </div>
-            <div class="form-group">
-                <label for="password" class="form-label">Пароль:</label>
-                {{ form.password }}
-            </div>
-            <button type="submit" class="btn btn-primary">Создать пользователя</button>
         </form>
-        <a href="{% url 'user_list' %}" class="btn btn-primary">Назад</a>
+
     </div>
 {% endblock %}
-

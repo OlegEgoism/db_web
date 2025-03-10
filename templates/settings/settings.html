@@ -1,0 +1,30 @@
+{% extends 'base.html' %}
+<title>{% block title %}Настройки{% endblock %}</title>
+
+{% block content %}
+    <div class="welcome-container">
+        <h2 class="welcome-title">Настройки</h2>
+        <hr>
+
+        <!-- Вывод сообщений -->
+        {% if messages %}
+            <div class="messages">
+                {% for message in messages %}
+                    <div class="alert {% if message.tags == 'success' %}alert-success{% else %}alert-error{% endif %}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        <div class="all-btn">
+            <a href="{% url 'settings_project' %}" class="btn btn-save">Настройки приложения</a>
+        </div>
+        <div class="all-btn">
+            <a href="{% url 'session_list' %}" class="btn btn-save">Активные сессии пользователей</a>
+        </div>
+        <div class="all-btn">
+            <a href="{% url 'admin_info' %}" class="btn btn-save">Информация об администраторах</a>
+        </div>
+    </div>
+{% endblock %}

@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+<title>{% block title %}Синхронизация данных{% endblock %}</title>
+
+{% block content %}
+    <div class="welcome-container">
+        <h2 class="welcome-title">Синхронизация пользователей и групп</h2>
+        <hr>
+
+        {% if messages %}
+            <div class="messages">
+                {% for message in messages %}
+                    <div class="alert {% if message.tags == 'success' %}alert-success{% else %}alert-error{% endif %}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        <form method="post">
+            {% csrf_token %}
+            <p>Нажмите кнопку ниже для синхронизации данных пользователей и групп из базы данных.</p>
+            <button type="submit" class="btn btn-save">Синхронизировать</button>
+        </form>
+
+        <div class="all-btn">
+            <a href="{% url 'database_list' %}" class="btn btn-cancel">Назад</a>
+        </div>
+    </div>
+{% endblock %}

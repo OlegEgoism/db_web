@@ -1,36 +1,50 @@
 {% extends 'base.html' %}
+<title>{% block title %}Регистрация{% endblock %}</title>
 
 {% block content %}
-<div class="welcome-container">
-    <h2 class="welcome-title">Регистрация</h2>
-    <form method="post" enctype="multipart/form-data" class="login-form">
-        {% csrf_token %}
-        <div class="form-group">
-            <label for="username" class="form-label">Логин:</label>
-            {{ form.username }}
-        </div>
-        <div class="form-group">
-            <label for="email" class="form-label">Email:</label>
-            {{ form.email }}
-        </div>
-        <div class="form-group">
-            <label for="phone_number" class="form-label">Номер телефона:</label>
-            {{ form.phone_number }}
-        </div>
-        <div class="form-group">
-            <label for="photo" class="form-label">Фото:</label>
-            {{ form.photo }}
-        </div>
-        <div class="form-group">
-            <label for="password1" class="form-label">Пароль:</label>
-            {{ form.password1 }}
-        </div>
-        <div class="form-group">
-            <label for="password2" class="form-label">Проверка пароля:</label>
-            {{ form.password2 }}
-        </div>
-        <button type="submit" class="btn">Зарегистрироваться</button>
-    </form>
-    <h3>Уже есть аккаунт?<a href="{% url 'register' %}"> Войдите</a></h3>
-</div>
+    <div class="welcome-container">
+        <h2 class="welcome-title">Регистрация</h2>
+        <hr>
+
+        <!-- Вывод сообщений об ошибках -->
+        {% if messages %}
+            <div class="messages">
+                {% for message in messages %}
+                    <div class="alert {% if message.tags == 'success' %}alert-success{% else %}alert-error{% endif %}" role="alert">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        <form method="post" enctype="multipart/form-data" class="login-form">
+            {% csrf_token %}
+            <div class="form-group">
+                <label for="username" class="form-label">Логин:</label>
+                {{ form.username }}
+            </div>
+            <div class="form-group">
+                <label for="email" class="form-label">Email:</label>
+                {{ form.email }}
+            </div>
+            <div class="form-group">
+                <label for="phone_number" class="form-label">Номер телефона:</label>
+                {{ form.phone_number }}
+            </div>
+            <div class="form-group">
+                <label for="photo" class="form-label">Фото:</label>
+                {{ form.photo }}
+            </div>
+            <div class="form-group">
+                <label for="password1" class="form-label">Пароль:</label>
+                {{ form.password1 }}
+            </div>
+            <div class="form-group">
+                <label for="password2" class="form-label">Проверка пароля:</label>
+                {{ form.password2 }}
+            </div>
+            <button type="submit" class="btn">Зарегистрироваться</button>
+        </form>
+        <h3>Уже есть аккаунт?<a href="{% url 'register' %}"> Войдите</a></h3>
+    </div>
 {% endblock %}

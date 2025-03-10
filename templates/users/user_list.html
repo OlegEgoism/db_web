@@ -1,33 +1,84 @@
 {% extends 'base.html' %}
+<title>{% block title %}Список пользователей{% endblock %}</title>
 
 {% block content %}
     <div class="welcome-container">
-        <h1 class="welcome-title">Список пользователей в базе данных</h1>
-        <a href="{% url 'user_create' %}" class="btn btn-add">Создать пользователя</a>
-        <table>
-            <thead>
-            <tr>
-                <th>Логин</th>
-                <th>Действия</th>
-            </tr>
-            </thead>
-            <tbody>
-            {% for user in users %}
-                <tr>
-                    <td>{{ user }}</td>
-                    <td>
-                        <a href="{% url 'user_info' username=user %}" class="btn btn-info">ℹ️ Информация</a>
-                        <a href="{% url 'user_change_password' username=user %}" class="btn btn-change">🔑 Сменить пароль</a>
-                        <a href="{% url 'user_add_to_group' %}?username={{ user }}" class="btn btn-group">👥 Добавить в группу</a>
-                        <a href="{% url 'user_delete' username=user %}" class="btn btn-delete" onclick="return confirm('Удалить пользователя {{ user }}?')">🗑️ Удалить</a>
-                    </td>
-                </tr>
+        <div class="title-with-button" style="display: flex; align-items: center; justify-content: space-between;">
+            <h2 class="welcome-title">Список пользователей ({{ users_data|length }} шт.)</h2>
+            <a href="{% url 'user_create' db_id=db_id %}" class="btn btn-save">Создать пользователя</a>
+        </div>
+        <hr>
+
+        <!-- Вывод сообщений об ошибках -->
+        {% if messages %}
+            <div class="messages">
+                {% for message in messages %}
+                    <div class="alert {% if message.tags == 'success' %}alert-success{% else %}alert-error{% endif %}"
+                         role="alert">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        <!-- Поле поиска -->
+        <input type="text" id="userSearch" class="user-search" onkeyup="filterUsers()"
+               placeholder="Поиск пользователя..."/>
+
+        <div id="userList">
+            {% for user in users_data %}
+                <div class="group-item">
+                    <div class="group-number">
+                        <strong>{{ forloop.counter }}. </strong>
+                    </div>
+                    <div class="group-name">
+                        <a href="{% url 'user_info' db_id=db_id username=user.username %}" class="group-link-user">
+                            {{ user.username }}
+                        </a>
+                    </div>
+                    <div class="group-dates">
+                        <small>Создан:
+                            {% if user.created_at %}{{ user.created_at|date:"d.m.Y H:i" }}{% else %}—{% endif %}</small>
+                        <small>Изменен:
+                            {% if user.updated_at %}{{ user.updated_at|date:"d.m.Y H:i" }}{% else %}—{% endif %}</small>
+                    </div>
+                    <div class="group-name">
+                        <small>Почта:
+                            {% if user.email %}{{ user.email }}{% else %}<span class="no-email">Не указана</span>{% endif %}</small>
+                    </div>
+                    <div class="group-user-count">
+                        <small>Групп: {{ user.group_count }} шт.</small>
+                    </div>
+                    <div class="user-actions">
+                        <a href="{% url 'user_edit' db_id=db_id username=user.username %}" class="btn btn-edit">Редактировать</a>
+                        <a href="{% url 'user_delete' db_id=db_id username=user.username %}" class="btn btn-delete"
+                           onclick="return confirm('Удалить пользователя {{ user.username }} из базы?')">Удалить</a>
+                    </div>
+                </div>
             {% empty %}
-                <tr>
-                    <td colspan="2" class="no-users">Нет пользователей</td>
-                </tr>
+                <li>Нет пользователей</li>
             {% endfor %}
-            </tbody>
-        </table>
+        </div>
+        <div class="all-btn">
+            <a href="{% url 'database_list' %}" class="btn btn-cancel">Назад</a>
+        </div>
     </div>
+
+    <script>
+        function filterUsers() {
+            let input = document.getElementById("userSearch");
+            let filter = input.value.toLowerCase();
+            let items = document.querySelectorAll(".group-item");
+
+            items.forEach(item => {
+                let userName = item.querySelector(".group-name a").textContent.toLowerCase();
+                if (userName.includes(filter)) {
+                    item.style.display = "";
+                } else {
+                    item.style.display = "none";
+                }
+            });
+        }
+    </script>
+
 {% endblock %}

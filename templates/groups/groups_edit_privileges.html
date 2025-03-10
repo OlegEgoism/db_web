@@ -1,0 +1,85 @@
+{% extends 'base.html' %}
+<title>{% block title %}Доступные базы данных в группе{% endblock %}</title>
+
+{% block content %}
+    <div class="welcome-container">
+        <div class="title-with-button" style="display: flex; align-items: center; justify-content: space-between;">
+            <h2 class="welcome-title">Доступные базы данных в группе {{ group_name }} ({{ databases|length }} шт.)</h2>
+        </div>
+        <hr>
+
+        <!-- Вывод сообщений -->
+        {% if messages %}
+            <div class="messages">
+                {% for message in messages %}
+                    <div class="alert {% if message.tags == 'success' %}alert-success{% elif message.tags == 'warning' %}alert-warning{% else %}alert-error{% endif %}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        <!-- Поле поиска -->
+        <input type="text" id="databaseSearch" class="group-search" onkeyup="filterDatabases()" placeholder="Поиск базы данных..."/>
+
+        <div id="databaseList">
+            {% for db in databases %}
+                <div class="group-item">
+                    <div class="group-number">
+                        <strong>{{ forloop.counter }}.</strong>
+                    </div>
+                    <div class="group-name">
+
+
+{% if db.id %}
+    <a href="{% url 'groups_edit_privileges_tables' db.id group_name %}" class="group-link-user">
+        {{ db.name_db }}
+    </a>
+{% else %}
+    <span class="error">Ошибка: у базы данных нет ID</span>
+{% endif %}
+
+
+
+                    </div>
+                    <div class="group-dates">
+                        <small>Создан: {% if db.created_at %}{{ db.created_at|date:"d.m.Y H:i" }}{% else %}—{% endif %}</small>
+                        <small>Изменен: {% if db.updated_at %}{{ db.updated_at|date:"d.m.Y H:i" }}{% else %}—{% endif %}</small>
+                    </div>
+                    <div class="group-user-count">
+                        <small>Хост: {{ db.host_db }}</small>
+                    </div>
+                    <div class="group-user-count">
+                        <small>Порт :{{ db.port_db }}</small>
+                    </div>
+                    <div class="group-user-count">
+                        <small>Пользователь: {{ db.user_db }}</small>
+                    </div>
+                </div>
+
+            {% empty %}
+                <li>Нет доступных баз данных</li>
+            {% endfor %}
+        <div class="all-btn">
+            <a href="{% url 'group_list' db_id=db_id %}" class="btn btn-cancel">Назад</a>
+        </div>
+        </div>
+    </div>
+
+    <script>
+        function filterDatabases() {
+            let input = document.getElementById("databaseSearch");
+            let filter = input.value.toLowerCase();
+            let items = document.querySelectorAll(".group-item");
+            items.forEach(item => {
+                let dbName = item.querySelector(".group-name a").textContent.toLowerCase();
+                if (dbName.includes(filter)) {
+                    item.style.display = "";
+                } else {
+                    item.style.display = "none";
+                }
+            });
+        }
+    </script>
+
+{% endblock %}

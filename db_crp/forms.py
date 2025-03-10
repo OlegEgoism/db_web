@@ -1,102 +1,98 @@
 from django import forms
 from django.contrib.auth.forms import UserCreationForm
-from .models import CustomUser
+from django.core.validators import MinValueValidator, MaxValueValidator
+from django.db import models
+from .models import CustomUser, ConnectingDB, SettingsProject
 
 
 class CustomUserRegistrationForm(UserCreationForm):
-    """Регистрация пользователя"""
-    phone_number = forms.CharField(max_length=15, required=True, help_text='Формат с кодом телефона')
+    """Регистрация администратора"""
+    phone_number = forms.CharField(max_length=15, required=True, help_text="Формат с кодом телефона")
     photo = forms.ImageField(required=False)
 
     class Meta:
         model = CustomUser
-        fields = ('username', 'email', 'phone_number', 'photo', 'password1', 'password2')
+        fields = "username", "email", "phone_number", "photo", "password1", "password2"
+
+    def clean_email(self):
+        """Проверка уникальности email"""
+        email = self.cleaned_data.get("email")
+        if CustomUser.objects.filter(email=email).exists():
+            raise forms.ValidationError("Почта уже используется другим администратором.")
+        return email
 
 
 class UserCreateForm(forms.Form):
-    """Создать нового пользователя в базе данных"""
-    username = forms.CharField(label="Имя пользователя", max_length=150)
+    """Создания пользователя"""
+    username = forms.CharField(label="Логин", max_length=150)
+    email = forms.EmailField(label="Почта")
     password = forms.CharField(label="Пароль", widget=forms.PasswordInput)
+    can_create_db = forms.BooleanField(label="Может создавать БД", required=False)
+    is_superuser = forms.BooleanField(label="Суперпользователь", required=False)
+    inherit = forms.BooleanField(label="Наследование", required=False)
+    create_role = forms.BooleanField(label="Право создания роли", required=False)
+    login = forms.BooleanField(label="Право входа", required=False, initial=True)
+    replication = forms.BooleanField(label="Право репликации", required=False)
+    bypass_rls = forms.BooleanField(label="Bypass RLS", required=False)
 
 
-class ChangePasswordForm(forms.Form):
-    new_password = forms.CharField(label="Новый пароль", widget=forms.PasswordInput)
+class UserEditForm(forms.Form):
+    """Редактирование пользователя"""
+    email = forms.EmailField(label="Почта", required=False)
+    password = forms.CharField(label="Пароль", widget=forms.PasswordInput, required=False)
+    can_create_db = forms.BooleanField(label="Может создавать БД", required=False)
+    is_superuser = forms.BooleanField(label="Суперпользователь", required=False)
+    inherit = forms.BooleanField(label="Наследование", required=False)
+    create_role = forms.BooleanField(label="Право создания роли", required=False)
+    login = forms.BooleanField(label="Право входа", required=False)
+    replication = forms.BooleanField(label="Право репликации", required=False)
+    bypass_rls = forms.BooleanField(label="Bypass RLS", required=False)
 
 
-# class AddUserToGroupForm(forms.Form):
-#     username = forms.CharField(label="Имя пользователя", max_length=150)
-#     groupname = forms.ChoiceField(label="Выберите группу")
-#
-#     def __init__(self, *args, **kwargs):
-#         super().__init__(*args, **kwargs)
-#         self.fields['groupname'].choices = self.get_groups()
-#
-#     @staticmethod
-#     def get_groups():
-#         """Получаем список групп PostgreSQL без системных ролей."""
-#         with connection.cursor() as cursor:
-#             cursor.execute("""
-#                 SELECT rolname
-#                 FROM pg_roles
-#                 WHERE rolcanlogin = FALSE
-#                 AND rolname NOT LIKE 'pg_%';
-#             """)
-#             groups = cursor.fetchall()
-#         return [(group[0], group[0]) for group in groups]
-
-from django import forms
-from django.db import connection
-
-
-class AddUserToGroupForm(forms.Form):
-    username = forms.CharField(label="Имя пользователя", max_length=150, widget=forms.TextInput(attrs={'readonly': 'readonly'}))
-    groups = forms.MultipleChoiceField(label="Выберите группы", widget=forms.CheckboxSelectMultiple)
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.fields['groups'].choices = self.get_groups()
-
-    @staticmethod
-    def get_groups():
-        """Получаем список доступных групп PostgreSQL без системных."""
-        with connection.cursor() as cursor:
-            cursor.execute("""
-                SELECT rolname 
-                FROM pg_roles 
-                WHERE rolcanlogin = FALSE AND rolname NOT LIKE 'pg_%';
-            """)
-            groups = cursor.fetchall()
-        return [(group[0], group[0]) for group in groups]
+class GroupEditForm(forms.Form):
+    """Редактирование группы"""
+    groupname = forms.CharField(label="Название", max_length=150)
 
 
 class CreateGroupForm(forms.Form):
-    groupname = forms.CharField(label="Название группы", max_length=150)
+    """Создание группы"""
+    groupname = forms.CharField(label="Название", max_length=150)
 
 
-COLUMN_TYPES = [
-    ('INTEGER', 'Integer'),
-    ('TEXT', 'Text'),
-    ('BOOLEAN', 'Boolean'),
-    ('DATE', 'Date'),
-    ('FLOAT', 'Float'),
-]
+class DatabaseConnectForm(forms.ModelForm):
+    """Подключение к базе данных"""
+
+    class Meta:
+        model = ConnectingDB
+        fields = ["name_db", "user_db", "password_db", "host_db", "port_db"]
+        labels = {
+            "name_db": "Название базы данных",
+            "user_db": "Пользователь",
+            "password_db": "Пароль",
+            "host_db": "Хост",
+            "port_db": "Порт",
+        }
+        widgets = {
+            "password_db": forms.PasswordInput(),
+        }
 
 
-class TableCreateForm(forms.Form):
-    table_name = forms.CharField(label="Имя таблицы", max_length=50)
+class SettingsProjectForm(forms.ModelForm):
+    """Настройки проекта"""
+    pagination_size = models.IntegerField(
+        verbose_name="Размер пагинации на странице",
+        default=20,
+        validators=[MinValueValidator(1), MaxValueValidator(200)]
+    )
+    send_email = models.BooleanField(verbose_name="Отправка сообщений на почту", default=True)
 
-    # Динамически создаем 5 полей для столбцов
-    column_1_name = forms.CharField(label="Имя столбца 1", required=False)
-    column_1_type = forms.ChoiceField(choices=COLUMN_TYPES, required=False)
+    class Meta:
+        model = SettingsProject
+        fields = "pagination_size", "send_email"
 
-    column_2_name = forms.CharField(label="Имя столбца 2", required=False)
-    column_2_type = forms.ChoiceField(choices=COLUMN_TYPES, required=False)
 
-    column_3_name = forms.CharField(label="Имя столбца 3", required=False)
-    column_3_type = forms.ChoiceField(choices=COLUMN_TYPES, required=False)
-
-    column_4_name = forms.CharField(label="Имя столбца 4", required=False)
-    column_4_type = forms.ChoiceField(choices=COLUMN_TYPES, required=False)
-
-    column_5_name = forms.CharField(label="Имя столбца 5", required=False)
-    column_5_type = forms.ChoiceField(choices=COLUMN_TYPES, required=False)
+class CustomUserForm(forms.ModelForm):
+    """Редактирование администратора"""
+    class Meta:
+        model = CustomUser
+        fields = "phone_number", "email", "is_active", "is_superuser"

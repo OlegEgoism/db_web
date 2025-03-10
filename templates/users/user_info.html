@@ -1,48 +1,102 @@
 {% extends 'base.html' %}
+<title>{% block title %}Информация пользователя{% endblock %}</title>
 
 {% block content %}
-    <div class="welcome-container">
+    <div class="welcome-group">
         {% if user_data %}
-            <h1 class="welcome-title">Информация о пользователе: {{ user_data.username }}</h1>
-            <div>
-                <span class="info-label">ID пользователя:</span> {{ user_data.user_id }}
+            <h1 class="welcome-title">Информация пользователя: {{ user_data.username }}</h1>
+            <hr>
+
+            <!-- Вывод сообщений об ошибках -->
+            {% if messages %}
+                <div class="messages">
+                    {% for message in messages %}
+                        <div class="alert {% if message.tags == 'success' %}alert-success{% else %}alert-error{% endif %}" role="alert">
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+
+            <!-- Информация пользователя -->
+            <div class="info-item">
+                <span class="info-label">ID пользователя:</span>
+                <span class="info-value">{{ user_data.user_id }}</span>
             </div>
-            <div>
-                <span class="info-label">Может создавать базы данных:</span> {{ user_data.can_create_db }}
+            <div class="info-item">
+                <span class="info-label">Логин:</span>
+                <span class="info-value">{{ user_data.username }}</span>
             </div>
-            <div>
-                <span class="info-label">Суперпользователь:</span> {{ user_data.is_superuser }}
+            <div class="info-item">
+                <span class="info-label">Пароль (хэш):</span>
+                <span class="info-value">{{ user_data.password_hash }}</span>
             </div>
-            <div>
-                <span class="info-label">Может изменять системный каталог:</span> {{ user_data.can_update_catalog }}
+            <div class="info-item">
+                <span class="info-label">Email:</span>
+                <span class="info-value">{{ user_data.email|default:"Почта не указана" }}</span>
             </div>
-            <div>
-                <span class="info-label">Пароль (хэш):</span> {{ user_data.password_hash }}
-                <a href="{% url 'user_change_password' user_data.username %}" class="btn btn-password">Изменить пароль</a>
+            <div class="info-item">
+                <span class="info-label">Дата создания:</span>
+                <span class="info-value">{{ user_data.created_at|date:"d.m.Y H:i" }}</span>
             </div>
-            <div>
-                <span class="info-label">Действителен до:</span> {{ user_data.valid_until|default:"Без ограничений" }}
+            <div class="info-item">
+                <span class="info-label">Дата изменения:</span>
+                <span class="info-value">{{ user_data.updated_at|date:"d.m.Y H:i" }}</span>
             </div>
-            <div>
+            <h3>Права доступа</h3>
+            <div class="info-item">
+                <span class="info-label">Может создавать БД:</span>
+                <span class="info-value">{{ user_data.can_create_db }}</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">Суперпользователь:</span>
+                <span class="info-value">{{ user_data.is_superuser }}</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">Наследование:</span>
+                <span class="info-value">{{ user_data.inherit }}</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">Право создания роли:</span>
+                <span class="info-value">{{ user_data.create_role }}</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">Право входа:</span>
+                <span class="info-value">{{ user_data.login }}</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">Право репликации:</span>
+                <span class="info-value">{{ user_data.replication }}</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">Bypass RLS:</span>
+                <span class="info-value">{{ user_data.bypass_rls }}</span>
+            </div>
+            <h3>Группы</h3>
+            <div class="info-item">
+                <span class="info-label">Количество групп пользователя:</span>
+                <span class="info-value">{{ user_data.group_count }} шт.</span>
+            </div>
+            <hr>
+            <div class="info-item">
                 <span class="info-label">Группы пользователя:</span>
                 {% if user_data.groups %}
-                    <ul class="group-list">
-                        {% for group in user_data.groups %}
-                            <a href="{% url 'group_users' group %}" class="group-link-user">{{ group }}</a>
-                        {% endfor %}
-                    </ul>
+{% for group in user_data.groups %}
+    {% if group %}
+        <a href="{% url 'group_info' db_id=db_id group_name=group %}" class="group-link-user">{{ group }}</a>
+    {% endif %}
+{% endfor %}
+
                 {% else %}
-                    <p class="no-groups">Пользователь не состоит в группах.</p>
+                    <span class="no-groups"> Пользователь не состоит в группах</span>
                 {% endif %}
+            </div>
+            <div class="all-btn">
+                <a href="{% url 'user_list' db_id=db_id %}" class="btn btn-cancel">Назад</a>
+                <a href="{% url 'user_edit' db_id=db_id username=user_data.username %}" class="btn btn-edit">Редактировать</a>
             </div>
         {% else %}
             <h1 class="welcome-title">Пользователь не найден</h1>
         {% endif %}
-        {% if user_data.groups %}
-            <a href="{% url 'group_users' user_data.groups.0 %}" class="btn">Назад</a>
-        {% else %}
-            <a href="{% url 'group_list' %}" class="btn">Назад {{ user_data.groups }}</a>
-        {% endif %}
     </div>
 {% endblock %}
-
