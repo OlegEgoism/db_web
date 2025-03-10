@@ -1,18 +1,20 @@
 from django.contrib.auth import get_user_model
-from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.contrib.sessions.models import Session
 from django.core.paginator import Paginator
 from django.db.models import Q
 from django.utils.dateparse import parse_date
 from django.utils.timezone import now
-from .audit_views import create_audit_log, logout_user_success, export_audit_log_success, project_settings_success
+from .audit_views import create_audit_log, logout_user_success, export_audit_log_success, project_settings_success, admin_edir_success, admin_delete_success, \
+    admin_delete_my_success
 from .forms import SettingsProjectForm
-from django.shortcuts import render, redirect
-from django.contrib import messages
 import xlsxwriter
 from django.http import HttpResponse
-from .models import Audit, SettingsProject
+from .models import Audit, SettingsProject, CustomUser
+from django.shortcuts import render, get_object_or_404, redirect
+from django.contrib.auth.decorators import login_required
+from django.contrib import messages
+from .forms import CustomUserForm
 
 User = get_user_model()
 
@@ -188,3 +190,51 @@ def logout_user(request, session_id):
             messages.success(request, message)
             create_audit_log(user_requester, 'delete', 'session', user_requester, message)
     return redirect('session_list')
+
+
+@login_required
+def admin_info(request):
+    """Отображение информации об администраторах"""
+    admins = CustomUser.objects.all()  # Получаем всех администраторов
+    return render(request, 'settings/admin_info.html', {'admins': admins})
+
+
+@login_required
+def admin_edit(request, admin_id):
+    """Редактирование администратора"""
+    user_requester = request.user.username if request.user.is_authenticated else "Аноним"
+    admin_user = get_object_or_404(CustomUser, id=admin_id)
+    if request.method == "POST":
+        form = CustomUserForm(request.POST, request.FILES, instance=admin_user)
+        if form.is_valid():
+            form.save()
+            updated_data = {
+                "phone_number": admin_user.phone_number if admin_user.phone_number else "Не указан",
+                "email": admin_user.email if admin_user.email else "Не указан",
+                "is_active": "Да" if admin_user.is_active else "Нет",
+                "is_superuser": "Да" if admin_user.is_superuser else "Нет"
+            }
+            message = admin_edir_success(admin_user.username, updated_data)
+            messages.success(request, message)
+            create_audit_log(user_requester, 'update', 'settings', user_requester, message)
+            return redirect('admin_info')
+    else:
+        form = CustomUserForm(instance=admin_user)
+    return render(request, 'settings/admin_edit.html', {'form': form, 'admin_user': admin_user})
+
+
+@login_required
+def admin_delete(request, admin_id):
+    """Удаление администратора"""
+    user_requester = request.user.username if request.user.is_authenticated else "Аноним"
+    admin_user = get_object_or_404(CustomUser, id=admin_id)
+    if request.user == admin_user:
+        message = admin_delete_my_success(admin_user.username)
+        messages.success(request, message)
+        create_audit_log(user_requester, 'delete', 'settings', user_requester, message)
+        return redirect('admin_info')
+    admin_user.delete()
+    message = admin_delete_success(admin_user)
+    messages.success(request, message)
+    create_audit_log(user_requester, 'delete', 'settings', user_requester, message)
+    return redirect('admin_info')

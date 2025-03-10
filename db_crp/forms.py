@@ -7,16 +7,16 @@ from .models import CustomUser, ConnectingDB, SettingsProject
 
 class CustomUserRegistrationForm(UserCreationForm):
     """Регистрация администратора"""
-    phone_number = forms.CharField(max_length=15, required=True, help_text='Формат с кодом телефона')
+    phone_number = forms.CharField(max_length=15, required=True, help_text="Формат с кодом телефона")
     photo = forms.ImageField(required=False)
 
     class Meta:
         model = CustomUser
-        fields = ('username', 'email', 'phone_number', 'photo', 'password1', 'password2')
+        fields = "username", "email", "phone_number", "photo", "password1", "password2"
 
     def clean_email(self):
         """Проверка уникальности email"""
-        email = self.cleaned_data.get('email')
+        email = self.cleaned_data.get("email")
         if CustomUser.objects.filter(email=email).exists():
             raise forms.ValidationError("Почта уже используется другим администратором.")
         return email
@@ -64,16 +64,16 @@ class DatabaseConnectForm(forms.ModelForm):
 
     class Meta:
         model = ConnectingDB
-        fields = ['name_db', 'user_db', 'password_db', 'host_db', 'port_db']
+        fields = ["name_db", "user_db", "password_db", "host_db", "port_db"]
         labels = {
-            'name_db': "Название базы данных",
-            'user_db': "Пользователь",
-            'password_db': "Пароль",
-            'host_db': "Хост",
-            'port_db': "Порт",
+            "name_db": "Название базы данных",
+            "user_db": "Пользователь",
+            "password_db": "Пароль",
+            "host_db": "Хост",
+            "port_db": "Порт",
         }
         widgets = {
-            'password_db': forms.PasswordInput(),
+            "password_db": forms.PasswordInput(),
         }
 
 
@@ -86,11 +86,13 @@ class SettingsProjectForm(forms.ModelForm):
     )
     send_email = models.BooleanField(verbose_name="Отправка сообщений на почту", default=True)
 
-
     class Meta:
         model = SettingsProject
-        fields = ["pagination_size", "send_email"]
-        # labels = {
-        #     "pagination_size": "Размер пагинации на странице",
-        #     "send_email": "Отправка сообщений на почту",
-        # }
+        fields = "pagination_size", "send_email"
+
+
+class CustomUserForm(forms.ModelForm):
+    """Редактирование администратора"""
+    class Meta:
+        model = CustomUser
+        fields = "phone_number", "email", "is_active", "is_superuser"

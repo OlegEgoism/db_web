@@ -20,7 +20,7 @@ from django.contrib import admin
 from django.urls import path
 from django.contrib.auth import views as auth_views
 from db_crp.views import home, register, logout_view
-from db_crp.views_setting import settings_info, audit_log, audit_log_export, session_list, logout_user, settings_project
+from db_crp.views_setting import settings_info, audit_log, audit_log_export, session_list, logout_user, settings_project, admin_info, admin_edit, admin_delete
 from db_crp.views_group import group_list, group_create, group_edit, group_delete, group_info, groups_edit_privileges_tables
 from db_crp.views_user import user_list, user_create, user_info, user_edit, user_delete
 from db_crp.views_database import database_list, tables_list, database_connect, database_edit, database_delete, sync_users_and_groups
@@ -40,6 +40,10 @@ urlpatterns = [
     path("settings_project/", settings_project, name="settings_project"),  # Настройки проекта
     path("session_list/", session_list, name="session_list"),  # Список сессий пользователей
     path("sessions/logout_user/<str:session_id>/", logout_user, name="logout_user"),  # Деактивация сессии пользователя
+
+    path('admin_info/', admin_info, name='admin_info'),  # Информация об администраторах
+    path('admin_edit/<int:admin_id>/', admin_edit, name='admin_edit'),  # Редактирование информация об администраторах
+    path('admin_delete/<int:admin_id>/', admin_delete, name='admin_delete'),  # Удаление администратора
 
     path('group_list/<int:db_id>/', group_list, name='group_list'),  # Список групп
     path('group_create/<int:db_id>/', group_create, name='group_create'),  # Создание группы

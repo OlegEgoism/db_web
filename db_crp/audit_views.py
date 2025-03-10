@@ -229,4 +229,18 @@ def export_audit_log_success(user_requester):
 # НАСТРОЙКИ
 def project_settings_success(user_requester, pagination_size, send_email):
     return f"Настройки проекта успешно обновлены. Размер пагинации на странице '{pagination_size} записей. Отправка сообщений на почту '{send_email}'. "
+
+
 # ---------------------------------------------------------------------------------------------------------------
+# АДМИНИСТРАТОРЫ
+def admin_edir_success(admin_user, updated_data):
+    return (
+        f"Администратор '{admin_user}' успешно обновлен. Телефон: '{updated_data['phone_number']}'. Email: '{updated_data['email']}'. Активен: '{updated_data['is_active']}'. Суперпользователь: {updated_data['is_superuser']}")
+
+
+def admin_delete_success(admin_user):
+    return f"Администратор '{admin_user}' успешно удален."
+
+
+def admin_delete_my_success(admin_user):
+    return f"Администратор '{admin_user}' не можете удалить свой собственный аккаун."
