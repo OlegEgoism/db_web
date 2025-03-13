@@ -7,7 +7,8 @@ from django.utils import timezone
 from .audit_views import group_data, create_audit_log, delete_group_messages_success, delete_group_messages_error, create_group_messages_error, \
     create_group_messages_error_pg, create_group_messages_error_info, edit_group_messages_error_pg, edit_group_messages_error_name, \
     edit_group_messages_success_name, edit_group_messages_error, edit_groups_privileges_tables_success, edit_groups_privileges_tables_error, \
-    user_groups_data_error, create_group_messages_group_success, edit_group_messages_error_info
+    create_group_messages_group_success, edit_group_messages_error_info
+from .db_connection_settings import get_db_connection_settings
 from .forms import CreateGroupForm, GroupEditForm
 from django.shortcuts import render, redirect, get_object_or_404
 from .models import GroupLog, ConnectingDB
@@ -21,14 +22,7 @@ updated_at = timezone.now()
 def group_list(request, db_id):
     """Список групп"""
     user_requester = request.user.username if request.user.is_authenticated else "Аноним"
-    connection_info = get_object_or_404(ConnectingDB, id=db_id)
-    temp_db_settings = {
-        'dbname': connection_info.name_db,
-        'user': connection_info.user_db,
-        'password': connection_info.get_decrypted_password(),
-        'host': connection_info.host_db,
-        'port': connection_info.port_db,
-    }
+    temp_db_settings = get_db_connection_settings(db_id)
     user_groups_data = []
     try:
         conn = psycopg2.connect(**temp_db_settings)
@@ -72,14 +66,7 @@ def group_list(request, db_id):
 def group_create(request, db_id):
     """Создание группы"""
     user_requester = request.user.username if request.user.is_authenticated else "Аноним"
-    connection_info = get_object_or_404(ConnectingDB, id=db_id)
-    temp_db_settings = {
-        'dbname': connection_info.name_db,
-        'user': connection_info.user_db,
-        'password': connection_info.get_decrypted_password(),
-        'host': connection_info.host_db,
-        'port': connection_info.port_db,
-    }
+    temp_db_settings = get_db_connection_settings(db_id)
     if request.method == "POST":
         form = CreateGroupForm(request.POST)
         if form.is_valid():
@@ -131,14 +118,7 @@ def group_create(request, db_id):
 def group_edit(request, db_id, group_name):
     """Редактирование группы"""
     user_requester = request.user.username if request.user.is_authenticated else "Аноним"
-    connection_info = get_object_or_404(ConnectingDB, id=db_id)
-    temp_db_settings = {
-        'dbname': connection_info.name_db,
-        'user': connection_info.user_db,
-        'password': connection_info.get_decrypted_password(),
-        'host': connection_info.host_db,
-        'port': connection_info.port_db,
-    }
+    temp_db_settings = get_db_connection_settings(db_id)
     group_log, created = GroupLog.objects.get_or_create(
         groupname=group_name,
         defaults={'created_at': created_at, 'updated_at': timezone.now()}
@@ -212,13 +192,7 @@ def groups_edit_privileges_tables(request, db_id, group_name):
     """Редактирование прав группы на таблицы"""
     user_requester = request.user.username if request.user.is_authenticated else "Аноним"
     connection_info = get_object_or_404(ConnectingDB, id=db_id)
-    temp_db_settings = {
-        'dbname': connection_info.name_db,
-        'user': connection_info.user_db,
-        'password': connection_info.get_decrypted_password(),
-        'host': connection_info.host_db,
-        'port': connection_info.port_db,
-    }
+    temp_db_settings = get_db_connection_settings(db_id)
     tables_by_schema = {}
     granted_tables = {}
     schemas = []
@@ -312,14 +286,7 @@ def groups_edit_privileges_tables(request, db_id, group_name):
 def group_delete(request, db_id, group_name):
     """Удаление группы"""
     user_requester = request.user.username if request.user.is_authenticated else "Аноним"
-    connection_info = get_object_or_404(ConnectingDB, id=db_id)
-    temp_db_settings = {
-        'dbname': connection_info.name_db,
-        'user': connection_info.user_db,
-        'password': connection_info.get_decrypted_password(),
-        'host': connection_info.host_db,
-        'port': connection_info.port_db,
-    }
+    temp_db_settings = get_db_connection_settings(db_id)
     try:
         conn = psycopg2.connect(**temp_db_settings)
         cursor = conn.cursor()
@@ -345,14 +312,7 @@ def group_delete(request, db_id, group_name):
 def group_info(request, db_id, group_name):
     """Вывод списка пользователей, входящих в группу"""
     user_requester = request.user.username if request.user.is_authenticated else "Аноним"
-    connection_info = get_object_or_404(ConnectingDB, id=db_id)
-    temp_db_settings = {
-        'dbname': connection_info.name_db,
-        'user': connection_info.user_db,
-        'password': connection_info.get_decrypted_password(),
-        'host': connection_info.host_db,
-        'port': connection_info.port_db,
-    }
+    temp_db_settings = get_db_connection_settings(db_id)
     try:
         conn = psycopg2.connect(**temp_db_settings)
         cursor = conn.cursor()

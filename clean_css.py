@@ -1,4 +1,3 @@
-import os
 import re
 import glob
 from bs4 import BeautifulSoup

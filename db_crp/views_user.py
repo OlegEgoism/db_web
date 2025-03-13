@@ -5,6 +5,8 @@ from django.contrib.auth.decorators import login_required
 from django.core.mail import EmailMultiAlternatives
 from django.template.loader import render_to_string
 from django.utils import timezone
+
+from .db_connection_settings import get_db_connection_settings
 from .forms import UserCreateForm
 from django.shortcuts import render, redirect, get_object_or_404
 from .models import UserLog, SettingsProject, ConnectingDB
@@ -22,14 +24,7 @@ updated_at = timezone.now()
 def user_list(request, db_id):
     """Список пользователей"""
     user_requester = request.user.username if request.user.is_authenticated else "Аноним"
-    connection_info = get_object_or_404(ConnectingDB, id=db_id)
-    temp_db_settings = {
-        'dbname': connection_info.name_db,
-        'user': connection_info.user_db,
-        'password': connection_info.get_decrypted_password(),
-        'host': connection_info.host_db,
-        'port': connection_info.port_db,
-    }
+    temp_db_settings = get_db_connection_settings(db_id)
     users_data = []
     try:
         conn = psycopg2.connect(**temp_db_settings)
@@ -69,14 +64,7 @@ def user_list(request, db_id):
 def user_create(request, db_id):
     """Создание пользователя"""
     user_requester = request.user.username if request.user.is_authenticated else "Аноним"
-    connection_info = get_object_or_404(ConnectingDB, id=db_id)
-    temp_db_settings = {
-        'dbname': connection_info.name_db,
-        'user': connection_info.user_db,
-        'password': connection_info.get_decrypted_password(),
-        'host': connection_info.host_db,
-        'port': connection_info.port_db,
-    }
+    temp_db_settings = get_db_connection_settings(db_id)
     send_email = SettingsProject.objects.first().send_email if SettingsProject.objects.exists() else False
     if request.method == "POST":
         form = UserCreateForm(request.POST)
@@ -174,14 +162,7 @@ def user_create(request, db_id):
 def user_info(request, db_id, username):
     """Информация о пользователе"""
     user_requester = request.user.username if request.user.is_authenticated else "Аноним"
-    connection_info = get_object_or_404(ConnectingDB, id=db_id)
-    temp_db_settings = {
-        'dbname': connection_info.name_db,
-        'user': connection_info.user_db,
-        'password': connection_info.get_decrypted_password(),
-        'host': connection_info.host_db,
-        'port': connection_info.port_db,
-    }
+    temp_db_settings = get_db_connection_settings(db_id)
     try:
         conn = psycopg2.connect(**temp_db_settings)
         cursor = conn.cursor()
@@ -260,14 +241,7 @@ def user_info(request, db_id, username):
 def user_edit(request, db_id, username):
     """Редактирование пользователя"""
     user_requester = request.user.username if request.user.is_authenticated else "Аноним"
-    connection_info = get_object_or_404(ConnectingDB, id=db_id)
-    temp_db_settings = {
-        'dbname': connection_info.name_db,
-        'user': connection_info.user_db,
-        'password': connection_info.get_decrypted_password(),
-        'host': connection_info.host_db,
-        'port': connection_info.port_db,
-    }
+    temp_db_settings = get_db_connection_settings(db_id)
     try:
         conn = psycopg2.connect(**temp_db_settings)
         cursor = conn.cursor()
@@ -380,13 +354,7 @@ def user_delete(request, db_id, username):
     """Удаление пользователя"""
     user_requester = request.user.username if request.user.is_authenticated else "Аноним"
     connection_info = get_object_or_404(ConnectingDB, id=db_id)
-    temp_db_settings = {
-        'dbname': connection_info.name_db,
-        'user': connection_info.user_db,
-        'password': connection_info.get_decrypted_password(),
-        'host': connection_info.host_db,
-        'port': connection_info.port_db,
-    }
+    temp_db_settings = get_db_connection_settings(db_id)
     try:
         conn = psycopg2.connect(**temp_db_settings)
         cursor = conn.cursor()

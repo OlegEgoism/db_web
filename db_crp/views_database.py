@@ -8,6 +8,7 @@ from .audit_views import connect_data_base_success, create_audit_log, delete_dat
     sync_data_base_success, sync_data_base_error
 from .forms import DatabaseConnectForm
 from .models import ConnectingDB, UserLog, GroupLog
+from django.db.utils import OperationalError
 
 
 @login_required
@@ -21,9 +22,6 @@ def database_list(request):
         })
     return render(request, "databases/database_list.html", {"databases_info": databases_info})
 
-
-from django.contrib import messages
-from django.db.utils import OperationalError
 
 @login_required
 def tables_list(request, db_id):
@@ -48,9 +46,6 @@ def tables_list(request, db_id):
     tables_info = []
     db_size = "Неизвестно"
     try:
-        # missing_params = [key for key, value in temp_db_settings.items() if value in [None, "", {}]]
-        # if missing_params and temp_db_settings['PASSWORD'] == None:
-        #     raise ValueError(f"Ошибка! Отсутствуют параметры подключения: {', '.join(missing_params)}")
         temp_connection = DatabaseWrapper(temp_db_settings, alias="temp_connection")
         temp_connection.connect()
         with temp_connection.cursor() as cursor:
@@ -87,7 +82,6 @@ def tables_list(request, db_id):
         "db_size": db_size,
         "tables_info": tables_info,
     })
-
 
 
 def database_connect(request):
@@ -223,4 +217,3 @@ def sync_users_and_groups(request, db_id):
         if conn is not None:
             conn.close()
     return redirect("database_list")
-
