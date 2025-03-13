@@ -41,3 +41,12 @@ python manage.py makemigrations
 python manage.py migrate
 python manage.py createsuperuser
 python manage.py runserver
+
+
+
+## 🎥 Видео-обзор проекта
+Посмотрите демонстрацию работы проекта на YouTube:
+
+(https://youtu.be/5QQ1RjDKR2k)
+
+Нажмите на изображение или [перейдите по ссылке]((https://youtu.be/5QQ1RjDKR2k), чтобы посмотреть видео.
