@@ -14,7 +14,7 @@ from django.contrib import messages
 from .audit_views import delete_user_messages_email, delete_user_messages_success, delete_user_messages_error, create_audit_log, create_user_messages_error, \
     create_user_messages_error_email, create_user_messages_success, create_user_messages_email, user_info_error, edit_user_messages_success, \
     edit_user_messages_delete_group_success, edit_user_messages_add_group_success, user_error, create_user_error, create_user_messages_email_error, \
-    user_info_all_error, edit_user_messages_db_error
+    user_info_all_error, edit_user_messages_db_error, user_data_log
 
 created_at = datetime(2000, 1, 1, 0, 0)
 updated_at = timezone.now()
@@ -231,6 +231,13 @@ def user_info(request, db_id, username):
         create_audit_log(user_requester, 'info', 'user', user_requester, message)
     cursor.close()
     conn.close()
+    UserLog.objects.get_or_create(
+        username=username,
+        defaults={'created_at': created_at, 'updated_at': timezone.now()}
+    )
+    message = user_data_log(username)
+    messages.success(request, message)
+    create_audit_log(user_requester, 'create', 'user', user_requester, message)
     return render(request, 'users/user_info.html', {
         'user_data': user_data,
         'db_id': db_id
@@ -339,6 +346,13 @@ def user_edit(request, db_id, username):
         return redirect('user_list', db_id=db_id)
     cursor.close()
     conn.close()
+    UserLog.objects.get_or_create(
+        username=username,
+        defaults={'created_at': created_at, 'updated_at': timezone.now()}
+    )
+    message = user_data_log(username)
+    messages.success(request, message)
+    create_audit_log(user_requester, 'create', 'user', user_requester, message)
     return render(request, 'users/user_edit.html', {
         'db_id': db_id,
         'username': username,

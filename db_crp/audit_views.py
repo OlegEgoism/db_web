@@ -20,7 +20,7 @@ def user_register(user_name, email, phone_number):
 
 
 # ИНФОРМАЦИЯ ПОЛЗОВАТЕЛЯ
-def user_data(user_name):
+def user_data_log(user_name):
     return f"Автоматическое создание 'Дата создания' и 'Дата изменения' пользователя '{user_name}'."
 
 
