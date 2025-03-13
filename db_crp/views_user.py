@@ -144,6 +144,10 @@ def user_create(request, db_id):
                         create_audit_log(user_requester, 'create', 'user', user_requester, f"{message}: {str(email_error)}")
                 cursor.close()
                 conn.close()
+                UserLog.objects.get_or_create(
+                    username=username,
+                    defaults={'created_at': created_at, 'updated_at': timezone.now()}
+                )
                 return redirect('user_list', db_id=db_id)
             except Exception as e:
                 message = create_user_error(username)
