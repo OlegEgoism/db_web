@@ -87,8 +87,10 @@ main {
     margin: 5px;
 }
 .info-label {
-    font-weight: bold;
-    color: #333;
+    /*font-weight: bold;*/
+    /*color: #333;*/
+    text-align: left;
+    /*margin-right: 2px;*/
 }
 .group-item {
     display: flex;
@@ -286,14 +288,14 @@ main {
     border-radius: 5px;
     font-size: 16px;
 }
-.o-button {
-    width: 10%;
-    padding: 4px 4px;
-    margin-bottom: 5px;
-    border: 1px solid #ccc;
-    border-radius: 5px;
-    font-size: 16px;
-}
+/*.o-button {*/
+/*    width: 10%;*/
+/*    padding: 4px 4px;*/
+/*    margin-bottom: 5px;*/
+/*    border: 1px solid #ccc;*/
+/*    border-radius: 5px;*/
+/*    font-size: 16px;*/
+/*}*/
 .d-button {
     width: 13%;
     padding: 4px 4px;
@@ -460,3 +462,12 @@ main {
 .schema-item a:hover {
     background: #e9ecef;
 }
+
+
+.form-container {
+    text-align: left;
+}
+
+
+
+

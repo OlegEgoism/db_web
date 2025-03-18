@@ -66,7 +66,7 @@ class DatabaseConnectForm(forms.ModelForm):
         model = ConnectingDB
         fields = ["name_db", "user_db", "password_db", "host_db", "port_db"]
         labels = {
-            "name_db": "Название базы данных",
+            "name_db": "Название",
             "user_db": "Пользователь",
             "password_db": "Пароль",
             "host_db": "Хост",

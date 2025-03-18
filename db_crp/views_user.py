@@ -167,6 +167,14 @@ def user_info(request, db_id, username):
     """Информация о пользователе"""
     user_requester = request.user.username if request.user.is_authenticated else "Аноним"
     temp_db_settings = get_db_connection_settings(db_id)
+    user_log, created = UserLog.objects.get_or_create(
+        username=username,
+        defaults={'created_at': created_at, 'updated_at': timezone.now()}
+    )
+    if created:
+        message = user_data_log(username)
+        messages.success(request, message)
+        create_audit_log(user_requester, 'create', 'user', user_requester, message)
     try:
         conn = psycopg2.connect(**temp_db_settings)
         cursor = conn.cursor()
@@ -235,13 +243,6 @@ def user_info(request, db_id, username):
         create_audit_log(user_requester, 'info', 'user', user_requester, message)
     cursor.close()
     conn.close()
-    UserLog.objects.get_or_create(
-        username=username,
-        defaults={'created_at': created_at, 'updated_at': timezone.now()}
-    )
-    message = user_data_log(username)
-    messages.success(request, message)
-    create_audit_log(user_requester, 'create', 'user', user_requester, message)
     return render(request, 'users/user_info.html', {
         'user_data': user_data,
         'db_id': db_id
@@ -253,6 +254,15 @@ def user_edit(request, db_id, username):
     """Редактирование пользователя"""
     user_requester = request.user.username if request.user.is_authenticated else "Аноним"
     temp_db_settings = get_db_connection_settings(db_id)
+    user_log, created = UserLog.objects.get_or_create(
+        username=username,
+        defaults={'created_at': created_at, 'updated_at': timezone.now()}
+    )
+    if created:
+        message = user_data_log(username)
+        messages.success(request, message)
+        create_audit_log(user_requester, 'create', 'user', user_requester, message)
+
     try:
         conn = psycopg2.connect(**temp_db_settings)
         cursor = conn.cursor()
@@ -350,13 +360,6 @@ def user_edit(request, db_id, username):
         return redirect('user_list', db_id=db_id)
     cursor.close()
     conn.close()
-    UserLog.objects.get_or_create(
-        username=username,
-        defaults={'created_at': created_at, 'updated_at': timezone.now()}
-    )
-    message = user_data_log(username)
-    messages.success(request, message)
-    create_audit_log(user_requester, 'create', 'user', user_requester, message)
     return render(request, 'users/user_edit.html', {
         'db_id': db_id,
         'username': username,

@@ -20,6 +20,17 @@
 
             <!-- Информация пользователя -->
             <div class="info-item">
+                <span class="info-label">Дата создания:</span>
+                <span class="info-value">{{ user_data.created_at|date:"d.m.Y H:i" }}</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">Дата изменения:</span>
+                <span class="info-value">{{ user_data.updated_at|date:"d.m.Y H:i" }}</span>
+            </div>
+            <hr>
+
+            <h3>Пользователь</h3>
+            <div class="info-item">
                 <span class="info-label">ID пользователя:</span>
                 <span class="info-value">{{ user_data.user_id }}</span>
             </div>
@@ -35,14 +46,8 @@
                 <span class="info-label">Email:</span>
                 <span class="info-value">{{ user_data.email|default:"Почта не указана" }}</span>
             </div>
-            <div class="info-item">
-                <span class="info-label">Дата создания:</span>
-                <span class="info-value">{{ user_data.created_at|date:"d.m.Y H:i" }}</span>
-            </div>
-            <div class="info-item">
-                <span class="info-label">Дата изменения:</span>
-                <span class="info-value">{{ user_data.updated_at|date:"d.m.Y H:i" }}</span>
-            </div>
+            <hr>
+
             <h3>Права доступа</h3>
             <div class="info-item">
                 <span class="info-label">Может создавать БД:</span>
@@ -72,20 +77,21 @@
                 <span class="info-label">Bypass RLS:</span>
                 <span class="info-value">{{ user_data.bypass_rls }}</span>
             </div>
+            <hr>
+
             <h3>Группы</h3>
             <div class="info-item">
                 <span class="info-label">Количество групп пользователя:</span>
                 <span class="info-value">{{ user_data.group_count }} шт.</span>
             </div>
-            <hr>
+
             <div class="info-item">
-                <span class="info-label">Группы пользователя:</span>
                 {% if user_data.groups %}
-{% for group in user_data.groups %}
-    {% if group %}
-        <a href="{% url 'group_info' db_id=db_id group_name=group %}" class="group-link-user">{{ group }}</a>
-    {% endif %}
-{% endfor %}
+                    {% for group in user_data.groups %}
+                        {% if group %}
+                            <a href="{% url 'group_info' db_id=db_id group_name=group %}" class="group-link-user">{{ group }}</a>
+                        {% endif %}
+                    {% endfor %}
 
                 {% else %}
                     <span class="no-groups"> Пользователь не состоит в группах</span>

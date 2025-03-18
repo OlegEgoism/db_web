@@ -10,8 +10,7 @@
         {% if messages %}
             <div class="messages">
                 {% for message in messages %}
-                    <div class="alert {% if message.tags == 'success' %}alert-success{% else %}alert-error{% endif %}"
-                         role="alert">
+                    <div class="alert {% if message.tags == 'success' %}alert-success{% else %}alert-error{% endif %}" role="alert">
                         {{ message }}
                     </div>
                 {% endfor %}
@@ -20,13 +19,13 @@
 
         <form method="post" id="user-edit-form">
             {% csrf_token %}
-            <div class="info-item">
-            <label for="email">Email:</label>
+            <div class="info-item" >
+            <label for="email" class="info-label">Почта: </label>
             <input type="email" name="email" id="email" value="{{ user_email }}" placeholder="Введите email">
 
             </div>
             <div class="info-item">
-                <label for="new_password" class="info-label">Пароль:</label>
+                <label for="new_password" class="info-label">Пароль: </label>
                 <input type="password" id="new_password" name="new_password" placeholder="Введите новый пароль">
             </div>
 

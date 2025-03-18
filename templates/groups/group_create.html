@@ -18,7 +18,7 @@
             </div>
         {% endif %}
 
-        <form method="post">
+        <form method="post" class="info-label">
             {% csrf_token %}
             {{ form.as_p }}
             <div class="all-btn">

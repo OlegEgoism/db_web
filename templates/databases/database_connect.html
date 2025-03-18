@@ -18,7 +18,7 @@
         {% endif %}
 
         <!-- Форма подключения -->
-        <form method="post">
+        <form method="post" class="form-container">
             {% csrf_token %}
             {{ form.as_p }}
             <div class="all-btn">
