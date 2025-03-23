@@ -1,7 +1,7 @@
 asgiref==3.8.1
 beautifulsoup4==4.13.3
 Django==4.1
-numpy==2.2.3
+numpy>=1.22.4
 pandas==2.2.3
 pillow==11.1.0
 psycopg2-binary==2.9.10
