@@ -7,23 +7,32 @@ from django.conf import settings
 from .audit_views import connect_data_base_success, create_audit_log, delete_data_base_success, delete_data_base_error, update_data_base_success, \
     sync_data_base_success, sync_data_base_error
 from .forms import DatabaseConnectForm
-from .models import ConnectingDB, UserLog, GroupLog
-
+from .models import ConnectingDB, UserLog, GroupLog, SettingsProject
+from django.db.utils import OperationalError
+from django.core.paginator import Paginator
+from django.db.models import Q
 
 @login_required
 def database_list(request):
-    """Список баз данных"""
-    databases = ConnectingDB.objects.all()
-    databases_info = []
-    for db in databases:
-        databases_info.append({
-            "db": db,
-        })
-    return render(request, "databases/database_list.html", {"databases_info": databases_info})
+    """Список баз данных с пагинацией и поиском"""
+    pagination_size = SettingsProject.objects.first().pagination_size if SettingsProject.objects.exists() else 20
+    search_query = request.GET.get('search', '')
+    if search_query:
+        databases = ConnectingDB.objects.filter(Q(name_db__icontains=search_query))
+    else:
+        databases = ConnectingDB.objects.all()
+    paginator = Paginator(databases, pagination_size)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    databases_info = [{"db": db} for db in page_obj]
+    return render(request, "databases/database_list.html", {
+        "databases_info": databases_info,
+        "page_obj": page_obj,
+        "search_query": search_query
+    })
 
 
-from django.contrib import messages
-from django.db.utils import OperationalError
+
 
 @login_required
 def tables_list(request, db_id):

@@ -22,8 +22,10 @@
         {% endif %}
 
         <!-- Поле поиска -->
-        <input type="text" id="userSearch" class="user-search" onkeyup="filterUsers()"
-               placeholder="Поиск пользователя..."/>
+        <form method="get" action="" class="search-form">
+            <input type="text" id="userSearch" name="search" class="user-search" value="{{ request.GET.search }}"
+                   placeholder="Поиск пользователя..."/>
+        </form>
 
         <div id="userList">
             {% for user in users_data %}
@@ -59,26 +61,22 @@
                 <li>Нет пользователей</li>
             {% endfor %}
         </div>
+        <br>
+        <!-- Пагинация -->
+        <div class="pagination">
+            {% if page_obj.has_previous %}
+                <a href="?page=1&search={{ request.GET.search }}" class="btn btn-page">Первая</a>
+                <a href="?page={{ page_obj.previous_page_number }}&search={{ request.GET.search }}" class="btn btn-page">Назад</a>
+            {% endif %}
+            <span class="current-page">Страница {{ page_obj.number }} из {{ page_obj.paginator.num_pages }}</span>
+            {% if page_obj.has_next %}
+                <a href="?page={{ page_obj.next_page_number }}&search={{ request.GET.search }}" class="btn btn-page">Вперед</a>
+                <a href="?page={{ page_obj.paginator.num_pages }}&search={{ request.GET.search }}" class="btn btn-page">Последняя</a>
+            {% endif %}
+        </div>
+
         <div class="all-btn">
             <a href="{% url 'database_list' %}" class="btn btn-cancel">Назад</a>
         </div>
     </div>
-
-    <script>
-        function filterUsers() {
-            let input = document.getElementById("userSearch");
-            let filter = input.value.toLowerCase();
-            let items = document.querySelectorAll(".group-item");
-
-            items.forEach(item => {
-                let userName = item.querySelector(".group-name a").textContent.toLowerCase();
-                if (userName.includes(filter)) {
-                    item.style.display = "";
-                } else {
-                    item.style.display = "none";
-                }
-            });
-        }
-    </script>
-
 {% endblock %}

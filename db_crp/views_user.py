@@ -3,6 +3,7 @@ import psycopg2
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.core.mail import EmailMultiAlternatives
+from django.core.paginator import Paginator
 from django.template.loader import render_to_string
 from django.utils import timezone
 from .forms import UserCreateForm
@@ -20,8 +21,9 @@ updated_at = timezone.now()
 
 @login_required
 def user_list(request, db_id):
-    """Список пользователей"""
+    """Список пользователей с пагинацией и полным поиском"""
     user_requester = request.user.username if request.user.is_authenticated else "Аноним"
+    pagination_size = SettingsProject.objects.first().pagination_size if SettingsProject.objects.exists() else 20
     connection_info = get_object_or_404(ConnectingDB, id=db_id)
     temp_db_settings = {
         'dbname': connection_info.name_db,
@@ -31,6 +33,7 @@ def user_list(request, db_id):
         'port': connection_info.port_db,
     }
     users_data = []
+    search_query = request.GET.get('search', '')
     try:
         conn = psycopg2.connect(**temp_db_settings)
         cursor = conn.cursor()
@@ -46,23 +49,33 @@ def user_list(request, db_id):
                 WHERE u.usename = %s;
             """, [user])
             group_count = cursor.fetchone()[0]
-            users_data.append({
+            user_data = {
                 "username": user,
                 "created_at": user_logs[user].created_at if user in user_logs else None,
                 "updated_at": user_logs[user].updated_at if user in user_logs else None,
                 "group_count": group_count,
                 "email": user_logs[user].email if user in user_logs else None,
-            })
+            }
+            if search_query:
+                if not any(search_query.lower() in str(value).lower() for value in user_data.values()):
+                    continue
+            users_data.append(user_data)
         cursor.close()
         conn.close()
+        paginator = Paginator(users_data, pagination_size)
+        page_number = request.GET.get('page')
+        page_obj = paginator.get_page(page_number)
     except Exception as e:
         message = user_error()
         messages.error(request, f"{message}: {str(e)}")
         create_audit_log(user_requester, 'info', 'create', user_requester, f"{message}: {str(e)}")
+        page_obj = []  # Добавлено дефолтное значение для page_obj
     return render(request, 'users/user_list.html', {
-        'users_data': users_data,
+        'users_data': page_obj.object_list if isinstance(page_obj, Paginator) else page_obj,
+        'page_obj': page_obj,
         'db_id': db_id
     })
+
 
 
 @login_required

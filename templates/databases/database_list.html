@@ -21,8 +21,10 @@
         {% endif %}
 
         <!-- Поле поиска -->
-        <input type="text" id="databaseSearch" class="group-search" onkeyup="filterDatabases()"
-               placeholder="Поиск базы данных..."/>
+        <form method="get" action="" class="search-form" id="searchForm">
+            <input type="text" id="databaseSearch" name="search" class="group-search" value="{{ search_query }}"
+                   placeholder="Поиск базы данных..." onkeyup="debounceSearch()"/>
+        </form>
 
         <div id="databaseList">
             {% for item in databases_info %}
@@ -56,21 +58,32 @@
                 <li>Нет доступных баз данных</li>
             {% endfor %}
         </div>
+
+        <br>
+
+        <!-- Пагинация -->
+        <div class="pagination">
+            {% if page_obj.has_previous %}
+                <a href="?page=1&search={{ search_query }}" class="btn btn-page">Первая</a>
+                <a href="?page={{ page_obj.previous_page_number }}&search={{ search_query }}" class="btn btn-page">Назад</a>
+            {% endif %}
+            <span class="current-page">Страница {{ page_obj.number }} из {{ page_obj.paginator.num_pages }}</span>
+            {% if page_obj.has_next %}
+                <a href="?page={{ page_obj.next_page_number }}&search={{ search_query }}" class="btn btn-page">Вперед</a>
+                <a href="?page={{ page_obj.paginator.num_pages }}&search={{ search_query }}" class="btn btn-page">Последняя</a>
+            {% endif %}
+        </div>
     </div>
 
-    <script>
-        function filterDatabases() {
-            let input = document.getElementById("databaseSearch");
-            let filter = input.value.toLowerCase();
-            let items = document.querySelectorAll(".group-item");
-            items.forEach(item => {
-                let dbName = item.querySelector(".group-name a").textContent.toLowerCase();
-                if (dbName.includes(filter)) {
-                    item.style.display = "";
-                } else {
-                    item.style.display = "none";
-                }
-            });
-        }
-    </script>
+{#    <script>#}
+{#        let timeout = null;#}
+{##}
+{#        // Функция для дебаунсинга#}
+{#        function debounceSearch() {#}
+{#            clearTimeout(timeout);#}
+{#            timeout = setTimeout(function() {#}
+{#                document.getElementById('searchForm').submit();#}
+{#            }, 1000); // задержка 500 миллисекунд#}
+{#        }#}
+{#    </script>#}
 {% endblock %}

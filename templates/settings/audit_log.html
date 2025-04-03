@@ -59,6 +59,7 @@
         <table class="audit-table">
             <thead>
             <tr>
+                <th>ID</th>
                 <th>Дата</th>
                 <th>Пользователь</th>
                 <th>Действие</th>
@@ -70,6 +71,7 @@
             <tbody>
             {% for entry in page_obj %}
                 <tr>
+                    <td><strong>{{ entry.id }}</strong></td>
                     <td>{{ entry.timestamp|date:"d.m.Y H:i" }}</td>
                     <td>{{ entry.username }}</td>
                     <td>{{ entry.get_action_type_display }}</td>
@@ -79,7 +81,7 @@
                 </tr>
             {% empty %}
                 <tr>
-                    <td colspan="6" class="no-data">Нет данных</td>
+                    <td colspan="7" class="no-data">Нет данных</td>
                 </tr>
             {% endfor %}
             </tbody>

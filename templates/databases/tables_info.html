@@ -4,7 +4,7 @@
 {% block content %}
     <div class="welcome-container">
         <div class="title-with-button" style="display: flex; align-items: center; justify-content: space-between;">
-            <h2 class="welcome-title">Список таблиц в базе данных: {{ db_name }} ({{ tables_info|length }} шт.)</h2>
+            <h2 class="welcome-title">Список таблиц в базе данных: {{ db_name }} ({{ tables_info|length }} шт.) </h2>
         </div>
         <hr>
 
@@ -22,15 +22,15 @@
         <!-- Поле поиска -->
         <input type="text" id="tableSearch" class="group-search" onkeyup="filterTables()" placeholder="Поиск таблицы..."/>
 
-{#        <!-- Вывод размера базы данных -->#}
-{#        <div class="database-size">#}
-{#            <h3>Размер базы данных: {{ db_size }}</h3>#}
-{#        </div>#}
+        <!-- Вывод размера базы данных -->
+        <div class="database-size">
+            <h3>Размер базы данных: {{ db_size }}</h3>
+        </div>
 
         <table class="table-list">
             <thead>
             <tr>
-                <th>#</th>
+                <th>№</th>
                 <th>Схема</th>
                 <th>Таблица</th>
                 <th>Размер</th>
